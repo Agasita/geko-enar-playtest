@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#111922">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="mobile.css?v=e06f081b7676">
+  <title>ゲコ＆エナー — モバイル体験版</title>
+</head>
+<body>
+  <header class="toolbar">
+    <a class="brand" href="./" aria-label="ゲコ＆エナーのスタート画面">GEKO <span>&</span> ENAR</a>
+    <span id="stage-name" role="status">モバイル体験版</span>
+    <button id="fullscreen" type="button" aria-label="全画面表示">全画面</button>
+    <button data-key="F2" type="button" aria-label="日本語と英語を切り替える">JP/EN</button>
+    <button id="show-help" type="button" aria-label="操作方法を開く">？</button>
+  </header>
+  <main class="play-layout">
+    <section class="game-area" aria-label="ゲーム画面">
+      <iframe id="game" title="ゲコ＆エナー" allow="autoplay; fullscreen; gamepad" tabindex="-1"></iframe>
+      <div id="launch-screen" class="launch-screen">
+        <p class="eyebrow">WORKBOOK / PLAYTEST</p>
+        <h1>世界を編集して、<br>道を切り開こう。</h1>
+        <p>横持ちがおすすめ。<br>移動・攻撃・編集をタッチで操作できます。</p>
+        <button class="launch primary" data-mode="exploration" type="button">探索マップを遊ぶ <span>→</span></button>
+        <button class="launch secondary" data-mode="demo" type="button">ストーリー体験版を遊ぶ</button>
+        <small>初回は読み込みに時間がかかります。通信できる場所で開いてください。</small>
+      </div>
+      <div id="loading" class="loading" role="status" hidden><span class="spinner"></span><strong>ゲームを準備しています</strong><small id="loading-detail">最初の読み込みには時間がかかる場合があります。</small><button id="retry" type="button" hidden>もう一度読み込む</button></div>
+    </section>
+    <section class="direction-panel" aria-label="移動操作">
+      <div class="dpad">
+        <button class="pad up" data-key="ArrowUp" aria-label="上">▲</button>
+        <button class="pad left" data-key="ArrowLeft" aria-label="左">◀</button>
+        <span class="pad-center" aria-hidden="true"></span>
+        <button class="pad right" data-key="ArrowRight" aria-label="右">▶</button>
+        <button class="pad down" data-key="ArrowDown" aria-label="下">▼</button>
+      </div>
+      <button class="dash" data-key="ShiftLeft">ダッシュ</button>
+    </section>
+    <section class="action-panel" aria-label="アクションと編集操作">
+      <button class="action main-action" data-key="Space" id="jump">ジャンプ</button>
+      <button class="action" data-key="KeyJ" id="attack">攻撃</button>
+      <button class="action" data-key="KeyE" id="interact">調べる／話す</button>
+      <button class="action edit-action" data-key="Tab" id="edit">編集</button>
+      <button class="action edit-only" data-key="KeyF" hidden>シフト</button>
+      <button class="action edit-only" data-key="KeyA" hidden>アンカー</button>
+      <button class="action edit-only" data-key="KeyK" hidden>カラー</button>
+      <button class="action edit-only" data-key="KeyZ" hidden>戻す</button>
+      <button class="action edit-only" data-key="KeyB" hidden>手前／奥</button>
+      <button class="action edit-only" data-key="KeyC" hidden>色を変える</button>
+      <button class="action" data-key="KeyI" id="map">地図</button>
+      <button class="action" data-key="KeyM">ステージ一覧</button>
+      <button class="action play-only" data-key="KeyC">武器切替</button>
+      <button class="action play-only" data-key="KeyR">やり直す</button>
+      <button class="action menu-only" data-key="KeyW" hidden>探索マップ</button>
+      <button class="action menu-only" data-key="KeyD" hidden>体験版</button>
+      <button class="action menu-only" data-key="Enter" hidden>選ぶ</button>
+    </section>
+  </main>
+  <footer id="touch-hint" role="status">横持ちで画面を広く使えます。</footer>
+  <dialog id="help-dialog">
+    <button id="close-help" class="close" aria-label="操作方法を閉じる">×</button>
+    <p class="eyebrow">HOW TO PLAY</p><h2>タッチ操作</h2>
+    <dl><dt>移動とジャンプ</dt><dd>方向キー＋ジャンプ。ダッシュを押しながら移動できます。</dd>
+    <dt>編集</dt><dd>編集ボタンで時間停止。方向キーでカーソルを動かします。</dd>
+    <dt>マージ</dt><dd>マージ／範囲を押し続けながら方向キーで範囲を選び、指を離して確定します。</dd>
+    <dt>シフト・アンカー</dt><dd>シフト→実行で前後を交換。アンカーはA相当のボタンです。</dd>
+    <dt>会話とステージ</dt><dd>「調べる／話す」で会話を進めます。クリア後は「次へ」を押します。</dd>
+    <dt>保存</dt><dd>セーブ地点で保存した進行と言語は、このブラウザ内に保存されます。PCとは同期しません。</dd></dl>
+    <p class="note">ブラウザを閉じる前にセーブ地点で保存してください。端末のデータ削除やプライベートブラウズでは進行が残らない場合があります。</p>
+  </dialog>
+  <script src="mobile.js?v=e06f081b7676" defer></script>
+</body>
+</html>
