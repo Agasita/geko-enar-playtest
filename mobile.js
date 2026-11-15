@@ -79,10 +79,18 @@
     document.querySelector('#loading').hidden=false;
     document.querySelector('#retry').hidden=true;
     document.querySelector('#loading-detail').textContent='最初の読み込みには時間がかかる場合があります。';
-    frame.src=`game.html?v=3df0120f8051`;
+    frame.src=`game.html?v=be8f8e8621d2`;
   }
   document.querySelectorAll('.launch').forEach(button=>button.addEventListener('click',()=>launch(button.dataset.mode)));
   document.querySelector('#retry').addEventListener('click',()=>launch(desiredMode));
+  function refreshGame() {
+    releaseAll();
+    const url=new URL(location.href);
+    url.searchParams.set('update',Date.now().toString(36));
+    location.replace(url.href);
+  }
+  document.querySelector('#refresh-game').addEventListener('click',refreshGame);
+  document.querySelector('.brand').addEventListener('click',event=>{event.preventDefault();refreshGame();});
   document.querySelector('#fullscreen').addEventListener('click',async()=>{
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
