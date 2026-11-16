@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="mobile.css?v=e7015c4c42a7">
+  <link rel="stylesheet" href="mobile.css?v=9b8e42b477d0">
   <title>ゲコ＆エナー — モバイル体験版</title>
 </head>
 <body>
@@ -30,6 +30,7 @@
         <button class="launch primary" data-mode="exploration" type="button">探索マップを遊ぶ <span>→</span></button>
         <button class="launch secondary" data-mode="vertical" type="button">縦に広がる保守シャフトを遊ぶ</button>
         <button class="launch secondary" data-mode="demo" type="button">ストーリー体験版を遊ぶ</button>
+        <button class="launch secondary" id="launch-lab" data-mode="lab" type="button" hidden>編集実験場（全スキル解放）を遊ぶ</button>
         <small>初回は読み込みに時間がかかります。通信できる場所で開いてください。</small>
       </div>
       <div id="loading" class="loading" role="status" hidden><span class="spinner"></span><strong>ゲームを準備しています</strong><small id="loading-detail">最初の読み込みには時間がかかる場合があります。</small><button id="retry" type="button" hidden>もう一度読み込む</button></div>
@@ -55,6 +56,7 @@
       <button class="action edit-only" data-key="KeyZ" hidden>戻す</button>
       <button class="action edit-only" data-key="KeyB" hidden>手前／奥</button>
       <button class="action edit-only" data-key="KeyC" hidden>色を変える</button>
+      <button class="action" data-key="KeyR" id="sort" hidden>ソート</button>
       <button class="action" data-key="KeyI" id="map">地図</button>
       <button class="action" data-key="KeyM">ステージ一覧</button>
       <button class="action play-only" data-key="KeyC">武器切替</button>
@@ -72,11 +74,12 @@
     <dl><dt>移動とジャンプ</dt><dd>方向キー＋ジャンプ。ダッシュを押しながら移動できます。</dd>
     <dt>編集</dt><dd>編集ボタンで時間停止。方向キーでカーソルを動かします。</dd>
     <dt>マージ</dt><dd>マージ／範囲を押し続けながら方向キーで範囲を選び、指を離して確定します。</dd>
-    <dt>シフト・アンカー</dt><dd>シフト→実行で前後を交換。アンカーはA相当のボタンです。</dd>
+    <dt>ソート</dt><dd>実験場などで「ソート」が出ます。押し続けながら方向キーで赤い範囲を選び、離すと鋼が右へ寄ります。</dd>
+        <dt>シフト・アンカー</dt><dd>シフト→実行で前後を交換。アンカーはA相当のボタンです。</dd>
     <dt>会話とステージ</dt><dd>「調べる／話す」で会話を進めます。クリア後は「次へ」を押します。</dd>
     <dt>保存</dt><dd>セーブ地点で保存した進行と言語は、このブラウザ内に保存されます。PCとは同期しません。</dd></dl>
     <p class="note">ブラウザを閉じる前にセーブ地点で保存してください。端末のデータ削除やプライベートブラウズでは進行が残らない場合があります。</p>
   </dialog>
-  <script src="mobile.js?v=e7015c4c42a7" defer></script>
+  <script src="mobile.js?v=9b8e42b477d0" defer></script>
 </body>
 </html>
