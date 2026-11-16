@@ -82,7 +82,7 @@
     document.querySelector('#loading').hidden=false;
     document.querySelector('#retry').hidden=true;
     document.querySelector('#loading-detail').textContent='最初の読み込みには時間がかかる場合があります。';
-    frame.src=`game.html?v=2374d0477279${theme?'&theme='+theme:''}`;
+    frame.src=`game.html?v=be59cb5a9784${theme?'&theme='+theme:''}`;
   }
   document.querySelectorAll('.launch').forEach(button=>button.addEventListener('click',()=>launch(button.dataset.mode)));
   document.querySelector('#retry').addEventListener('click',()=>launch(desiredMode));
