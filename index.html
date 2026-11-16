@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="mobile.css?v=35cd19f49a2d">
+  <link rel="stylesheet" href="mobile.css?v=784741a97e1b">
   <title>ゲコ＆エナー — モバイル体験版</title>
 </head>
 <body>
@@ -28,6 +28,7 @@
         <h1>世界を編集して、<br>道を切り開こう。</h1>
         <p>横持ちがおすすめ。<br>移動・攻撃・編集をタッチで操作できます。</p>
         <button class="launch primary" data-mode="exploration" type="button">探索マップを遊ぶ <span>→</span></button>
+        <button class="launch secondary" data-mode="vertical" type="button">縦に広がる保守シャフトを遊ぶ</button>
         <button class="launch secondary" data-mode="demo" type="button">ストーリー体験版を遊ぶ</button>
         <small>初回は読み込みに時間がかかります。通信できる場所で開いてください。</small>
       </div>
@@ -59,6 +60,7 @@
       <button class="action play-only" data-key="KeyC">武器切替</button>
       <button class="action play-only" data-key="KeyR">やり直す</button>
       <button class="action menu-only" data-key="KeyW" hidden>探索マップ</button>
+      <button class="action menu-only" data-key="KeyU" hidden>縦の探索</button>
       <button class="action menu-only" data-key="KeyD" hidden>体験版</button>
       <button class="action menu-only" data-key="Enter" hidden>選ぶ</button>
     </section>
@@ -75,6 +77,6 @@
     <dt>保存</dt><dd>セーブ地点で保存した進行と言語は、このブラウザ内に保存されます。PCとは同期しません。</dd></dl>
     <p class="note">ブラウザを閉じる前にセーブ地点で保存してください。端末のデータ削除やプライベートブラウズでは進行が残らない場合があります。</p>
   </dialog>
-  <script src="mobile.js?v=35cd19f49a2d" defer></script>
+  <script src="mobile.js?v=784741a97e1b" defer></script>
 </body>
 </html>

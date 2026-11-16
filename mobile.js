@@ -11,7 +11,7 @@
   const keys = new Map();
   let started = false, desiredMode = 'exploration', selectedMode = false;
   let state = {}, helperPaused = false, startedAt = 0;
-  const codes = {ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,Space:32,Enter:13,Tab:9,ShiftLeft:16,KeyJ:74,KeyE:69,KeyF:70,KeyA:65,KeyK:75,KeyZ:90,KeyB:66,KeyC:67,KeyI:73,KeyM:77,KeyW:87,KeyD:68,KeyH:72,KeyV:86,KeyR:82,F2:113};
+  const codes = {ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,Space:32,Enter:13,Tab:9,ShiftLeft:16,KeyJ:74,KeyE:69,KeyF:70,KeyA:65,KeyK:75,KeyZ:90,KeyB:66,KeyC:67,KeyI:73,KeyM:77,KeyW:87,KeyU:85,KeyD:68,KeyH:72,KeyV:86,KeyR:82,F2:113};
   function emit(code, down) {
     try {
       const win = frame.contentWindow;
@@ -79,7 +79,7 @@
     document.querySelector('#loading').hidden=false;
     document.querySelector('#retry').hidden=true;
     document.querySelector('#loading-detail').textContent='最初の読み込みには時間がかかる場合があります。';
-    frame.src=`game.html?v=35cd19f49a2d`;
+    frame.src=`game.html?v=784741a97e1b`;
   }
   document.querySelectorAll('.launch').forEach(button=>button.addEventListener('click',()=>launch(button.dataset.mode)));
   document.querySelector('#retry').addEventListener('click',()=>launch(desiredMode));
@@ -139,7 +139,7 @@
         if(next.ready) {
           document.querySelector('#loading').hidden=true;
           updateControls(next);
-          if(!selectedMode && next.menu) {selectedMode=true;pulse(desiredMode==='exploration'?'KeyW':'KeyD');}
+          if(!selectedMode && next.menu) {selectedMode=true;pulse(desiredMode==='vertical'?'KeyU':desiredMode==='exploration'?'KeyW':'KeyD');}
         }
       }
     } catch (_) { /* ページの切替中は次回の更新を待つ。 */ }
