@@ -7,6 +7,9 @@
   }
   new ResizeObserver(fitGame).observe(gameArea);
   fitGame();
+  // 画風: URLの ?theme=classic|soft をゲームへ引き継ぐ(未指定ならゲーム側の既定)。
+  const theme = ['classic','soft'].find(name=>name===new URLSearchParams(location.search).get('theme'))||'';
+  if (theme) document.documentElement.dataset.theme = theme;
   const pointers = new Map();
   const keys = new Map();
   let started = false, desiredMode = 'exploration', selectedMode = false;
@@ -79,7 +82,7 @@
     document.querySelector('#loading').hidden=false;
     document.querySelector('#retry').hidden=true;
     document.querySelector('#loading-detail').textContent='最初の読み込みには時間がかかる場合があります。';
-    frame.src=`game.html?v=d0774bd14083`;
+    frame.src=`game.html?v=e7015c4c42a7${theme?'&theme='+theme:''}`;
   }
   document.querySelectorAll('.launch').forEach(button=>button.addEventListener('click',()=>launch(button.dataset.mode)));
   document.querySelector('#retry').addEventListener('click',()=>launch(desiredMode));
