@@ -5,21 +5,3 @@
 
 /* 内部解像度を保ったままiframe全体を縮小し、SDLの描画領域が欠けるのを防ぐ。 */
 #game{position:absolute;width:960px;height:540px;max-width:none;left:50%;top:50%;transform-origin:center;transform:translate(-50%,-50%) scale(var(--game-scale,.5))}
-
-/* FLAT画風(?theme=flat): 枠線をなくし、角丸の面だけで構成する。 */
-html[data-theme=flat]{--bg:#1f2a44;--surface:#2e3b5e;--border:transparent;--ink:#fff;--muted:#aeb8d0;--green:#f5c842;--blue:#7fa2f0}
-html[data-theme=flat] button{border:0;border-radius:14px}
-html[data-theme=flat] button.pressed,html[data-theme=flat] button:active{background:#42527f;transform:scale(.95)}
-html[data-theme=flat] .toolbar{border-bottom:0}
-html[data-theme=flat] .toolbar button{border-radius:999px}
-html[data-theme=flat] .game-area{border:0;border-radius:14px;background:#151d33}
-html[data-theme=flat] .pad{border-radius:16px}
-html[data-theme=flat] .pad-center{background:#2e3b5e}
-html[data-theme=flat] .main-action{background:#e8563f;color:#fff}
-html[data-theme=flat] body.editing .main-action{background:#4c9be8;color:#fff}
-html[data-theme=flat] .edit-action{background:#f5c842;color:#1f2a44}
-html[data-theme=flat] .launch-screen,html[data-theme=flat] .loading{background:#1f2a44}
-html[data-theme=flat] .primary{background:#f5c842;color:#1f2a44}
-html[data-theme=flat] .secondary{background:#2e3b5e}
-html[data-theme=flat] .spinner{border-top-color:#f5c842}
-html[data-theme=flat] dialog{background:#2e3b5e;border:0;border-radius:22px}
