@@ -716,7 +716,9 @@
 
   // ===== 描画 =====
   function dotRect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
+  const SNES = /[?&]gfx=snes/.test(location.search) && !!window.GFX; // ?gfx=snes : スーファミ風グラフィック(見本)
   function drawBackground() {
+    if (SNES) { GFX.bg(ctx, G, G.level, W, H); return; }
     const lv = G.level; ctx.fillStyle = lv.bg; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = lv.bg2;
     const sc = Math.round(G.cam.x * .3);
@@ -729,9 +731,10 @@
   }
   const TC = { steel: '#66708C', steelL: '#8D97B3', steelD: '#2F3752' };
   const LOCK = ['.111.', '1...1', '11111', '11011', '11111'];
-  function drawBlock(t, c, x, y, topOpen, botOpen, alpha) {
+  function drawBlock(t, c, x, y, topOpen, botOpen, alpha, seed) {
     const k = COLORS[c] || COLORS[0];
     if (alpha !== undefined) ctx.globalAlpha = alpha;
+    if (SNES) { ctx.drawImage(GFX.block(t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); ctx.globalAlpha = 1; return; }
     ctx.fillStyle = k.hex; ctx.fillRect(x, y, T, T);
     if (topOpen) { ctx.fillStyle = k.hi; ctx.fillRect(x, y, T, 2); }
     if (botOpen) { ctx.fillStyle = k.lo; ctx.fillRect(x, y + T - 3, T, 3); }
@@ -745,8 +748,11 @@
     if (isBlockT(t)) {
       if (G.hideRow.has(ty) || G.hideCol.has(tx)) return;
       const faded = G.filter !== null && G.col[ty][tx] !== G.filter;
-      drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined);
-      if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
+      drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined, tx * 7 + ty * 13);
+      if (G.lock[ty][tx] && SNES) ctx.drawImage(GFX.lock(), x + 8, y + 1);
+      else if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
+    } else if (t === TL.STEEL && SNES) {
+      ctx.drawImage(GFX.steel(!solidCell(tx, ty - 1), !solidCell(tx, ty + 1)), x, y);
     } else if (t === TL.STEEL) {
       ctx.fillStyle = TC.steel; ctx.fillRect(x, y, T, T);
       if (!solidCell(tx, ty - 1)) { ctx.fillStyle = TC.steelL; ctx.fillRect(x, y, T, 2); }
