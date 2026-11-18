@@ -13,6 +13,7 @@ header h1{font-size:16px;margin:0 8px 0 0}
 button,select,input,textarea{font:inherit;color:inherit}
 button{border:0;border-radius:10px;background:var(--panel);padding:6px 12px;cursor:pointer;min-height:34px}
 button:active,button.sel{background:var(--accent);color:var(--bg)}
+button.modebtn{font-weight:700;min-width:150px}
 button.go{background:var(--green);font-weight:700}
 input[type=text],input[type=number],select,textarea{background:#17203a;border:1px solid #ffffff30;border-radius:8px;padding:5px 8px;max-width:100%}
 main{padding:10px 12px;display:flex;flex-direction:column;gap:10px}
@@ -46,6 +47,7 @@ a{color:var(--muted)}
     <span class="lbl">コスト上限</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:70px"></div>
   <div class="row"><span class="lbl">ヒント(スタートで表示)</span><input id="f-hint" type="text" size="40" placeholder="（なくてもOK）"></div>
 
+  <div class="row"><button id="b-mode" class="modebtn"></button><span class="lbl">「動かす」のあいだは、さわってもブロックは置かれません。道具をえらぶと「置く」になります</span></div>
   <div class="row pal" id="pal"></div>
   <div class="row pal" id="pal2"></div>
   <div class="row"><label><input type="checkbox" id="f-lock"> 保護（カギつき）にする</label>
@@ -77,6 +79,8 @@ a{color:var(--muted)}
   const $ = (s) => document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d');
   let L = null, cur = { kind: 'block', color: 0 }, editingId = null, down = false, last = null;
+  let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw'; // スマホは、まず「動かす」(うっかり置かない)
+  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; const b = $('#b-mode'); b.textContent = m === 'scroll' ? '✋ いま：動かす（タップで切りかえ）' : '✏ いま：置く（タップで切りかえ）'; b.classList.toggle('sel', m === 'draw'); }
 
   function blank(w) {
     const front = [], color = [], lock = [];
@@ -127,7 +131,6 @@ a{color:var(--muted)}
   function apply(x, y) {
     if (!inb(x, y)) return;
     const k = cur.kind;
-    if (k === 'hand') return;
     if (k === 'erase') return eraseAt(x, y);
     if (k === 'block') { L.front[y][x] = '#'; L.color[y][x] = cur.color; L.lock[y][x] = $('#f-lock').checked ? 1 : 0; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); return; }
     if (k === 'steel') { eraseAt(x, y); L.front[y][x] = 'S'; return; }
@@ -142,18 +145,18 @@ a{color:var(--muted)}
     let [x0, y0] = a; const [x1, y1] = b, dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let err = dx - dy;
     for (;;) { apply(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x0 += sx; } if (e2 < dx) { err += dx; y0 += sy; } }
   }
-  cv.addEventListener('pointerdown', (e) => { if (cur.kind === 'hand') return; e.preventDefault(); cv.setPointerCapture(e.pointerId); down = true; last = cell(e); apply(last[0], last[1]); draw(); });
+  cv.addEventListener('pointerdown', (e) => { if (mode !== 'draw') return; e.preventDefault(); cv.setPointerCapture(e.pointerId); down = true; last = cell(e); apply(last[0], last[1]); draw(); });
   cv.addEventListener('pointermove', (e) => { const c = cell(e); $('#cursor').textContent = inb(c[0], c[1]) ? '(' + c[0] + ', ' + c[1] + ')' : ''; if (!down) return; if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } });
   const up = () => { down = false; last = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 
   // ---- パレット ----
-  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; cv.style.touchAction = v.kind === 'hand' ? 'auto' : 'none'; }
+  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); }
   function addBtn(box, html, v) { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => setCur(b, v); box.appendChild(b); return b; }
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
     COLORS.forEach((c, i) => { const b = addBtn(p, '<span class="sw" style="background:' + c[1] + '"></span>' + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) b.classList.add('sel'); });
-    addBtn(p, '鋼（固定）', { kind: 'steel' }); addBtn(p, 'ひび割れ壁', { kind: 'crack' }); addBtn(p, '消しゴム', { kind: 'erase' }); addBtn(p, '✋ 画面を動かす', { kind: 'hand' });
+    addBtn(p, '鋼（固定）', { kind: 'steel' }); addBtn(p, 'ひび割れ壁', { kind: 'crack' }); addBtn(p, '消しゴム', { kind: 'erase' });
     ENTS.forEach(e => addBtn(p2, '<span class="sw" style="background:' + e[2] + ';border-radius:50%"></span>' + e[1], { kind: 'ent', type: e[0] }));
     addBtn(p2, '宝石', { kind: 'gem' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
     TOOLS.forEach(t => { const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" data-t="' + t[0] + '"> ' + t[1]; $('#tools').appendChild(l); });
@@ -199,7 +202,8 @@ a{color:var(--muted)}
   $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length !== H) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました。保存すると新しいステージになります'); } catch (e) { msg('読みこめませんでした（データが正しくありません）'); } };
 
   (window.LEVELS || []).forEach((l, i) => { const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
-  loadData(Object.assign(blank(60), { name: 'マイステージ', tools: ['move', 'clear'], energy: 20 })); editingId = null; refreshSaved();
+  $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
+  loadData(Object.assign(blank(60), { name: 'マイステージ', tools: ['move', 'clear'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
   window.__editor = { get L() { return L; }, apply, toData, save, loadData, draw };
 })();
 </script>
