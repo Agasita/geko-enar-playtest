@@ -182,7 +182,7 @@
   L.push(make({
     id: '4-2', name: 'シートを仕上げる', world: 4, w: 96, tools: ['move', 'clear', 'hide', 'transform', 'color', 'painter', 'filter', 'protect', 'unprotect', 'delCol', 'insCol'], energy: 100, bg: '#3C4170', bg2: '#343863', par: 42,
     hints: [
-      { x: 6, text: '最終ステージ。表計算のしくみを、ぜんぶ使おう' },
+      { x: 6, text: '表計算のしくみを、ぜんぶ使おう' },
       { x: 12, text: '赤い鍵のついたブロックは「保護」されている。「表示」タブで保護を解除してから消そう' },
       { x: 58, text: '「セル」タブの「列の削除」: 穴の列を消すと、左に詰まって穴がせまくなる' },
     ],
@@ -204,6 +204,71 @@
       { x: 25, edits: [{ tool: 'transform', rect: { x0: 28, y0: 5, x1: 33, y1: 10 }, opts: { tf: 'rot' } }] },
       { x: 42, edits: [{ tool: 'hide', rect: { x0: 46, y0: 5, x1: 46, y1: 5 }, opts: { axis: 'col' } }] },
       { x: 59, edits: [{ tool: 'delCol', col: 63 }, { tool: 'delCol', col: 63 }] },
+    ],
+  }));
+
+  // ---- ワールド5: 応用（置換・入れ替え・並べ替え） ----
+  const T5 = ['move', 'swap', 'clear', 'color', 'painter', 'transform', 'sort', 'replace', 'hide', 'filter'];
+  L.push(make({
+    id: '5-1', name: '赤い床を置換', world: 5, w: 64, tools: T5, energy: 60, bg: '#F2B6B0', bg2: '#E8A29B', par: 6,
+    hints: [
+      { x: 6, text: '「データ」タブの「置換」: 範囲の「から」の色を「へ」の色に、まとめて置き換える' },
+      { x: 18, text: '赤い床は、さわるとダメージ（天井が低くて、とびこせない）。赤を茶に置換しよう（「から」＝赤、「へ」＝茶）' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(4);
+      m.pit(28, 47); m.rect(28, 11, 47, 11, 'S');
+      for (let x = 28; x <= 47; x++) m.blk(x, 10, 1);
+      m.rect(28, 4, 47, 8, 'S'); m.gem(33, 9); m.gem(56, 8); m.gem(40, 9);
+      m.ent('walker', 20, 9); m.ent('walker', 52, 9);
+      m.spark(14, 9); m.spark(24, 9); m.spark(50, 9);
+      m.check(24, 9);
+      m.flag = [58, 9];
+    },
+    solution: [{ x: 24, edits: [{ tool: 'replace', rect: { x0: 28, y0: 10, x1: 47, y1: 10 }, opts: { from: 1, to: 0 } }] }],
+  }));
+
+  L.push(make({
+    id: '5-2', name: '入れ替え', world: 5, w: 66, tools: T5, energy: 60, bg: '#F2B6B0', bg2: '#E8A29B', par: 8,
+    hints: [
+      { x: 5, text: '「ホーム」タブの「入れ替え」: 2つの範囲のブロックを、そっくり交換する' },
+      { x: 14, text: '上の棚の茶ブロックと、むこうの赤い床を、入れ替えよう（①棚をドラッグ → ②床の左端をタップ）' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(4);
+      m.rect(4, 7, 19, 7, 'S');
+      for (let x = 4; x <= 19; x++) m.blk(x, 6, 0);
+      m.pit(30, 45); m.rect(30, 11, 45, 11, 'S');
+      for (let x = 30; x <= 45; x++) m.blk(x, 10, 1);
+      m.rect(30, 4, 45, 8, 'S'); m.gem(36, 9); m.gem(56, 8); m.gem(10, 4);
+      m.ent('walker', 22, 9); m.ent('walker', 54, 9);
+      m.spark(14, 9); m.spark(27, 9); m.spark(50, 9);
+      m.check(26, 9);
+      m.flag = [60, 9];
+    },
+    solution: [{ x: 20, edits: [{ tool: 'swap', rect: { x0: 4, y0: 6, x1: 19, y1: 6 }, dst: [30, 10] }] }],
+  }));
+
+  L.push(make({
+    id: '5-3', name: '重力で並べ替え', world: 5, w: 70, tools: T5, energy: 60, bg: '#F2B6B0', bg2: '#E8A29B', par: 10,
+    hints: [
+      { x: 5, text: '「データ」タブの「並べ替え」: 範囲のブロックを、一方向に寄せる。「寄せ↓」は、重力で落とすイメージ' },
+      { x: 12, text: '穴の上に浮かぶブロックを、まとめて「寄せ↓」で落として、橋にしよう' },
+      { x: 42, text: '壁は、その列を隠して通りぬけよう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(22, 29);
+      [0, 2, 3, 0, 2, 3, 0, 2].forEach((c, i) => m.blk(22 + i, 4 + (i % 3), c));
+      m.rect(46, 3, 46, 9, '#');
+      m.gem(26, 8); m.gem(56, 8); m.gem(36, 5); m.set(36, 6, '#');
+      m.ent('walker', 38, 9); m.ent('guard', 52, 9); m.ent('flyer', 60, 6);
+      m.spark(14, 9); m.spark(34, 9); m.spark(42, 9);
+      m.check(34, 9);
+      m.flag = [65, 9];
+    },
+    solution: [
+      { x: 18, edits: [{ tool: 'sort', rect: { x0: 22, y0: 4, x1: 29, y1: 10 }, opts: { sort: 'D' } }] },
+      { x: 42, edits: [{ tool: 'hide', rect: { x0: 46, y0: 4, x1: 46, y1: 4 }, opts: { axis: 'col' } }] },
     ],
   }));
 
