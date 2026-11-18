@@ -924,7 +924,7 @@
   const UI = {
     toastT: 0,
     toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); clearTimeout(UI.toastT); UI.toastT = setTimeout(() => t.classList.add('hide'), ms || 2200); },
-    show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); },
+    show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); },
     refresh() {
       const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
       UI.refreshTools();

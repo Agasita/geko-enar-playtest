@@ -93,3 +93,12 @@ body.editing .hudbtns,body.editing #lvname{display:none}
 .gi b{display:block;font-size:14px}
 .gi span{font-size:12px;color:var(--muted);line-height:1.35}
 .gh{grid-column:1/-1;margin:6px 0 0;font-size:13px;color:var(--accent)}
+
+/* 画面のスクロール: 縦にドラッグして一覧を動かせるように（ボタン上からでも） */
+.screen,.screen button,.screen .lv{touch-action:pan-y}
+.screen{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
+/* 縦画面のメニュー系の画面は、画面いっぱいに広げる（ゲーム画面だけ16:9） */
+@media (orientation:portrait){body.menu #stage{align-items:stretch;padding:0}body.menu #game{width:100vw!important;height:100%!important}.screen{padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}}
+#screen-select header button,#screen-guide header button{white-space:nowrap}
+#screen-select h2{font-size:16px;white-space:nowrap}
