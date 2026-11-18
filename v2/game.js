@@ -127,6 +127,18 @@
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.levels) save = s; } catch (e) { /* 保存できなくても遊べる */ }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
   muted = !!save.muted;
+  // 自作ステージ(ステージ作成ページで保存したもの)を、ステージ一覧のおわりに足す
+  const CUSTOM_KEY = 'geko-enar-v2-custom';
+  function normalizeCustom(l) {
+    const w = l.w | 0, h = 12;
+    if (w < 20 || w > 160 || !Array.isArray(l.front) || l.front.length !== h || !Array.isArray(l.color) || l.color.length !== h) throw new Error('bad level');
+    return Object.assign({ world: 9, hints: [], solution: [], bg: '#9ADBC0', bg2: '#86CEB0', par: 0, sparks: [], checks: [], gems: [], ents: [], start: [2, 9], flag: [w - 4, 9], custom: true },
+      l, { w, h, energy: l.energy | 0, tools: (l.tools || []).filter(id => TOOL_BY[id]), lock: l.lock || l.front.map(() => new Array(w).fill(0)), hints: l.hint ? [{ x: 0, text: l.hint }] : (l.hints || []) });
+  }
+  (function loadCustomLevels() {
+    let arr = []; try { arr = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch (e) { arr = []; }
+    arr.forEach(l => { try { LEVELS.push(normalizeCustom(l)); } catch (e) { /* こわれたデータは無視 */ } });
+  })();
 
   // ===== 状態 =====
   const G = {
@@ -1042,6 +1054,11 @@
     render();
   }
   loadLevel(0); render(); UI.title();
+  { // ?test=ID : ステージ作成ページからのテストプレイ
+    const m = /[?&]test=([^&]+)/.exec(location.search);
+    if (m) { const i = LEVELS.findIndex(l => l.id === decodeURIComponent(m[1])); if (i >= 0) { audio(); UI.start(i); } }
+  }
+  $('#btn-editor').onclick = () => { location.href = 'editor.html'; };
   requestAnimationFrame(loop);
 
   // ===== テスト用の口(自動プレイが使う) =====
