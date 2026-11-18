@@ -70,10 +70,73 @@
     ctx.fillStyle = L.line2; const big = step * 4; for (let x = -(ox % big); x < W; x += big) ctx.fillRect(x, 0, 1, H); for (let y = -(oy % big); y < H; y += big) ctx.fillRect(0, y, W, 1);
   }
 
+
+  // ---- キャラクター: 元の絵の形を使い、ベタ塗り(2面)＋太い縁どり(外側に1ドット)に描きなおす ----
+  const HERO_MAP = { g: '#F7CE45', f: '#C28E14', j: '#58C070', i: '#A6EA96', k: '#2F8048', q: '#4C7BE0', p: '#2B4C9B', '9': '#F7CE45', '0': '#1F2A44', '6': '#FFFFFF' };
+  const BIRD_MAP = { '6': '#FFFFFF', u: '#5F86DE', y: '#DDE6FA', '8': '#F29B3A', '0': '#1F2A44' };
+  const OUT = '#1F2A44';
+  function solidSprite(rows, map, flip) {
+    const h = rows.length, w = rows[0].length, g = [];
+    for (let y = 0; y < h; y++) { g.push([]); for (let x = 0; x < w; x++) { const ch = rows[y][flip ? w - 1 - x : x]; g[y].push(ch === '.' || !map[ch] ? null : map[ch]); } }
+    const s = surface(w + 2, h + 2);
+    const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? null : g[y][x];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let c = g[y][x]; if (!c) continue;
+      if (c !== '#FFFFFF' && c !== OUT) { // 上のふちを明るく、下のふちを暗く(2面のベタ塗り)
+        if (!at(x, y - 1)) c = mix(c, [255, 255, 255], .35); else if (!at(x, y + 1)) c = mix(c, [20, 24, 48], .28);
+      }
+      s.set(x + 1, y + 1, c);
+    }
+    for (let y = -1; y <= h; y++) for (let x = -1; x <= w; x++) { if (at(x, y)) continue; if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) s.set(x + 1, y + 1, OUT); }
+    return s.done();
+  }
+
+  // ---- 主人公(ゲコ): 太い面で組み立てなおす。体の部品(帽子・あたま・どうぎ・うで・あし)を重ねて、全コマを描く ----
+  const HC = { y: '#F7CE45', Y: '#FFF0A0', s: '#C28E14', g: '#58C070', G: '#A6EA96', d: '#2F8048', w: '#FFFFFF', p: '#1F2A44', b: '#4C7BE0', B: '#2B4C9B', n: '#F7CE45', m: '#E8563F' };
+  function heroFrame(name) {
+    const g = []; for (let y = 0; y < 16; y++) g.push(new Array(16).fill(null));
+    const R = (x, y, w, h, k) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (x + i >= 0 && x + i < 16 && y + j >= 0 && y + j < 16) g[y + j][x + i] = HC[k]; };
+    const P = (x, y, k) => R(x, y, 1, 1, k);
+    let B = 0, legs = 'stand', arm = 'down', eye = 'open';
+    if (name === 'idle2') B = 1;
+    else if (name === 'walk0') legs = 'a'; else if (name === 'walk1') { legs = 'mid'; B = 1; } else if (name === 'walk2') legs = 'b'; else if (name === 'walk3') { legs = 'mid'; B = 1; }
+    else if (name === 'rise') { legs = 'tuck'; arm = 'up'; } else if (name === 'fall') { legs = 'wide'; arm = 'up'; } else if (name === 'takeoff') { legs = 'wide'; B = 2; }
+    else if (name === 'windup') { arm = 'back'; } else if (name === 'swing') { arm = 'front'; B = 0; } else if (name === 'hurt') { arm = 'up'; eye = 'x'; legs = 'wide'; }
+    // あし
+    const foot = (x, y) => { R(x, y, 4, 2, 'd'); R(x, y, 3, 1, 'g'); };
+    if (legs === 'stand') { foot(3, 14); foot(9, 14); } else if (legs === 'a') { foot(2, 14); foot(10, 14); } else if (legs === 'b') { foot(5, 14); foot(8, 14); }
+    else if (legs === 'mid') { foot(4, 14); foot(8, 14); } else if (legs === 'tuck') { foot(3, 13); foot(9, 12); } else if (legs === 'wide') { foot(1, 14); foot(11, 14); }
+    // どうぎ(青いサロペット)
+    R(4, 10 + B, 8, 4 - B, 'b'); R(4, 13, 8, 1, 'B'); R(6, 10 + B, 1, 2, 'B'); P(8, 12, 'n'); P(9, 12, 'n');
+    // うで
+    if (arm === 'down') { R(11, 11 + B, 2, 3, 'g'); P(12, 13, 'd'); } else if (arm === 'up') { R(12, 7 + B, 2, 4, 'g'); P(13, 7 + B, 'G'); }
+    else if (arm === 'back') { R(1, 9 + B, 2, 4, 'g'); P(1, 9 + B, 'G'); } else if (arm === 'front') { R(11, 11, 4, 2, 'g'); P(14, 11, 'G'); }
+    // あたま
+    R(3, 6 + B, 11, 4, 'g'); R(2, 7 + B, 13, 2, 'g'); R(3, 9 + B, 11, 1, 'd'); P(3, 6 + B, 'G'); P(4, 6 + B, 'G'); P(2, 7 + B, 'G');
+    if (eye === 'open') { R(9, 7 + B, 4, 3, 'w'); R(11, 8 + B, 2, 2, 'p'); P(9, 7 + B, 'w'); } else { P(9, 7 + B, 'p'); P(10, 8 + B, 'p'); P(11, 9 + B, 'p'); P(11, 7 + B, 'p'); P(9, 9 + B, 'p'); }
+    R(5, 9 + B, 5, 1, 'd'); if (eye === 'x') { R(6, 9 + B, 3, 1, 'm'); }
+    // ヘルメット
+    R(5, 1 + B, 6, 1, 'y'); R(4, 2 + B, 8, 2, 'y'); R(3, 4 + B, 10, 1, 'y'); R(5, 2 + B, 3, 1, 'Y'); P(4, 3 + B, 'Y'); R(2, 5 + B, 13, 1, 's'); R(14, 5 + B, 1, 1, 'y');
+    return g;
+  }
+  function gridSprite(grid, flip) {
+    const h = grid.length, w = grid[0].length, s = surface(w + 2, h + 2), at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? null : grid[y][flip ? w - 1 - x : x];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = at(x, y); if (c) s.set(x + 1, y + 1, c); }
+    for (let y = -1; y <= h; y++) for (let x = -1; x <= w; x++) { if (at(x, y)) continue; if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) s.set(x + 1, y + 1, OUT); }
+    return s.done();
+  }
+
+  // ---- 相棒エナー(白い鳥) ----
+  const BC = { W: '#FFFFFF', S: '#C6D3F0', U: '#4F7FE0', V: '#8FB0F5', O: '#F29B3A', e: '#1F2A44', f: '#E8663A' };
+  const BIRD_ROWS = ['............', '....WWWW....', '...WWWWWW...', '..WWWWWWeW..', '..WWWWWWWWOO', '.UUWWWWWWW..', 'UUUVWWWWWW..', '.UUUUWWWSW..', '...UUUSSSS..', '.....f.f....', '............', '............'];
+  function birdGrid() { return BIRD_ROWS.map(r => [...r].map(ch => (ch === '.' ? null : BC[ch]))); }
+
   window.GFX = {
     block(t, c, topOpen, botOpen) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
     steel() { return cache.s || (cache.s = makeSteel()); },
     lock() { return lockImg || (lockImg = makeLock()); },
     bg: drawBg,
+    hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(heroFrame(name), flip)); },
+    bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(birdGrid(), flip)); },
   };
 })();

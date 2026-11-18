@@ -792,7 +792,7 @@
     drawPlayer(cx, cy);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
     // 相棒エナー
-    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
+    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (SNES) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
   }
   function drawPlayer(cx, cy) {
     const p = G.p; if (p.dead) return;
@@ -806,7 +806,7 @@
     const sq = p.squash, sx = 1 + Math.abs(sq) * .0, sy = 1;
     void sx; void sy;
     const x = Math.round(p.x - 3 - cx), y = Math.round(p.y - 2 - cy);
-    ctx.drawImage(heroSprite(name, p.face < 0), x, y);
+    if (SNES) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
     if (p.dashT > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + 3 - p.face * i * 6, y + 5, 6, 8); }
     if (p.atkT > 0) { // レンチの弧
       const b = attackBox(), prog = 1 - p.atkT / .22; ctx.fillStyle = '#D5DBE6';
