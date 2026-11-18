@@ -33,17 +33,32 @@ body.editing .hudbtns,body.editing #lvname{display:none}
 @media (orientation:portrait){#touch .pad,#touch .acts{gap:6px}#touch button{width:56px;height:56px;font-size:16px}#touch .pad .small{width:44px;height:44px}#touch .b-jump{width:72px;height:72px}#touch .b-dash{width:52px;height:52px;font-size:10px;white-space:nowrap;padding:0}#touch{position:fixed;left:0;right:0;bottom:0;height:40%}#touch .pad,#touch .acts{bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}#touch .pad{left:10px}#touch .acts{right:10px}#toast{font-size:12px;top:calc(var(--s,1)*18px)}}
 @media (hover:hover) and (pointer:fine){#touch{opacity:.0;pointer-events:none}#touch *{pointer-events:none!important}}
 
-/* 編集バー: 横向きは右側に縦並び(足もとの操作範囲をふさがない)、縦向きは画面の下 */
-#editbar{position:absolute;top:0;right:0;bottom:0;width:128px;padding:6px 6px 6px 22px;background:linear-gradient(90deg,#0000,#1f2a44f2 30%);display:flex;flex-direction:column;gap:6px;justify-content:center;align-items:stretch}
-#edithelp{position:absolute;left:calc(-1 * (var(--s,2)*320px - 128px)/2 - 64px);width:calc(var(--s,2)*320px - 150px);top:calc(var(--s,2)*3px);text-align:center;font-size:12px;color:#fff;background:#1f2a44cc;padding:3px 12px;border-radius:999px;pointer-events:none}
-#tools,#paintopt{display:flex;flex-direction:column;gap:5px}
-#tools button,#paintopt button{background:#2e3b5ee6;min-height:36px;padding:4px 8px;font-size:13px;white-space:nowrap}
-#tools button.sel,#paintopt button.sel{background:var(--accent);color:var(--bg);font-weight:800}
-#tools button.done{background:var(--green);font-weight:800}
+/* 編集バー(Excelのリボン風): 横向きは右側、縦向きは画面の下 */
+#editbar{position:absolute;top:0;right:0;bottom:0;width:176px;padding:6px 6px 6px 18px;background:linear-gradient(90deg,#0000,#1f2a44f4 22%);display:flex;flex-direction:column;gap:5px;justify-content:flex-start;align-items:stretch;overflow-y:auto}
+#edithelp{position:absolute;left:calc(-1 * (var(--s,2)*320px - 176px) + 8px);width:calc(var(--s,2)*320px - 200px);top:calc(var(--s,2)*3px);text-align:center;font-size:12px;line-height:1.35;color:#fff;background:#1f2a44dd;padding:3px 12px;border-radius:14px;pointer-events:none}
+#tabs{display:flex;gap:3px;margin-top:calc(var(--s,2)*10px + 4px)}
+#tabs button{flex:1;min-height:28px;padding:2px 0;font-size:11px;background:#2e3b5ee0;border-radius:8px 8px 0 0}
+#tabs button.sel{background:var(--accent);color:var(--bg);font-weight:800}
+#tools,#opts{display:flex;flex-direction:column;gap:4px}
+#tools button{background:#2e3b5ee6;min-height:28px;padding:3px 8px;font-size:12px;text-align:left;display:flex;align-items:center;gap:5px;white-space:nowrap}
+#tools button small{margin-left:auto;color:var(--accent);font-size:10px}
+#tools button.sel{background:#4a5c92;box-shadow:inset 3px 0 0 var(--accent);font-weight:800}
+#tools kbd{background:#0004}
+.chips{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.chips>span{font-size:10px;color:var(--muted);margin-right:2px}
+.chip{min-height:26px!important;padding:2px 7px!important;font-size:11px!important;border-radius:7px!important;background:#2e3b5e;white-space:nowrap}
+.chip.sel{outline:2px solid #fff;outline-offset:-2px;font-weight:800}
+.chip.wide{width:100%}
+#editfoot{display:flex;gap:4px;margin-top:auto;position:sticky;bottom:0;padding-top:4px;background:#1f2a44}
+#editfoot button{min-height:30px;padding:2px 6px;font-size:13px}
+#editfoot button.done{background:var(--green);font-weight:800;flex:1 1 0;min-width:0;font-size:10px;padding:2px 3px;white-space:nowrap;writing-mode:horizontal-tb}
+#editfoot button.sel{background:var(--accent);color:var(--bg)}
 @media (orientation:portrait){
-  #editbar{position:fixed;top:auto;left:0;right:0;bottom:0;width:auto;padding:8px;background:#1f2a44;align-items:center}
+  #editbar{position:fixed;top:auto;left:0;right:0;bottom:0;width:auto;max-height:52vh;padding:8px;background:#1f2a44;align-items:stretch}
   #edithelp{position:static;width:auto;pointer-events:auto}
-  #tools,#paintopt{flex-direction:row;flex-wrap:wrap;justify-content:center}
+  #tabs{margin-top:0}
+  #tools{flex-direction:row;flex-wrap:wrap}
+  #tools button{flex:1 1 44%}
 }
 
 /* 画面 */
