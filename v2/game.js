@@ -143,11 +143,11 @@
     const lv = LEVELS[i]; G.levelIdx = i; G.level = lv;
     G.front = lv.front.map(r => Array.from(r).map(c => CH2TILE[c] || 0));
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
-    G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 1.2;
+    G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // 実験シート以外は、ステージごとの「コスト上限」だけ。回復しない
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
     G.pick = [];
     lv.gems.forEach((g, k) => G.pick.push({ type: 'gem', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
-    lv.sparks.forEach((g, k) => G.pick.push({ type: 'spark', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
+    if (lv.regen) lv.sparks.forEach((g, k) => G.pick.push({ type: 'spark', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
     G.checks = lv.checks.map(c => ({ x: c[0] * T, y: c[1] * T, on: false }));
     G.flag = { x: lv.flag[0] * T, y: lv.flag[1] * T - 16, w: 16, h: 32 };
     G.respawn = { x: lv.start[0] * T + 3, y: lv.start[1] * T + 2 };
@@ -315,7 +315,7 @@
   function breakCrack(tx, ty) { G.front[ty][tx] = 0; G.col[ty][tx] = 0; SFX.hit(); spawnParts(tx * T + 8, ty * T + 8, 8, '#B07A4F', 70); G.shake = 3; }
   function damageEnemy(e, n) {
     e.hp -= n; e.flash = .15; G.hitstop = .05; G.shake = 3; SFX.hit(); spawnParts(e.x + e.w / 2, e.y + e.h / 2, 7, '#fff', 60);
-    if (e.hp <= 0) { e.dead = true; spawnParts(e.x + e.w / 2, e.y + e.h / 2, 14, '#F5C842', 90); G.pick.push({ type: 'spark', x: e.x + 2, y: e.y + 2, w: 8, h: 8, got: false, drop: true }); }
+    if (e.hp <= 0) { e.dead = true; spawnParts(e.x + e.w / 2, e.y + e.h / 2, 14, '#F5C842', 90); if (G.regen) G.pick.push({ type: 'spark', x: e.x + 2, y: e.y + 2, w: 8, h: 8, got: false, drop: true }); }
   }
 
   // ===== 敵 =====
@@ -368,7 +368,7 @@
       if (overlap(p.x, p.y, p.w, p.h, k.x, k.y, k.w, k.h)) {
         k.got = true;
         if (k.type === 'gem') { G.gems++; SFX.gem(); spawnParts(k.x + 4, k.y + 4, 10, '#7FA2F0', 70); }
-        else { G.energy = Math.min(100, G.energy + 15); SFX.spark(); spawnParts(k.x + 4, k.y + 4, 5, '#F5C842', 40); }
+        else { G.energy = Math.min(G.maxE, G.energy + 15); SFX.spark(); spawnParts(k.x + 4, k.y + 4, 5, '#F5C842', 40); }
       }
     }
     for (const c of G.checks) {
@@ -600,6 +600,7 @@
   }
 
   // ---- 実行・元に戻す・やり直す(状態をまるごと保存する) ----
+  function minCost() { let m = 999; for (const id of G.level.tools) m = Math.min(m, TOOL_BY[id].cost); return m; }
   function snapshot() {
     return {
       front: G.front.map(r => r.slice()), col: G.col.map(r => r.slice()), lock: G.lock.map(r => r.slice()),
@@ -622,11 +623,12 @@
     if (plan.cost > G.energy) { E.msg = 'エナジーが足りません（' + plan.cost + '）'; SFX.bad(); return false; }
     E.undo.push({ state: snapshot(), cost: plan.cost }); E.redo.length = 0;
     plan.run(); G.energy -= plan.cost; E.msg = ''; SFX.place();
+    if (!G.regen && G.energy < minCost()) UI.toast('コストを使い切りました。もう編集できません（Rでやり直し）', 3500);
     return true;
   }
   function undoEdit() {
     const E = G.edit, u = E.undo.pop(); if (!u) { SFX.bad(); return; }
-    E.redo.push({ state: snapshot(), cost: u.cost }); restoreSnap(u.state); G.energy = Math.min(100, G.energy + u.cost); SFX.place(); E.step = 0; E.src = null; E.msg = '';
+    E.redo.push({ state: snapshot(), cost: u.cost }); restoreSnap(u.state); G.energy = Math.min(G.maxE, G.energy + u.cost); SFX.place(); E.step = 0; E.src = null; E.msg = '';
   }
   function redoEdit() {
     const E = G.edit, r = E.redo.pop(); if (!r) { SFX.bad(); return; }
@@ -807,7 +809,7 @@
     // エナジー(編集できないステージでは出さない)
     if (G.level.tools.length) {
     ctx.fillStyle = '#1F2A44'; ctx.fillRect(5, 15, 62, 7); ctx.fillStyle = '#5B6785'; ctx.fillRect(6, 16, 60, 5);
-    ctx.fillStyle = G.energy < 20 ? '#E8563F' : '#F5C842'; ctx.fillRect(6, 16, Math.round(60 * G.energy / 100), 5);
+    ctx.fillStyle = G.energy < minCost() ? '#E8563F' : '#F5C842'; ctx.fillRect(6, 16, Math.round(60 * G.energy / Math.max(1, G.maxE)), 5);
     icon(BOLT, 70, 14, '#F5C842'); text(Math.floor(G.energy), 77, 16, '#fff'); }
     // 宝石
     const gy = G.level.tools.length ? 25 : 16;

@@ -41,7 +41,7 @@
     hints: [
       { x: 1, text: '◀ ▶ で移動。A でジャンプ（長押しで高く）' },
       { x: 14, text: '穴は、ジャンプでとびこえよう' },
-      { x: 26, text: 'B でレンチ攻撃。敵をたおすとエナジーが出るよ' },
+      { x: 26, text: 'B でレンチ攻撃。敵に当てて、たおそう' },
       { x: 40, text: '宝石を3つ集めると★がふえる' },
     ],
     build(m) {
@@ -55,7 +55,7 @@
   }));
 
   L.push(make({
-    id: '1-2', name: '切り取って、貼り付け', world: 1, w: 62, tools: T1, energy: 60, bg: '#42B8C2', bg2: '#3AA7B1', par: 10,
+    id: '1-2', name: '切り取って、貼り付け', world: 1, w: 62, tools: ['move', 'clear'], energy: 12, bg: '#42B8C2', bg2: '#3AA7B1', par: 10,
     hints: [
       { x: 1, text: '「編集」で時間が止まる。世界は表計算シート、ブロックは色つきのセルだよ' },
       { x: 10, text: '上の棚のブロックを、「切り取り→貼り付け」で穴へ運ぼう。ブロックは新しくは生まれない' },
@@ -98,7 +98,7 @@
 
   // ---- ワールド2: 行と列（非表示・変形） ----
   L.push(make({
-    id: '2-1', name: '列をかくす', world: 2, w: 56, tools: ['move', 'clear', 'hide'], energy: 60, bg: '#F3C9A0', bg2: '#E9B88A', par: 6,
+    id: '2-1', name: '列をかくす', world: 2, w: 56, tools: ['hide', 'move'], energy: 8, bg: '#F3C9A0', bg2: '#E9B88A', par: 6,
     hints: [
       { x: 1, text: '新しい力「行・列の非表示」: 隠した列のブロックは、通りぬけられる' },
       { x: 18, text: '壁は消さずに、その列を隠そう。「表示」タブ →「行・列の非表示」→「列を隠す」' },
@@ -115,7 +115,7 @@
   }));
 
   L.push(make({
-    id: '2-2', name: 'ひっくり返せ', world: 2, w: 66, tools: ['move', 'clear', 'hide', 'transform'], energy: 60, bg: '#F3C9A0', bg2: '#E9B88A', par: 14,
+    id: '2-2', name: 'ひっくり返せ', world: 2, w: 66, tools: ['transform', 'hide', 'move'], energy: 16, bg: '#F3C9A0', bg2: '#E9B88A', par: 14,
     hints: [
       { x: 6, text: '「セル」タブの「変形」: ブロックを回転・反転・転置できる（回転と転置は正方形の範囲）' },
       { x: 12, text: '向こう岸にそびえる塔を、穴ごと選んで「回転90°」。倒れて橋になる！' },
@@ -139,7 +139,7 @@
 
   // ---- ワールド3: 色（書式） ----
   L.push(make({
-    id: '3-1', name: '色の性質', world: 3, w: 60, tools: ['move', 'clear', 'hide', 'transform', 'color', 'painter'], energy: 60, bg: '#C7B9EE', bg2: '#B8A8E6', par: 3,
+    id: '3-1', name: '色の性質', world: 3, w: 60, tools: ['color', 'painter'], energy: 5, bg: '#C7B9EE', bg2: '#B8A8E6', par: 3,
     hints: [
       { x: 6, text: '「塗りつぶし」: ブロックの色には性質がある。緑＝はずむ、青＝すべる、赤＝あつい、黄＝もろい' },
       { x: 20, text: '天井の穴の下のブロックを、緑にしよう' },
@@ -161,7 +161,7 @@
 
   // ---- ワールド4: データ（フィルター・保護・列の削除） ----
   L.push(make({
-    id: '4-1', name: 'フィルター', world: 4, w: 62, tools: ['move', 'clear', 'hide', 'transform', 'color', 'painter', 'filter'], energy: 60, bg: '#9ADBC0', bg2: '#86CEB0', par: 8,
+    id: '4-1', name: 'フィルター', world: 4, w: 62, tools: ['filter', 'color', 'replace'], energy: 10, bg: '#9ADBC0', bg2: '#86CEB0', par: 8,
     hints: [
       { x: 6, text: '「データ」タブの「フィルター」: 選んだ色のブロックだけが残り、ほかは通りぬけられる' },
       { x: 20, text: '青だけ残すと、茶色の壁が消える。終わったら「解除」を忘れずに' },
@@ -180,7 +180,7 @@
   }));
 
   L.push(make({
-    id: '4-2', name: 'シートを仕上げる', world: 4, w: 96, tools: ['move', 'clear', 'hide', 'transform', 'color', 'painter', 'filter', 'protect', 'unprotect', 'delCol', 'insCol'], energy: 100, bg: '#3C4170', bg2: '#343863', par: 42,
+    id: '4-2', name: 'シートを仕上げる', world: 4, w: 96, tools: ['unprotect', 'clear', 'transform', 'hide', 'delCol', 'color', 'filter'], energy: 46, bg: '#3C4170', bg2: '#343863', par: 42,
     hints: [
       { x: 6, text: '表計算のしくみを、ぜんぶ使おう' },
       { x: 12, text: '赤い鍵のついたブロックは「保護」されている。「表示」タブで保護を解除してから消そう' },
@@ -210,7 +210,7 @@
   // ---- ワールド5: 応用（置換・入れ替え・並べ替え） ----
   const T5 = ['move', 'swap', 'clear', 'color', 'painter', 'transform', 'sort', 'replace', 'hide', 'filter'];
   L.push(make({
-    id: '5-1', name: '赤い床を置換', world: 5, w: 64, tools: T5, energy: 60, bg: '#F2B6B0', bg2: '#E8A29B', par: 6,
+    id: '5-1', name: '赤い床を置換', world: 5, w: 64, tools: ['replace', 'color', 'hide'], energy: 8, bg: '#F2B6B0', bg2: '#E8A29B', par: 6,
     hints: [
       { x: 6, text: '「データ」タブの「置換」: 範囲の「から」の色を「へ」の色に、まとめて置き換える' },
       { x: 18, text: '赤い床は、さわるとダメージ（天井が低くて、とびこせない）。赤を茶に置換しよう（「から」＝赤、「へ」＝茶）' },
@@ -229,7 +229,7 @@
   }));
 
   L.push(make({
-    id: '5-2', name: '入れ替え', world: 5, w: 66, tools: T5, energy: 60, bg: '#F2B6B0', bg2: '#E8A29B', par: 8,
+    id: '5-2', name: '入れ替え', world: 5, w: 66, tools: ['swap', 'move', 'clear'], energy: 10, bg: '#F2B6B0', bg2: '#E8A29B', par: 8,
     hints: [
       { x: 5, text: '「ホーム」タブの「入れ替え」: 2つの範囲のブロックを、そっくり交換する' },
       { x: 14, text: '上の棚の茶ブロックと、むこうの赤い床を、入れ替えよう（①棚をドラッグ → ②床の左端をタップ）' },
@@ -250,7 +250,7 @@
   }));
 
   L.push(make({
-    id: '5-3', name: '重力で並べ替え', world: 5, w: 70, tools: T5, energy: 60, bg: '#F2B6B0', bg2: '#E8A29B', par: 10,
+    id: '5-3', name: '重力で並べ替え', world: 5, w: 70, tools: ['sort', 'hide', 'move', 'clear'], energy: 18, bg: '#F2B6B0', bg2: '#E8A29B', par: 10,
     hints: [
       { x: 5, text: '「データ」タブの「並べ替え」: 範囲のブロックを、一方向に寄せる。「寄せ↓」は、重力で落とすイメージ' },
       { x: 12, text: '穴の上に浮かぶブロックを、まとめて「寄せ↓」で落として、橋にしよう' },
