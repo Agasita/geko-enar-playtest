@@ -1,0 +1,71 @@
+:root{--bg:#1f2a44;--panel:#2e3b5e;--panel2:#3a4a75;--ink:#fff;--muted:#aeb8d0;--accent:#f5c842;--red:#e8563f;--green:#58b368;--blue:#4c9be8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Yu Gothic","Hiragino Sans",sans-serif;overscroll-behavior:none;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#game{position:relative;width:640px;height:360px;background:#000;overflow:hidden}
+canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none}
+.hide{display:none!important}
+button{font:inherit;color:inherit;border:0;border-radius:12px;background:var(--panel);padding:8px 14px;cursor:pointer;min-height:36px;touch-action:none}
+button:active,button.on{background:var(--panel2);transform:scale(.96)}
+button.big{background:var(--accent);color:var(--bg);font-weight:800;font-size:1.15em;padding:12px 30px;border-radius:16px}
+button.ghost{background:transparent;color:var(--muted);border:1px solid #ffffff30}
+button.tiny{font-size:11px;min-height:28px;padding:4px 10px}
+kbd{font:inherit;font-size:.75em;background:#0003;border-radius:4px;padding:0 4px}
+
+/* ゲーム内HUD(ドット絵のHUDは canvas に描く。ここは操作ボタンだけ) */
+#hud{position:absolute;inset:0;pointer-events:none}
+#lvname{position:absolute;left:0;right:0;top:calc(var(--s,2)*3px);text-align:center;font-size:calc(var(--s,2)*3px + 5px);color:#fffb;text-shadow:0 1px 0 #0006;pointer-events:none}
+.hudbtns{position:absolute;top:calc(var(--s,2)*2px);right:calc(var(--s,2)*2px);display:flex;gap:6px;pointer-events:auto}
+body.editing .hudbtns,body.editing #lvname{display:none}
+.hudbtns button{min-height:30px;padding:3px 10px;font-size:12px;background:#1f2a44cc;border-radius:999px}
+#toast{position:absolute;left:50%;top:calc(var(--s,2)*16px);transform:translateX(-50%);max-width:92%;background:#1f2a44ee;padding:8px 16px;border-radius:14px;font-size:13px;text-align:center;pointer-events:none;border-left:5px solid var(--accent)}
+
+/* タッチ操作 */
+#touch{position:absolute;inset:auto 0 0 0;height:50%;pointer-events:none}
+#touch .pad,#touch .acts{position:absolute;bottom:calc(var(--s,2)*4px);display:flex;gap:10px;pointer-events:auto;align-items:flex-end}
+#touch .pad{left:calc(var(--s,2)*4px)}
+#touch .acts{right:calc(var(--s,2)*4px)}
+#touch button{background:#2e3b5eb0;font-weight:700;width:68px;height:68px;border-radius:18px;font-size:18px}
+#touch .pad .small{width:52px;height:52px}
+#touch .b-jump{background:#e8563fcc;width:84px;height:84px;border-radius:50%;font-size:12px;padding:0;white-space:nowrap}
+#touch .b-atk{background:#4c9be8cc;border-radius:50%;font-size:13px}
+#touch .b-dash{background:#f5c842cc;color:var(--bg);width:56px;height:56px;border-radius:50%;font-size:11px;white-space:nowrap;padding:0}
+@media (orientation:portrait){#touch .pad,#touch .acts{gap:6px}#touch button{width:56px;height:56px;font-size:16px}#touch .pad .small{width:44px;height:44px}#touch .b-jump{width:72px;height:72px}#touch .b-dash{width:52px;height:52px;font-size:10px;white-space:nowrap;padding:0}#touch{position:fixed;left:0;right:0;bottom:0;height:40%}#touch .pad,#touch .acts{bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}#touch .pad{left:10px}#touch .acts{right:10px}#toast{font-size:12px;top:calc(var(--s,1)*18px)}}
+@media (hover:hover) and (pointer:fine){#touch{opacity:.0;pointer-events:none}#touch *{pointer-events:none!important}}
+
+/* 編集バー: 横向きは右側に縦並び(足もとの操作範囲をふさがない)、縦向きは画面の下 */
+#editbar{position:absolute;top:0;right:0;bottom:0;width:128px;padding:6px 6px 6px 22px;background:linear-gradient(90deg,#0000,#1f2a44f2 30%);display:flex;flex-direction:column;gap:6px;justify-content:center;align-items:stretch}
+#edithelp{position:absolute;left:calc(-1 * (var(--s,2)*320px - 128px)/2 - 64px);width:calc(var(--s,2)*320px - 150px);top:calc(var(--s,2)*3px);text-align:center;font-size:12px;color:#fff;background:#1f2a44cc;padding:3px 12px;border-radius:999px;pointer-events:none}
+#tools,#paintopt{display:flex;flex-direction:column;gap:5px}
+#tools button,#paintopt button{background:#2e3b5ee6;min-height:36px;padding:4px 8px;font-size:13px;white-space:nowrap}
+#tools button.sel,#paintopt button.sel{background:var(--accent);color:var(--bg);font-weight:800}
+#tools button.done{background:var(--green);font-weight:800}
+@media (orientation:portrait){
+  #editbar{position:fixed;top:auto;left:0;right:0;bottom:0;width:auto;padding:8px;background:#1f2a44;align-items:center}
+  #edithelp{position:static;width:auto;pointer-events:auto}
+  #tools,#paintopt{flex-direction:row;flex-wrap:wrap;justify-content:center}
+}
+
+/* 画面 */
+.screen{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;overflow:auto}
+.screen h1{margin:0;font-size:clamp(34px,9vw,56px);letter-spacing:.04em}
+.screen h1 span{color:var(--accent)}
+.screen .sub{margin:0 0 6px;color:var(--muted)}
+.keys{font-size:11px;color:var(--muted);max-width:520px;margin:6px 0 0}
+.oldlink{font-size:11px;color:var(--muted)}
+#screen-select{justify-content:flex-start}
+#screen-select header{width:100%;display:flex;align-items:center;gap:10px;justify-content:space-between}
+#screen-select h2{margin:0;font-size:18px}
+#total{color:var(--accent);font-weight:700}
+#levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;width:100%}
+.lv{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;background:var(--panel);border-radius:14px}
+.lv b{font-size:18px;color:var(--accent)}
+.lv span{font-size:12px}
+.lv i{font-style:normal;color:var(--accent);letter-spacing:.1em}
+.lv.lock{opacity:.4}
+#screen-result h2{margin:0;font-size:30px;color:var(--accent)}
+#r-stars{font-size:44px;color:var(--accent);letter-spacing:.1em}
+#r-tip{color:var(--muted);font-size:12px;min-height:1.4em;margin:0}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+@media (max-height:420px){.screen{gap:6px;padding:8px}.screen h1{font-size:30px}.keys{display:none}#r-stars{font-size:32px}#levels{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.lv{padding:6px}}
+@media (orientation:portrait){#stage{align-items:flex-start}}

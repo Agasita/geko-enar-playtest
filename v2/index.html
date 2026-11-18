@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1f2a44">
+<title>ゲコ＆エナー v2 — 世界を直して進め</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="game">
+    <canvas id="cv" width="320" height="180"></canvas>
+
+    <div id="hud" class="hide">
+      <span id="lvname"></span>
+      <div class="hudbtns">
+        <button id="btn-edit" aria-label="編集">編集 <kbd>E</kbd></button>
+        <button id="btn-restart" aria-label="やりなおし">↻</button>
+        <button id="btn-mute" aria-label="音">🔊</button>
+        <button id="btn-menu" aria-label="ステージえらび">☰</button>
+      </div>
+    </div>
+    <div id="toast" class="hide"></div>
+
+    <div id="touch" class="hide">
+      <div class="pad">
+        <button data-btn="left" aria-label="左">◀</button>
+        <button data-btn="right" aria-label="右">▶</button>
+        <button data-btn="down" class="small" aria-label="下">▼</button>
+      </div>
+      <div class="acts">
+        <button data-btn="dash" class="b-dash">ダッシュ</button>
+        <button data-btn="attack" class="b-atk">攻撃</button>
+        <button data-btn="jump" class="b-jump">ジャンプ</button>
+      </div>
+    </div>
+
+    <div id="editbar" class="hide">
+      <div id="edithelp"></div>
+      <div id="paintopt" class="hide"><button data-mat="bounce" class="sel">ばね</button></div>
+      <div id="tools"></div>
+    </div>
+
+    <section id="screen-title" class="screen">
+      <h1>ゲコ<span>＆</span>エナー</h1>
+      <p class="sub">時間を止めて、世界を直しながら進む<br>アクション・パズル</p>
+      <button id="btn-play" class="big">あそぶ</button>
+      <p class="keys">PC: ← → 移動　Z/Space ジャンプ　X 攻撃　C ダッシュ　E 編集（時間停止）<br>編集中: ドラッグで範囲を選ぶ／1〜4 道具　Z 戻す　R やりなおし</p>
+      <a class="oldlink" href="../">旧バージョン（Pyxel版）はこちら</a>
+    </section>
+
+    <section id="screen-select" class="screen hide">
+      <header><button id="btn-back" class="ghost">◀ もどる</button><h2>ステージえらび</h2><span id="total"></span></header>
+      <div id="levels"></div>
+      <footer><button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
+    </section>
+
+    <section id="screen-result" class="screen hide">
+      <h2>クリア！</h2>
+      <div id="r-stars"></div>
+      <p id="r-info"></p>
+      <p id="r-tip"></p>
+      <div class="row"><button id="r-next" class="big">次のステージへ</button></div>
+      <div class="row"><button id="r-retry" class="ghost">もう一度</button><button id="r-menu" class="ghost">ステージえらび</button></div>
+    </section>
+  </div>
+</div>
+<script src="sprites.js"></script>
+<script src="levels.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
