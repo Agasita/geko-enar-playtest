@@ -63,7 +63,7 @@
     ],
     build(m) {
       m.floor(); m.pit(20, 25);
-      m.rect(6, 6, 13, 6, 'S'); m.rect(8, 5, 13, 5, '#');
+      m.rect(10, 6, 17, 6, 'S'); m.rect(12, 5, 17, 5, '#');
       m.rect(41, 6, 41, 9, '#');
       m.gem(22, 8); m.gem(41, 5); m.gem(53, 8);
       m.ent('walker', 31, 9); m.ent('walker', 49, 9);
@@ -72,7 +72,7 @@
       m.flag = [58, 9];
     },
     solution: [
-      { x: 17, edits: [{ tool: 'move', rect: { x0: 8, y0: 5, x1: 13, y1: 5 }, dst: [20, 10] }] },
+      { x: 15, edits: [{ tool: 'move', rect: { x0: 12, y0: 5, x1: 17, y1: 5 }, dst: [20, 10] }] },
       { x: 37, edits: [{ tool: 'clear', rect: { x0: 41, y0: 6, x1: 41, y1: 9 } }] },
     ],
   }));
@@ -231,22 +231,22 @@
   L.push(make({
     id: '5-2', name: '入れ替え', world: 5, w: 66, tools: ['swap', 'move', 'clear'], energy: 10, bg: '#F2B6B0', bg2: '#E8A29B', par: 8,
     hints: [
-      { x: 5, text: '「ホーム」タブの「入れ替え」: 2つの範囲のブロックを、そっくり交換する' },
-      { x: 14, text: '上の棚の茶ブロックと、むこうの赤い床を、入れ替えよう（①棚をドラッグ → ②床の左端をタップ）' },
+      { x: 4, text: '「ホーム」タブの「入れ替え」: 2つの範囲のブロックを、そっくり交換する' },
+      { x: 12, text: '上の棚の茶ブロックと、むこうの赤い床を、入れ替えよう（①棚をドラッグ → ②床の左端をタップ）' },
     ],
     build(m) {
       m.floor(); m.ceil(4);
-      m.rect(4, 7, 19, 7, 'S');
-      for (let x = 4; x <= 19; x++) m.blk(x, 6, 0);
-      m.pit(30, 45); m.rect(30, 11, 45, 11, 'S');
-      for (let x = 30; x <= 45; x++) m.blk(x, 10, 1);
-      m.rect(30, 4, 45, 8, 'S'); m.gem(36, 9); m.gem(56, 8); m.gem(10, 4);
-      m.ent('walker', 22, 9); m.ent('walker', 54, 9);
-      m.spark(14, 9); m.spark(27, 9); m.spark(50, 9);
-      m.check(26, 9);
+      m.rect(24, 7, 28, 7, 'S');
+      for (let x = 24; x <= 28; x++) m.blk(x, 6, 0);
+      m.pit(31, 35); m.rect(31, 11, 35, 11, 'S');
+      for (let x = 31; x <= 35; x++) m.blk(x, 10, 1);
+      m.rect(31, 4, 35, 8, 'S'); m.gem(33, 9); m.gem(50, 8); m.gem(18, 8);
+      m.ent('walker', 14, 9); m.ent('walker', 44, 9);
+      m.spark(14, 9);
+      m.check(21, 9);
       m.flag = [60, 9];
     },
-    solution: [{ x: 20, edits: [{ tool: 'swap', rect: { x0: 4, y0: 6, x1: 19, y1: 6 }, dst: [30, 10] }] }],
+    solution: [{ x: 20, edits: [{ tool: 'swap', rect: { x0: 24, y0: 6, x1: 28, y1: 6 }, dst: [31, 10] }] }],
   }));
 
   L.push(make({
