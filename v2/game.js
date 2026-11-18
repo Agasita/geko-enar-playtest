@@ -7,7 +7,7 @@
   // ブロックの色(＝Excelのセルの色)。色には性質がある。
   const COLORS = [
     { n: '茶', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
-    { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
+    { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわると即ミス）' },
     { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（氷）' },
     { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
     { n: '黄', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（攻撃・ダッシュで壊れる）' },
@@ -263,7 +263,7 @@
     }
     // 赤いブロック=あつい(さわるとダメージ)
     for (let ty = Math.floor((p.y - 1) / T); ty <= Math.floor((p.y + p.h + 1) / T); ty++) for (let tx = Math.floor((p.x - 1) / T); tx <= Math.floor((p.x + p.w) / T); tx++)
-      if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, false);
+      if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, true);
     // トゲ
     const sx0 = Math.floor(p.x / T), sx1 = Math.floor((p.x + p.w - 1) / T), sy0 = Math.floor((p.y + 6) / T), sy1 = Math.floor((p.y + p.h - 1) / T);
     for (let ty = sy0; ty <= sy1; ty++) for (let tx = sx0; tx <= sx1; tx++) if (tileAt(tx, ty) === TL.SPIKE && !G.hideRow.has(ty) && !G.hideCol.has(tx) && p.y + p.h > ty * T + 8) hurtPlayer(null, true);
