@@ -5,16 +5,16 @@
 (function () {
   'use strict';
   function make(def) {
-    const w = def.w, h = 12;
+    const w = def.w, h = def.h || 12;
     const front = [], color = [], lock = [];
     for (let y = 0; y < h; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
     const m = {
-      ents: [], gems: [], sparks: [], checks: [], start: [2, 9], flag: [w - 4, 9],
+      ents: [], gems: [], sparks: [], checks: [], start: [2, h - 3], flag: [w - 4, h - 3],
       set(x, y, ch) { front[y][x] = ch; },
       rect(x0, y0, x1, y1, ch) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) front[y][x] = ch; },
-      floor() { m.rect(0, 10, w - 1, 11, 'S'); },
+      floor() { m.rect(0, h - 2, w - 1, h - 1, 'S'); },
       ceil(rows) { m.rect(0, 0, w - 1, rows - 1, 'S'); },
-      pit(x0, x1) { m.rect(x0, 10, x1, 11, '.'); },
+      pit(x0, x1) { m.rect(x0, h - 2, x1, h - 1, '.'); },
       blk(x, y, c, locked) { front[y][x] = '#'; color[y][x] = c || 0; if (locked) lock[y][x] = 1; },
       paint(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) color[y][x] = c; },
       lockRect(x0, y0, x1, y1) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) lock[y][x] = 1; },
@@ -326,6 +326,44 @@
       m.flag = [54, 9];
     },
     solution: [{ x: 24, edits: [{ tool: 'delCol', col: 30 }, { tool: 'delCol', col: 30 }] }],
+  }));
+
+  // ---- ワールド7: 上へ（たて長のステージ） ----
+  L.push(make({
+    id: '7-1', name: 'バネのたて穴', world: 7, w: 24, h: 30, tools: ['color', 'painter'], energy: 9, bg: '#8FA6E8', bg2: '#7E95DB', par: 7,
+    hints: [
+      { x: 0, text: 'たて穴をのぼろう。ふつうのジャンプでは、天井にとどかない' },
+      { x: 8, text: '床のブロックを緑（はずむ）にして、天井の穴をつきぬけよう。つぎの足場のブロックも同じように' },
+    ],
+    build(m) {
+      m.floor();
+      m.rect(0, 0, 0, 27, 'S'); m.rect(23, 0, 23, 27, 'S'); m.rect(1, 0, 22, 1, 'S');
+      // 足場の段（それぞれ、穴が2マス）
+      [[23, 10], [18, 6], [13, 10], [8, 6]].forEach(([y, hx]) => { m.rect(1, y, 22, y, 'S'); m.rect(hx, y, hx + 1, y, '.'); });
+      // 足もとのブロック（緑にする）
+      m.blk(10, 27, 0); m.blk(11, 27, 0);
+      m.blk(6, 22, 0); m.blk(7, 22, 0);
+      m.blk(10, 17, 0); m.blk(11, 17, 0);
+      m.blk(6, 12, 0); m.blk(7, 12, 0);
+      m.gem(15, 22); m.gem(5, 17); m.gem(15, 12);
+      m.start = [3, 27]; m.flag = [19, 7];
+    },
+    solution: [],
+  }));
+
+  L.push(make({
+    id: '7-2', name: 'のぼりの塔', world: 7, w: 26, h: 30, tools: [], energy: 0, bg: '#8FA6E8', bg2: '#7E95DB',
+    hints: [{ x: 0, text: 'ジグザグに足場をのぼろう。落ちたら、ひとつ下の足場にもどるだけ' }],
+    build(m) {
+      m.floor();
+      m.rect(0, 0, 0, 27, 'S'); m.rect(25, 0, 25, 27, 'S'); m.rect(1, 0, 24, 1, 'S');
+      for (let i = 0; i < 11; i++) { const y = 26 - i * 2, x = i % 2 ? 12 : 2; m.rect(x, y, x + 7, y, 'S'); }
+      m.ent('walker', 15, 23); m.ent('walker', 4, 17); m.ent('flyer', 5, 11);
+      m.gem(14, 19); m.gem(5, 13); m.gem(14, 7);
+      m.check(13, 19); m.check(13, 11);
+      m.start = [10, 27]; m.flag = [4, 5];
+    },
+    solution: [],
   }));
 
   // ---- 実験シート: すべての道具を、好きに試す場所 ----

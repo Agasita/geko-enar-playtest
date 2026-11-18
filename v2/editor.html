@@ -43,7 +43,8 @@ a{color:var(--muted)}
 <main>
   <div class="row"><span class="lbl">名前</span><input id="f-name" type="text" value="マイステージ" size="16">
     <span class="lbl">はば</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
-    <button id="b-w">はばを変える</button>
+    <span class="lbl">たかさ</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
+    <button id="b-w">はば・たかさを変える</button>
     <span class="lbl">コスト上限</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:70px"></div>
   <div class="row"><span class="lbl">ヒント(スタートで表示)</span><input id="f-hint" type="text" size="40" placeholder="（なくてもOK）"></div>
 
@@ -72,7 +73,8 @@ a{color:var(--muted)}
 <script>
 (function () {
   'use strict';
-  const T = 20, H = 12, KEY = 'geko-enar-v2-custom';
+  let H = 12;
+  const T = 20, KEY = 'geko-enar-v2-custom';
   const COLORS = [['茶', '#C9A15E'], ['赤', '#E8563F'], ['青', '#6FD6E8'], ['緑', '#58B368'], ['黄', '#F5C842']];
   const TOOLS = [['move', '切り取り→貼り付け'], ['swap', '入れ替え'], ['clear', '内容の消去'], ['color', '塗りつぶし'], ['painter', '書式のコピー'], ['transform', '変形'], ['insCol', '列の挿入'], ['delCol', '列の削除'], ['sort', '並べ替え'], ['filter', 'フィルター'], ['replace', '置換'], ['hide', '行・列の非表示'], ['unhide', '再表示'], ['protect', 'シートの保護'], ['unprotect', '保護の解除']];
   const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95']];
@@ -82,21 +84,25 @@ a{color:var(--muted)}
   let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw'; // スマホは、まず「動かす」(うっかり置かない)
   function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; const b = $('#b-mode'); b.textContent = m === 'scroll' ? '✋ いま：動かす（タップで切りかえ）' : '✏ いま：置く（タップで切りかえ）'; b.classList.toggle('sel', m === 'draw'); }
 
-  function blank(w) {
+  function blank(w, h) {
+    H = h || H;
     const front = [], color = [], lock = [];
     for (let y = 0; y < H; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
-    for (let y = 10; y < H; y++) front[y].fill('S');
-    return { w, front, color, lock, ents: [], gems: [], checks: [], start: [2, 9], flag: [w - 4, 9] };
+    for (let y = H - 2; y < H; y++) front[y].fill('S');
+    return { w, front, color, lock, ents: [], gems: [], checks: [], start: [2, H - 3], flag: [w - 4, H - 3] };
   }
   function fromLevel(lv) { // 既存ステージ → 編集用(文字の2次元配列)
+    H = lv.front.length;
     return { w: lv.w, front: lv.front.map(r => Array.from(r)), color: lv.color.map(r => r.slice()), lock: lv.lock.map(r => r.slice()), ents: lv.ents.map(e => ({ type: e.type, x: e.x, y: e.y })), gems: lv.gems.map(g => g.slice()), checks: lv.checks.map(c => c.slice()), start: lv.start.slice(), flag: lv.flag.slice() };
   }
-  function resize(w) {
-    w = Math.max(20, Math.min(160, w | 0));
-    const n = blank(w);
-    for (let y = 0; y < H; y++) for (let x = 0; x < Math.min(w, L.w); x++) { n.front[y][x] = L.front[y][x]; n.color[y][x] = L.color[y][x]; n.lock[y][x] = L.lock[y][x]; }
-    n.ents = L.ents.filter(e => e.x < w); n.gems = L.gems.filter(g => g[0] < w); n.checks = L.checks.filter(c => c[0] < w);
-    n.start = L.start[0] < w ? L.start : [2, 9]; n.flag = L.flag[0] < w ? L.flag : [w - 4, 9];
+  function resize(w, h) {
+    w = Math.max(20, Math.min(160, w | 0)); h = Math.max(12, Math.min(60, h | 0)); const oldH = L.front.length, dy = h - oldH;
+    const n = blank(w, h);
+    for (let y = 0; y < oldH; y++) { const ny = y + dy; if (ny < 0) continue;
+      for (let x = 0; x < Math.min(w, L.w); x++) { n.front[ny][x] = L.front[y][x]; n.color[ny][x] = L.color[y][x]; n.lock[ny][x] = L.lock[y][x]; } }
+    if (false) for (let y = 0; y < H; y++) for (let x = 0; x < Math.min(w, L.w); x++) { n.front[y][x] = L.front[y][x]; n.color[y][x] = L.color[y][x]; n.lock[y][x] = L.lock[y][x]; }
+    n.ents = L.ents.filter(e => e.x < w && e.y + dy >= 0).map(e => ({ type: e.type, x: e.x, y: e.y + dy })); n.gems = L.gems.filter(g => g[0] < w && g[1] + dy >= 0).map(g => [g[0], g[1] + dy]); n.checks = L.checks.filter(c => c[0] < w && c[1] + dy >= 0).map(c => [c[0], c[1] + dy]);
+    n.start = L.start[0] < w && L.start[1] + dy >= 0 ? [L.start[0], L.start[1] + dy] : [2, h - 3]; n.flag = L.flag[0] < w && L.flag[1] + dy >= 1 ? [L.flag[0], L.flag[1] + dy] : [w - 4, h - 3];
     L = n; fit();
   }
   function fit() { cv.width = L.w * T; cv.height = H * T; draw(); }
@@ -183,7 +189,7 @@ a{color:var(--muted)}
     editingId = d.id; refreshSaved(); msg('保存しました（' + d.id + '）' + (warn ? ' ※' + warn : '')); return d;
   }
   function loadData(d) {
-    L = fromLevel(d); editingId = d.id || null; $('#f-name').value = d.name || 'マイステージ'; $('#f-w').value = L.w; $('#f-energy').value = d.energy | 0; $('#f-hint').value = d.hint || (d.hints && d.hints[0] ? d.hints[0].text : '');
+    L = fromLevel(d); editingId = d.id || null; $('#f-name').value = d.name || 'マイステージ'; $('#f-w').value = L.w; $('#f-h').value = H; $('#f-energy').value = d.energy | 0; $('#f-hint').value = d.hint || (d.hints && d.hints[0] ? d.hints[0].text : '');
     document.querySelectorAll('#tools input').forEach(i => { i.checked = (d.tools || []).includes(i.dataset.t); }); fit();
   }
   function refreshSaved() {
@@ -193,13 +199,13 @@ a{color:var(--muted)}
   $('#b-save').onclick = save;
   $('#b-test').onclick = () => { const d = save(); if (d) location.href = 'index.html?test=' + encodeURIComponent(d.id); };
   $('#b-new').onclick = () => { if (!confirm('新しいステージを作ります（保存していない内容は消えます）')) return; editingId = null; loadData(Object.assign(blank(60), { name: 'マイステージ', tools: [], energy: 20 })); editingId = null; msg(''); };
-  $('#b-w').onclick = () => { resize($('#f-w').value); $('#f-w').value = L.w; };
-  $('#b-floor').onclick = () => { for (let y = 10; y < H; y++) for (let x = 0; x < L.w; x++) { L.front[y][x] = 'S'; L.color[y][x] = 0; L.lock[y][x] = 0; } draw(); };
+  $('#b-w').onclick = () => { resize($('#f-w').value, $('#f-h').value); $('#f-w').value = L.w; $('#f-h').value = H; };
+  $('#b-floor').onclick = () => { for (let y = H - 2; y < H; y++) for (let x = 0; x < L.w; x++) { L.front[y][x] = 'S'; L.color[y][x] = 0; L.lock[y][x] = 0; } draw(); };
   $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('読みこみました'); } };
   $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' を削除しますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('削除しました'); };
   $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひな形にします（いまの内容は消えます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー' })); editingId = null; msg('ひな形を読みこみました。保存すると新しいステージになります'); };
   $('#b-exp').onclick = () => { $('#t-json').value = JSON.stringify(toData()); $('#t-json').select(); msg('書き出しました。コピーして渡せます'); };
-  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length !== H) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました。保存すると新しいステージになります'); } catch (e) { msg('読みこめませんでした（データが正しくありません）'); } };
+  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました。保存すると新しいステージになります'); } catch (e) { msg('読みこめませんでした（データが正しくありません）'); } };
 
   (window.LEVELS || []).forEach((l, i) => { const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
