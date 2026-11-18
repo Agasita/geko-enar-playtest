@@ -273,6 +273,61 @@
     ],
   }));
 
+  // ---- ワールド6: 書式・反転・列の削除 ----
+  L.push(make({
+    id: '6-1', name: '書式をコピー', world: 6, w: 60, tools: ['painter', 'hide'], energy: 4, bg: '#E3D18F', bg2: '#D8C47C', par: 2,
+    hints: [
+      { x: 4, text: '「ホーム」タブの「書式のコピー」: まねしたいブロックを①タップ → ②色をぬる範囲をドラッグ' },
+      { x: 16, text: '空に浮かぶ緑のブロックの色を、天井の穴の下の床にコピーしよう（はずむ床になる）' },
+      { x: 27, text: '上に出たら、いちばん高いところで C（ダッシュ）で前へ！' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(4);
+      m.rect(24, 6, 59, 6, 'S'); m.rect(29, 6, 32, 6, '.');
+      m.rect(56, 7, 59, 9, 'S');
+      m.blk(30, 10, 0); m.blk(31, 10, 0);
+      m.blk(22, 6, 3); m.blk(14, 6, 3);
+      m.gem(31, 8); m.gem(40, 5); m.gem(48, 5);
+      m.ent('walker', 20, 9); m.ent('walker', 46, 5);
+      m.check(26, 9);
+      m.flag = [55, 5];
+    },
+    solution: [{ x: 24, edits: [{ tool: 'painter', srcCell: [22, 6], rect: { x0: 30, y0: 10, x1: 31, y1: 10 } }] }],
+  }));
+
+  L.push(make({
+    id: '6-2', name: '左右反転', world: 6, w: 56, tools: ['transform', 'move'], energy: 10, bg: '#E3D18F', bg2: '#D8C47C', par: 8,
+    hints: [
+      { x: 4, text: '「セル」タブの「変形」→「左右反転」: 範囲のブロックを、左右にひっくり返す' },
+      { x: 12, text: '左がわが高い階段は、のぼれない。2つの階段を、まとめて範囲に入れて反転しよう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      [[22, 6], [23, 7], [24, 8], [25, 9], [30, 6], [31, 7], [32, 8], [33, 9]].forEach(([x, y]) => m.rect(x, y, x, 9, '#'));
+      m.gem(27, 9); m.gem(44, 8); m.gem(36, 6);
+      m.ent('walker', 40, 9);
+      m.check(36, 9);
+      m.flag = [52, 9];
+    },
+    solution: [{ x: 18, edits: [{ tool: 'transform', rect: { x0: 22, y0: 6, x1: 33, y1: 9 }, opts: { tf: 'flipH' } }] }],
+  }));
+
+  L.push(make({
+    id: '6-3', name: '穴をつめる', world: 6, w: 60, tools: ['delCol', 'insCol', 'move'], energy: 24, bg: '#E3D18F', bg2: '#D8C47C', par: 20,
+    hints: [
+      { x: 4, text: '「セル」タブの「列の削除」: 列をタップすると、その列が消えて左につまる' },
+      { x: 14, text: '広い穴の中の列を2つ消して、穴をせまくしよう。ジャンプ＋ダッシュでこえられる' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(4); m.pit(28, 34);
+      m.gem(31, 8); m.gem(44, 8); m.gem(20, 9);
+      m.ent('walker', 14, 9); m.ent('walker', 42, 9);
+      m.check(24, 9);
+      m.flag = [54, 9];
+    },
+    solution: [{ x: 24, edits: [{ tool: 'delCol', col: 30 }, { tool: 'delCol', col: 30 }] }],
+  }));
+
   // ---- 実験シート: すべての道具を、好きに試す場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
