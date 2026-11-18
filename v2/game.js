@@ -969,7 +969,7 @@
     start(i) { G.mode = 'play'; loadLevel(i); UI.show(null); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
     title() { G.mode = 'title'; UI.show('#screen-title'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); },
     select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
-    unlocked(i) { return i === 0 || !!save.levels[LEVELS[i - 1].id]; },
+    unlocked(i) { return true; }, // 試遊用: ステージは自由に選べる
     buildSelect() {
       const box = $('#levels'); box.innerHTML = ''; let total = 0;
       LEVELS.forEach((lv, i) => {
