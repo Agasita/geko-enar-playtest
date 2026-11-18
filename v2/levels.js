@@ -218,15 +218,15 @@
     ],
     build(m) {
       m.floor(); m.ceil(4);
-      m.pit(28, 47); m.rect(28, 11, 47, 11, 'S');
-      for (let x = 28; x <= 47; x++) m.blk(x, 10, 1);
-      m.rect(28, 4, 47, 8, 'S'); m.gem(33, 9); m.gem(56, 8); m.gem(40, 9);
+      m.pit(28, 37); m.rect(28, 11, 37, 11, 'S');
+      for (let x = 28; x <= 37; x++) m.blk(x, 10, 1);
+      m.rect(28, 4, 37, 8, 'S'); m.gem(32, 9); m.gem(52, 8); m.gem(44, 9);
       m.ent('walker', 20, 9); m.ent('walker', 52, 9);
       m.spark(14, 9); m.spark(24, 9); m.spark(50, 9);
       m.check(24, 9);
       m.flag = [58, 9];
     },
-    solution: [{ x: 24, edits: [{ tool: 'replace', rect: { x0: 28, y0: 10, x1: 47, y1: 10 }, opts: { from: 1, to: 0 } }] }],
+    solution: [{ x: 24, edits: [{ tool: 'replace', rect: { x0: 28, y0: 10, x1: 37, y1: 10 }, opts: { from: 1, to: 0 } }] }],
   }));
 
   L.push(make({
