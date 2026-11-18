@@ -2,10 +2,12 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#1f2a44">
 <title>ゲコ＆エナー v2 — 世界を直して進め</title>
-<link rel="stylesheet" href="style.css?v=4ff84f8e">
+<script>document.write('<link rel="stylesheet" href="style.css?t='+Date.now()+'">')</script>
+<noscript><link rel="stylesheet" href="style.css"></noscript>
 </head>
 <body>
 <div id="stage">
@@ -79,8 +81,9 @@
     </section>
   </div>
 </div>
-<script src="sprites.js?v=4ff84f8e"></script>
-<script src="levels.js?v=4ff84f8e"></script>
-<script src="game.js?v=4ff84f8e"></script>
+<script>
+// 毎回あたらしいファイルを読み込む（スマホで古いキャッシュが残らないように）。順番どおりに実行される。
+(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+</script>
 </body>
 </html>
