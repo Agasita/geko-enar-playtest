@@ -6,7 +6,7 @@
   const CH2TILE = { '.': 0, '#': 1, 'S': 2, 'c': 3, '^': 5 };
   // ブロックの色(＝Excelのセルの色)。色には性質がある。
   const COLORS = [
-    { n: '灰', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
+    { n: '茶', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
     { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
     { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（氷）' },
     { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
@@ -793,7 +793,7 @@
     const sq = p.squash, sx = 1 + Math.abs(sq) * .0, sy = 1;
     void sx; void sy;
     const x = Math.round(p.x - 3 - cx), y = Math.round(p.y - 2 - cy);
-    ctx.drawImage(heroSprite(name, p.face > 0), x, y);
+    ctx.drawImage(heroSprite(name, p.face < 0), x, y);
     if (p.dashT > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + 3 - p.face * i * 6, y + 5, 6, 8); }
     if (p.atkT > 0) { // レンチの弧
       const b = attackBox(), prog = 1 - p.atkT / .22; ctx.fillStyle = '#D5DBE6';
@@ -994,6 +994,30 @@
   $('#e-pan').onclick = () => { G.edit.pan = !G.edit.pan; UI.refreshTools(); };
   $('#btn-play').onclick = () => { audio(); UI.select(); };
   $('#btn-back').onclick = () => UI.title();
+  let guideFrom = 'title';
+  function openGuide(from) {
+    guideFrom = from; G.mode = from; UI.show('#screen-guide');
+    const items = [['h', '色つきブロック（編集で色を変えられる）']];
+    COLORS.forEach(k => items.push([k.hex, k.n + 'ブロック', k.fx, k.hi]));
+    items.push(['h', 'そのほかの地形']);
+    items.push(['#66708C', 'はがね', '編集できない固定の壁・床。どの道具も効かない', '#8D97B3']);
+    items.push(['#D5DBE6', 'トゲ', 'さわるとダメージ。ブロックを動かして隠せる', '#fff']);
+    items.push(['#C9A15E', 'ひびわれ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）', '#E8CFA0']);
+    items.push(['h', '編集のしるし']);
+    items.push(['#1F2A44', '🔒 カギ（保護）', '保護されたブロック。どの編集も受けない。「保護の解除」で外せる', '#F5C842']);
+    items.push(['#ffffff30', '点線の行・列', '「非表示」にした行・列。ブロックも敵も通りぬけられる', '#fff6']);
+    items.push(['#ffffff30', 'うすい色', 'フィルター中。選んだ色以外は通りぬけられる', '#fff4']);
+    const box = $('#guide'); box.innerHTML = '';
+    items.forEach(it => {
+      if (it[0] === 'h') { const p = document.createElement('p'); p.className = 'gh'; p.textContent = it[1]; box.appendChild(p); return; }
+      const d = document.createElement('div'); d.className = 'gi';
+      d.innerHTML = '<div class="sw" style="background:' + it[0] + '"></div><div><b></b><span></span></div>';
+      d.querySelector('b').textContent = it[1]; d.querySelector('span').textContent = it[2]; box.appendChild(d);
+    });
+  }
+  $('#btn-guide').onclick = () => openGuide('title');
+  $('#btn-guide2').onclick = () => openGuide('select');
+  $('#btn-guide-back').onclick = () => (guideFrom === 'select' ? UI.select() : UI.title());
   $('#btn-edit').onclick = () => toggleEdit();
   $('#btn-restart').onclick = () => UI.restart();
   $('#btn-menu').onclick = () => UI.select();
