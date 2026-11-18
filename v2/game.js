@@ -621,7 +621,7 @@
     if (!plan.ok) { E.msg = plan.msg; SFX.bad(); return false; }
     if (plan.cost > G.energy) { E.msg = 'エナジーが足りません（' + plan.cost + '）'; SFX.bad(); return false; }
     E.undo.push({ state: snapshot(), cost: plan.cost }); E.redo.length = 0;
-    plan.run(); G.energy -= plan.cost; E.msg = ''; SFX.place(); G.shake = 1;
+    plan.run(); G.energy -= plan.cost; E.msg = ''; SFX.place();
     return true;
   }
   function undoEdit() {
@@ -683,7 +683,7 @@
   // ===== 更新 =====
   function update(dt) {
     if (G.mode !== 'play') return;
-    if (G.edit.on) { G.frame++; return; }
+    if (G.edit.on) { G.frame++; G.shake = 0; return; }
     if (G.hitstop > 0) { G.hitstop -= dt; return; }
     G.frame++; G.t += dt;
     if (!G.cleared) G.time += dt;
@@ -748,7 +748,7 @@
     }
   }
   function drawWorld() {
-    const lv = G.level, cx = Math.round(G.cam.x + (G.shake ? (Math.random() - .5) * G.shake : 0)), cy = Math.round(G.cam.y);
+    const lv = G.level, cx = Math.round(G.cam.x + (G.shake && !G.edit.on ? (Math.random() - .5) * G.shake : 0)), cy = Math.round(G.cam.y);
     const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const t = G.front[ty][tx]; if (t) drawTile(t, tx * T - cx, ty * T - cy, tx, ty); }
     // 隠した行・列は、点線で示す
