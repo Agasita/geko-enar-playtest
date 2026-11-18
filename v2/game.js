@@ -264,9 +264,6 @@
     // 赤いブロック=あつい(さわるとダメージ)
     for (let ty = Math.floor((p.y - 1) / T); ty <= Math.floor((p.y + p.h + 1) / T); ty++) for (let tx = Math.floor((p.x - 1) / T); tx <= Math.floor((p.x + p.w) / T); tx++)
       if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, true);
-    // トゲ
-    const sx0 = Math.floor(p.x / T), sx1 = Math.floor((p.x + p.w - 1) / T), sy0 = Math.floor((p.y + 6) / T), sy1 = Math.floor((p.y + p.h - 1) / T);
-    for (let ty = sy0; ty <= sy1; ty++) for (let tx = sx0; tx <= sx1; tx++) if (tileAt(tx, ty) === TL.SPIKE && !G.hideRow.has(ty) && !G.hideCol.has(tx) && p.y + p.h > ty * T + 8) hurtPlayer(null, true);
     // 落下
     if (p.y > G.level.h * T + 40) { G.deaths++; G.p.dead = 0.01; SFX.die(); G.p.dead = .5; p.vy = 0; }
     p.anim += dt * (Math.abs(p.vx) > 20 ? 1 : 0.4); if (p.squash) p.squash *= .85; if (Math.abs(p.squash) < .01) p.squash = 0;
@@ -394,7 +391,7 @@
   // ===== 編集(Excelのしくみ) =====
   const key = (x, y) => x + ',' + y;
   const isBlk = (x, y) => isBlockT(G.front[y][x]);
-  const isFixedCell = (x, y) => { const t = G.front[y][x]; return t === TL.STEEL || t === TL.SPIKE || !!G.lock[y][x]; }; // 鋼・トゲ・保護されたブロック
+  const isFixedCell = (x, y) => { const t = G.front[y][x]; return t === TL.STEEL || !!G.lock[y][x]; }; // 鋼・トゲ・保護されたブロック
   const isMovable = (x, y) => isBlk(x, y) && !G.lock[y][x];
   function actorRects() {
     const r = [{ x: G.p.x, y: G.p.y, w: G.p.w, h: G.p.h }];
@@ -743,10 +740,6 @@
       if (!solidCell(tx, ty - 1)) { ctx.fillStyle = TC.steelL; ctx.fillRect(x, y, T, 2); }
       if (!solidCell(tx, ty + 1)) { ctx.fillStyle = TC.steelD; ctx.fillRect(x, y + T - 3, T, 3); }
       ctx.fillStyle = TC.steelD; ctx.fillRect(x + 3, y + 6, 2, 2); ctx.fillRect(x + 11, y + 6, 2, 2);
-    } else if (t === TL.SPIKE) {
-      if (G.hideRow.has(ty) || G.hideCol.has(tx)) return;
-      ctx.fillStyle = '#D5DBE6';
-      for (let i = 0; i < 4; i++) for (let j = 0; j < 8; j++) { const w = 4 - Math.floor(j / 2); ctx.fillRect(x + i * 4 + (4 - w) / 2, y + 8 + j, w, 1); }
     }
   }
   function drawWorld() {
@@ -1003,7 +996,6 @@
     COLORS.forEach(k => items.push([k.hex, k.n + 'ブロック', k.fx, k.hi]));
     items.push(['h', 'そのほかの地形']);
     items.push(['#66708C', 'はがね', '編集できない固定の壁・床。どの道具も効かない', '#8D97B3']);
-    items.push(['#D5DBE6', 'トゲ', 'さわるとダメージ。ブロックを動かして隠せる', '#fff']);
     items.push(['#C9A15E', 'ひびわれ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）', '#E8CFA0']);
     items.push(['h', '編集のしるし']);
     items.push(['#1F2A44', '🔒 カギ（保護）', '保護されたブロック。どの編集も受けない。「保護の解除」で外せる', '#F5C842']);
