@@ -54,15 +54,15 @@
   let lockImg = null;
 
 
-  // ---- 金属(鋼): 青みのある銀いろ。たてのグラデーション、ブラシのすじ、ななめのつや、ネジ ----
+  // ---- 金属(鋼): 青みのある銀いろ。光沢はななめに入れず、たて方向のグラデーションと、よこ方向のブラシのすじで質感を出す ----
   function makeMetal() {
-    const s = surface(16, 16), top = hex('#E3EAF4'), mid = hex('#93A4BC'), bot = hex('#566480');
+    const s = surface(16, 16), top = hex('#DCE4EF'), mid = hex('#9AAAC0'), bot = hex('#5A6883'), off = [0, 3, 6, 2, 5, 8, 1, 4, 7, 3, 0, 6, 2, 5, 8, 4];
     for (let y = 0; y < 16; y++) {
-      const base = y < 6 ? mix(top, mid, y / 6) : mix(mid, bot, (y - 6) / 9);
+      const base = y < 5 ? mix(top, mid, y / 5) : mix(mid, bot, (y - 5) / 10);
       for (let x = 0; x < 16; x++) {
         let c = base;
-        if ((x * 5 + y * 3) % 7 < 2) c = mix(c, [255, 255, 255], .07);                 // ブラシのすじ
-        if ((x - y + 32) % 16 === 5 || (x - y + 32) % 16 === 6) c = mix(c, [255, 255, 255], .5); // ななめのつや
+        if (((x + off[y]) % 9) < 4) c = mix(c, [255, 255, 255], .09); else if (((x + off[y]) % 9) > 6) c = mix(c, [20, 28, 50], .07); // よこ向きのブラシのすじ
+        if (y === 2 || y === 3) c = mix(c, [255, 255, 255], .18);                                                                      // 上がわのやわらかい照り返し
         s.set(x, y, c);
       }
     }
