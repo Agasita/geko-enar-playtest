@@ -33,8 +33,7 @@
   }
 
   const L = [];
-  const T1 = ['move', 'clear'];
-
+  
   // ---- ワールド1: スタートアップ ----
   L.push(make({
     id: '1-1', name: 'はじめの一歩', world: 1, w: 56, tools: [], energy: 0, bg: '#42B8C2', bg2: '#3AA7B1',
@@ -55,25 +54,22 @@
   }));
 
   L.push(make({
-    id: '1-2', name: '切り取って、貼り付け', world: 1, w: 62, tools: ['move', 'clear'], energy: 12, bg: '#42B8C2', bg2: '#3AA7B1', par: 10,
+    id: '1-2', name: '切り取って、貼り付け', world: 1, w: 62, tools: ['move'], energy: 10, bg: '#42B8C2', bg2: '#3AA7B1', par: 8,
     hints: [
       { x: 1, text: '「編集」で時間が止まる。世界は表計算シート、ブロックは色つきのセルだよ' },
       { x: 10, text: '上の棚のブロックを、「切り取り→貼り付け」で穴へ運ぼう。ブロックは新しくは生まれない' },
-      { x: 34, text: '高い壁は「内容の消去」で消せる' },
     ],
     build(m) {
-      m.floor(); m.pit(20, 25);
-      m.rect(10, 6, 17, 6, 'S'); m.rect(12, 5, 17, 5, '#');
-      m.rect(41, 6, 41, 9, '#');
-      m.gem(22, 8); m.gem(41, 5); m.gem(53, 8);
+      m.floor(); m.pit(20, 26);
+      m.rect(11, 6, 19, 6, 'S'); m.rect(13, 5, 19, 5, '#');
+      m.gem(22, 8); m.gem(41, 8); m.gem(53, 8);
       m.ent('walker', 31, 9); m.ent('walker', 49, 9);
       m.spark(18, 9); m.spark(30, 9); m.spark(46, 9);
       m.check(36, 9);
       m.flag = [58, 9];
     },
     solution: [
-      { x: 15, edits: [{ tool: 'move', rect: { x0: 12, y0: 5, x1: 17, y1: 5 }, dst: [20, 10] }] },
-      { x: 37, edits: [{ tool: 'clear', rect: { x0: 41, y0: 6, x1: 41, y1: 9 } }] },
+      { x: 16, edits: [{ tool: 'move', rect: { x0: 13, y0: 5, x1: 19, y1: 5 }, dst: [20, 10] }] },
     ],
   }));
 
@@ -140,10 +136,10 @@
 
   // ---- ワールド3: 色（書式） ----
   L.push(make({
-    id: '3-1', name: '色の性質', world: 3, w: 60, tools: ['color', 'painter'], energy: 5, bg: '#C7B9EE', bg2: '#B8A8E6', par: 3,
+    id: '3-1', name: '色の性質', world: 3, w: 60, tools: ['painter'], energy: 4, bg: '#C7B9EE', bg2: '#B8A8E6', par: 2,
     hints: [
-      { x: 6, text: '「塗りつぶし」: ブロックの色には性質がある。緑＝はずむ、青＝すべる、赤＝あつい、黄＝もろい' },
-      { x: 20, text: '天井の穴の下のブロックを、緑にしよう' },
+      { x: 4, text: '「書式のコピー」: まねしたいブロックを①タップ → ②色をぬる範囲をドラッグ。ブロックの色には性質がある（緑＝はずむ、青＝すべる、赤＝さわると即ミス、黄＝もろい）' },
+      { x: 16, text: '空に浮かぶ緑のブロックの色を、天井の穴の下の床にコピーしよう（はずむ床になる）' },
       { x: 27, text: '上に出たら、いちばん高いところで C（ダッシュ）で前へ！' },
     ],
     build(m) {
@@ -151,18 +147,18 @@
       m.rect(24, 6, 59, 6, 'S'); m.rect(29, 6, 32, 6, '.');
       m.rect(56, 7, 59, 9, 'S');
       m.blk(30, 10, 0); m.blk(31, 10, 0);
+      m.blk(22, 6, 3); m.blk(14, 6, 3);
       m.gem(31, 8); m.gem(40, 5); m.gem(48, 5);
       m.ent('walker', 20, 9); m.ent('walker', 46, 5);
-      m.spark(14, 9); m.spark(36, 5);
       m.check(26, 9);
       m.flag = [55, 5];
     },
-    solution: [{ x: 24, edits: [{ tool: 'color', rect: { x0: 30, y0: 10, x1: 31, y1: 10 }, opts: { color: 3 } }] }],
+    solution: [{ x: 24, edits: [{ tool: 'painter', srcCell: [22, 6], rect: { x0: 30, y0: 10, x1: 31, y1: 10 } }] }],
   }));
 
   // ---- ワールド4: データ（フィルター・保護・列の削除） ----
   L.push(make({
-    id: '4-1', name: 'フィルター', world: 4, w: 62, tools: ['filter', 'color', 'replace'], energy: 10, bg: '#9ADBC0', bg2: '#86CEB0', par: 8,
+    id: '4-1', name: 'フィルター', world: 4, w: 62, tools: ['filter', 'replace'], energy: 10, bg: '#9ADBC0', bg2: '#86CEB0', par: 8,
     hints: [
       { x: 6, text: '「データ」タブの「フィルター」: 選んだ色のブロックだけが残り、ほかは通りぬけられる' },
       { x: 20, text: '青だけ残すと、茶色の壁が消える。終わったら「解除」を忘れずに' },
@@ -181,10 +177,10 @@
   }));
 
   L.push(make({
-    id: '4-2', name: 'シートを仕上げる', world: 4, w: 96, tools: ['unprotect', 'clear', 'transform', 'hide', 'delCol', 'color', 'filter'], energy: 46, bg: '#3C4170', bg2: '#343863', par: 42,
+    id: '4-2', name: 'シートを仕上げる', world: 4, w: 96, tools: ['unprotect', 'transform', 'hide', 'delCol', 'filter'], energy: 50, bg: '#3C4170', bg2: '#343863', par: 42,
     hints: [
       { x: 6, text: '表計算のしくみを、ぜんぶ使おう' },
-      { x: 12, text: '赤い鍵のついたブロックは「保護」されている。「表示」タブで保護を解除してから消そう' },
+      { x: 12, text: '赤い鍵のついたブロックは「保護」されている。「表示」タブで保護を解除してから、その列を隠そう' },
       { x: 58, text: '「セル」タブの「列の削除」: 穴の列を消すと、左に詰まって穴がせまくなる' },
     ],
     build(m) {
@@ -201,7 +197,7 @@
       m.flag = [88, 9];
     },
     solution: [
-      { x: 14, edits: [{ tool: 'unprotect', rect: { x0: 18, y0: 4, x1: 18, y1: 9 } }, { tool: 'clear', rect: { x0: 18, y0: 4, x1: 18, y1: 9 } }] },
+      { x: 14, edits: [{ tool: 'unprotect', rect: { x0: 18, y0: 4, x1: 18, y1: 9 } }, { tool: 'hide', rect: { x0: 18, y0: 5, x1: 18, y1: 5 }, opts: { axis: 'col' } }] },
       { x: 25, edits: [{ tool: 'transform', rect: { x0: 28, y0: 5, x1: 33, y1: 10 }, opts: { tf: 'rot' } }] },
       { x: 42, edits: [{ tool: 'hide', rect: { x0: 46, y0: 5, x1: 46, y1: 5 }, opts: { axis: 'col' } }] },
       { x: 59, edits: [{ tool: 'delCol', col: 63 }, { tool: 'delCol', col: 63 }] },
@@ -209,9 +205,8 @@
   }));
 
   // ---- ワールド5: 応用（置換・入れ替え・並べ替え） ----
-  const T5 = ['move', 'swap', 'clear', 'color', 'painter', 'transform', 'sort', 'replace', 'hide', 'filter'];
-  L.push(make({
-    id: '5-1', name: '赤い床を置換', world: 5, w: 64, tools: ['replace', 'color', 'hide'], energy: 8, bg: '#F2B6B0', bg2: '#E8A29B', par: 6,
+    L.push(make({
+    id: '5-1', name: '赤い床を置換', world: 5, w: 64, tools: ['replace', 'hide'], energy: 8, bg: '#F2B6B0', bg2: '#E8A29B', par: 6,
     hints: [
       { x: 6, text: '「データ」タブの「置換」: 範囲の「から」の色を「へ」の色に、まとめて置き換える' },
       { x: 18, text: '赤い床は、さわると即ミス（天井が低くて、とびこせない）。赤を茶に置換しよう（「から」＝赤、「へ」＝茶）' },
@@ -230,7 +225,7 @@
   }));
 
   L.push(make({
-    id: '5-2', name: '入れ替え', world: 5, w: 66, tools: ['swap', 'move', 'clear'], energy: 10, bg: '#F2B6B0', bg2: '#E8A29B', par: 8,
+    id: '5-2', name: '入れ替え', world: 5, w: 66, tools: ['swap', 'move'], energy: 10, bg: '#F2B6B0', bg2: '#E8A29B', par: 8,
     hints: [
       { x: 4, text: '「ホーム」タブの「入れ替え」: 2つの範囲のブロックを、そっくり交換する' },
       { x: 12, text: '上の棚の茶ブロックと、むこうの赤い床を、入れ替えよう（①棚をドラッグ → ②床の左端をタップ）' },
@@ -251,7 +246,7 @@
   }));
 
   L.push(make({
-    id: '5-3', name: '重力で並べ替え', world: 5, w: 70, tools: ['sort', 'hide', 'move', 'clear'], energy: 18, bg: '#F2B6B0', bg2: '#E8A29B', par: 10,
+    id: '5-3', name: '重力で並べ替え', world: 5, w: 70, tools: ['sort', 'hide', 'move'], energy: 18, bg: '#F2B6B0', bg2: '#E8A29B', par: 10,
     hints: [
       { x: 5, text: '「データ」タブの「並べ替え」: 範囲のブロックを、一方向に寄せる。「寄せ↓」は、重力で落とすイメージ' },
       { x: 12, text: '穴の上に浮かぶブロックを、まとめて「寄せ↓」で落として、橋にしよう' },
@@ -275,10 +270,10 @@
 
   // ---- ワールド6: 書式・反転・列の削除 ----
   L.push(make({
-    id: '6-1', name: '書式をコピー', world: 6, w: 60, tools: ['painter', 'hide'], energy: 4, bg: '#E3D18F', bg2: '#D8C47C', par: 2,
+    id: '6-1', name: '茶を緑に置換', world: 6, w: 60, tools: ['replace', 'hide'], energy: 8, bg: '#E3D18F', bg2: '#D8C47C', par: 6,
     hints: [
-      { x: 4, text: '「ホーム」タブの「書式のコピー」: まねしたいブロックを①タップ → ②色をぬる範囲をドラッグ' },
-      { x: 16, text: '空に浮かぶ緑のブロックの色を、天井の穴の下の床にコピーしよう（はずむ床になる）' },
+      { x: 4, text: '「データ」タブの「置換」: 範囲の「から」の色を「へ」の色に、まとめて置き換える' },
+      { x: 16, text: '天井の穴の下の床を、茶から緑（はずむ）へ置換しよう（「から」＝茶、「へ」＝緑）' },
       { x: 27, text: '上に出たら、いちばん高いところで C（ダッシュ）で前へ！' },
     ],
     build(m) {
@@ -286,13 +281,12 @@
       m.rect(24, 6, 59, 6, 'S'); m.rect(29, 6, 32, 6, '.');
       m.rect(56, 7, 59, 9, 'S');
       m.blk(30, 10, 0); m.blk(31, 10, 0);
-      m.blk(22, 6, 3); m.blk(14, 6, 3);
       m.gem(31, 8); m.gem(40, 5); m.gem(48, 5);
       m.ent('walker', 20, 9); m.ent('walker', 46, 5);
       m.check(26, 9);
       m.flag = [55, 5];
     },
-    solution: [{ x: 24, edits: [{ tool: 'painter', srcCell: [22, 6], rect: { x0: 30, y0: 10, x1: 31, y1: 10 } }] }],
+    solution: [{ x: 24, edits: [{ tool: 'replace', rect: { x0: 30, y0: 10, x1: 31, y1: 10 }, opts: { from: 0, to: 3 } }] }],
   }));
 
   L.push(make({
@@ -330,10 +324,10 @@
 
   // ---- ワールド7: 上へ（たて長のステージ） ----
   L.push(make({
-    id: '7-1', name: 'バネのたて穴', world: 7, w: 24, h: 30, tools: ['color', 'painter'], energy: 9, bg: '#8FA6E8', bg2: '#7E95DB', par: 7,
+    id: '7-1', name: 'バネのたて穴', world: 7, w: 24, h: 30, tools: ['painter'], energy: 8, bg: '#8FA6E8', bg2: '#7E95DB', par: 7,
     hints: [
       { x: 0, text: 'たて穴をのぼろう。ふつうのジャンプでは、天井にとどかない' },
-      { x: 8, text: '床のブロックを緑（はずむ）にして、天井の穴をつきぬけよう。つぎの足場のブロックも同じように' },
+      { x: 8, text: '空に浮かぶ緑のブロックの色を、「書式のコピー」で足もとのブロックにうつして、天井の穴をつきぬけよう。つぎの足場も同じように' },
     ],
     build(m) {
       m.floor();
@@ -341,6 +335,7 @@
       // 足場の段（それぞれ、穴が2マス）
       [[23, 10], [18, 6], [13, 10], [8, 6]].forEach(([y, hx]) => { m.rect(1, y, 22, y, 'S'); m.rect(hx, y, hx + 1, y, '.'); });
       // 足もとのブロック（緑にする）
+      m.blk(4, 24, 3);
       m.blk(10, 27, 0); m.blk(11, 27, 0);
       m.blk(6, 22, 0); m.blk(7, 22, 0);
       m.blk(10, 17, 0); m.blk(11, 17, 0);
@@ -369,13 +364,13 @@
   // ---- 実験シート: すべての道具を、好きに試す場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
-    tools: ['move', 'swap', 'clear', 'color', 'painter', 'transform', 'insCol', 'delCol', 'sort', 'filter', 'replace', 'hide', 'unhide', 'protect', 'unprotect'],
+    tools: ['move', 'swap', 'painter', 'transform', 'insCol', 'delCol', 'sort', 'filter', 'replace', 'hide', 'unhide', 'protect', 'unprotect'],
     hints: [
       { x: 1, text: '実験シート: すべての道具が使える（エナジーは早く回復）。気になる機能を、ためしてみよう' },
-      { x: 12, text: '色のちがうブロックの列。「並べ替え」「置換」「塗りつぶし」「書式のコピー」を試そう' },
+      { x: 12, text: '色のちがうブロックの列。「並べ替え」「置換」「書式のコピー」を試そう' },
       { x: 24, text: '赤い鍵は保護。解除してから動かせる' },
       { x: 34, text: '穴の列を「削除」「挿入」して、広さを変えてみよう' },
-      { x: 46, text: '壁は「非表示」「フィルター」「消去」のどれでも通れる' },
+      { x: 46, text: '壁は「非表示」「フィルター」で通れる' },
     ],
     build(m) {
       m.floor(); m.ceil(2);
@@ -389,7 +384,7 @@
       m.blk(26, 8, 0, true); m.blk(27, 8, 3, true); m.blk(28, 8, 0, true);
       // D: 穴(列の削除・挿入)
       m.pit(36, 40);
-      // E: 壁(非表示・フィルター・消去)
+      // E: 壁(非表示・フィルター)
       m.rect(46, 3, 47, 9, '#'); m.paint(46, 3, 46, 5, 0); m.paint(47, 6, 47, 9, 2);
       m.ent('walker', 14, 9); m.ent('guard', 30, 9); m.ent('walker', 52, 9); m.ent('flyer', 22, 6);
       m.spark(10, 9); m.spark(20, 9); m.spark(32, 9); m.spark(44, 9); m.spark(54, 9);
