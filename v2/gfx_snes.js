@@ -53,6 +53,26 @@
   }
   let lockImg = null;
 
+
+  // ---- 金属(鋼): 青みのある銀いろ。たてのグラデーション、ブラシのすじ、ななめのつや、ネジ ----
+  function makeMetal() {
+    const s = surface(16, 16), top = hex('#E3EAF4'), mid = hex('#93A4BC'), bot = hex('#566480');
+    for (let y = 0; y < 16; y++) {
+      const base = y < 6 ? mix(top, mid, y / 6) : mix(mid, bot, (y - 6) / 9);
+      for (let x = 0; x < 16; x++) {
+        let c = base;
+        if ((x * 5 + y * 3) % 7 < 2) c = mix(c, [255, 255, 255], .07);                 // ブラシのすじ
+        if ((x - y + 32) % 16 === 5 || (x - y + 32) % 16 === 6) c = mix(c, [255, 255, 255], .5); // ななめのつや
+        s.set(x, y, c);
+      }
+    }
+    for (let i = 0; i < 16; i++) { s.set(i, 0, '#F6F9FD'); s.set(i, 15, '#2F3A52'); s.set(0, i, '#EAF0F8'); s.set(15, i, '#3E4A64'); }
+    s.set(0, 0, '#FFFFFF'); s.set(15, 15, '#232C40');
+    for (const [x, y] of [[2, 2], [12, 2], [2, 12], [12, 12]]) { s.set(x, y, '#E9F0FA'); s.set(x + 1, y, '#8895AE'); s.set(x, y + 1, '#8895AE'); s.set(x + 1, y + 1, '#2C3750'); s.set(x - 1, y - 1, '#6B7993'); } // ネジ
+    return s.done();
+  }
+  let metalImg = null;
+
   // ---- 背景: 暗い色 + うすい方眼(スプレッドシート) ----
   const bgCache = {};
   function buildBg(bgHex, W, H) {
@@ -137,6 +157,7 @@
     block(t, c, topOpen, botOpen) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
     steel() { return cache.s || (cache.s = makeSteel()); },
     lock() { return lockImg || (lockImg = makeLock()); },
+    metal() { return metalImg || (metalImg = makeMetal()); },
     bg: drawBg,
     hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(heroFrame(name), flip)); },
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(birdGrid(), flip)); },
