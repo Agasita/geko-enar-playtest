@@ -57,7 +57,7 @@
       <button id="btn-play" class="big">あそぶ</button>
       <button id="btn-guide" class="ghost">ブロックのずかん</button>
       <p class="keys">PC: ← → 移動　Z/Space ジャンプ　X 攻撃　C ダッシュ　E 編集（時間停止）<br>編集中: ドラッグで範囲を選ぶ／1〜9 道具　[ ] タブ　Z 戻す　Y やり直し　R やりなおし</p>
-      <a class="oldlink" href="?gfx=snes">スーファミ風グラフィック（見本）</a>　<a class="oldlink" href="./">いつもの絵</a><br><a class="oldlink" href="../">旧バージョン（Pyxel版）はこちら</a>
+      <p class="themes"><a class="oldlink" href="./">Excel風（標準）</a>　<a class="oldlink" href="?gfx=snes">ソリッド版</a>　<a class="oldlink" href="?gfx=classic">元の絵</a></p><a class="oldlink" href="../">旧バージョン（Pyxel版）はこちら</a>
     </section>
 
     <section id="screen-select" class="screen hide">
@@ -83,7 +83,7 @@
 </div>
 <script>
 // 毎回あたらしいファイルを読み込む（スマホで古いキャッシュが残らないように）。順番どおりに実行される。
-(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
 </script>
 </body>
 </html>

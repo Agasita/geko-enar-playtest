@@ -11,21 +11,16 @@
     { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（氷）' },
     { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
     { n: '黄', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（攻撃・ダッシュで壊れる）' },
+    { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: '未書式のセル（性質なし）。書式のコピーで色（性質）をつけられる' },
   ];
+  const GLASS = 5;
   const TABS = [{ id: 'home', name: 'ホーム' }, { id: 'cell', name: 'セル' }, { id: 'data', name: 'データ' }, { id: 'view', name: '表示' }];
   // Excelの機能を、世界の編集に転用した道具。何もないところにブロックは生まれない(動かす・並べる・色・隠す・消す、だけ)。
   const TOOLS = [
-    { id: 'move', tab: 'home', name: '切り取り→貼り付け', mode: 'two', cost: 8, help: '①動かす範囲をドラッグ → ②行き先（左上）をタップ' },
-    { id: 'swap', tab: 'home', name: '入れ替え', mode: 'two', cost: 8, help: '①範囲Aをドラッグ → ②入れ替え先（左上）をタップ' },
-    { id: 'painter', tab: 'home', name: '書式のコピー', mode: 'painter', cost: 2, help: '①まねしたいブロックをタップ → ②範囲をドラッグ' },
+    { id: 'painter', tab: 'home', name: '書式のコピー', mode: 'painter', cost: 2, help: '①色をまねるブロックをタップ → ②ガラスのある範囲をドラッグ（ガラスにだけ色がつく）' },
     { id: 'transform', tab: 'cell', name: '変形', mode: 'rect', cost: 8, help: '範囲のブロックを反転・回転・転置（回転と転置は正方形）' },
-    { id: 'insCol', tab: 'cell', name: '列の挿入', mode: 'col', cost: 12, help: '列をタップ → その手前に空の列を入れる（右が1つずれる）' },
-    { id: 'delCol', tab: 'cell', name: '列の削除', mode: 'col', cost: 10, help: '列をタップ → その列を消して左に詰める（穴がせまくなる）' },
-    { id: 'sort', tab: 'data', name: '並べ替え', mode: 'rect', cost: 10, help: '範囲の各行・各列を並べ替える（寄せる／色の順）' },
+    { id: 'sort', tab: 'data', name: '並べ替え', mode: 'rect', cost: 10, help: '範囲のブロックを、上下左右に寄せる（保護ブロックと鋼で区切られる）' },
     { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: '色を選ぶ → その色のブロックだけが残り、他は通りぬけられる' },
-    { id: 'replace', tab: 'data', name: '置換', mode: 'rect', cost: 6, help: '範囲の「から」の色を「へ」の色に置き換える' },
-    { id: 'hide', tab: 'view', name: '行・列の非表示', mode: 'rect', cost: 6, help: '範囲がかかる行（または列）を隠す。隠した行・列のブロックと敵は通りぬけられる' },
-    { id: 'unhide', tab: 'view', name: '再表示', mode: 'instant', cost: 3, help: '隠した行・列を、すべて元にもどす' },
     { id: 'protect', tab: 'view', name: 'シートの保護', mode: 'rect', cost: 4, help: '範囲のブロックを保護する。保護されたブロックは、どの編集も受けない' },
     { id: 'unprotect', tab: 'view', name: '保護の解除', mode: 'rect', cost: 6, help: '範囲の保護を解除する' },
   ];
@@ -462,8 +457,8 @@
     return { ok: true, cost: costOf('clear'), rects: [r], hl: cells, run() { for (const [x, y] of cells) { G.front[y][x] = 0; G.col[y][x] = 0; } } };
   }
   function planColor(r, c, id) {
-    const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] !== c) cells.push([x, y]); });
-    if (!cells.length) return fail('色を変えられるブロックがありません', { rects: [r] });
+    const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === GLASS) cells.push([x, y]); }); // 書式をつけられるのは、ガラス(未書式)だけ
+    if (!cells.length) return fail('ガラスがありません（書式をつけられるのは、ガラスだけ）', { rects: [r] });
     return { ok: true, cost: costOf(id), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.col[y][x] = c; } };
   }
   function planTransform(r, op) {
@@ -488,7 +483,7 @@
     } };
   }
   function planSort(r, dir) {
-    const horiz = dir === 'L' || dir === 'R' || dir === 'CR';
+    const horiz = dir === 'L' || dir === 'R';
     const lines = horiz ? r.y1 - r.y0 + 1 : r.x1 - r.x0 + 1, len = horiz ? r.x1 - r.x0 + 1 : r.y1 - r.y0 + 1;
     const assign = []; // {x,y,t,c}
     const barrier = (x, y) => (G.front[y][x] !== 0 && isFixedCell(x, y)) || cellBlocked(x, y);
@@ -498,10 +493,7 @@
       const flush = () => {
         if (seg.length) {
           const blocks = seg.filter(([x, y]) => isMovable(x, y)).map(([x, y]) => ({ x, y, t: G.front[y][x], c: G.col[y][x] }));
-          if (dir === 'CR' || dir === 'CC') {
-            const cs = blocks.map(b => b.c).sort((p, q) => p - q);
-            blocks.forEach((b, k) => assign.push({ x: b.x, y: b.y, t: b.t, c: cs[k] }));
-          } else {
+          {
             const first = dir === 'L' || dir === 'U'; const n = blocks.length;
             seg.forEach(([x, y], k) => { const idx = first ? k : k - (seg.length - n); const b = idx >= 0 && idx < n ? blocks[idx] : null; assign.push({ x, y, t: b ? b.t : 0, c: b ? b.c : 0 }); });
           }
@@ -587,17 +579,10 @@
   function planFor(tool, a) {
     const o = a.opts || G.edit.opts;
     switch (tool) {
-      case 'move': return planMove(a.rect, a.dst[0], a.dst[1]);
-      case 'swap': return planSwap(a.rect, a.dst[0], a.dst[1]);
-      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
+      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('ガラスの色（未書式）はコピーできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
-      case 'insCol': return planInsCol(a.col);
-      case 'delCol': return planDelCol(a.col);
       case 'sort': return planSort(a.rect, o.sort);
       case 'filter': return planFilter(a.fcolor !== undefined ? a.fcolor : o.fcolor);
-      case 'replace': return planReplace(a.rect, o.from, o.to);
-      case 'hide': return planHide(a.rect, o.axis);
-      case 'unhide': return planUnhide();
       case 'protect': return planProtect(a.rect, true);
       case 'unprotect': return planProtect(a.rect, false);
     }
@@ -712,9 +697,13 @@
 
   // ===== 描画 =====
   function dotRect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-  const SNES = /[?&]gfx=snes/.test(location.search) && !!window.GFX; // ?gfx=snes : スーファミ風グラフィック(見本)
+  // 見た目: ?gfx=excel(標準: Excel風) / ?gfx=snes(ソリッド版) / ?gfx=classic(元の絵)
+  const THEME = ((/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
+  const EXCEL = THEME === 'excel' && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
+  const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
+  if (EXCEL) document.body.classList.add('theme-excel');
   function drawBackground() {
-    if (SNES) { GFX.bg(ctx, G, G.level, W, H); return; }
+    if (TILES) { TILES.bg(ctx, G, G.level, W, H); return; }
     const lv = G.level; ctx.fillStyle = lv.bg; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = lv.bg2;
     const sc = Math.round(G.cam.x * .3);
@@ -730,13 +719,14 @@
   function drawBlock(t, c, x, y, topOpen, botOpen, alpha, seed) {
     const k = COLORS[c] || COLORS[0];
     if (alpha !== undefined) ctx.globalAlpha = alpha;
-    if (SNES) { ctx.drawImage(GFX.block(t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); ctx.globalAlpha = 1; return; }
+    if (TILES) { ctx.drawImage(TILES.block(t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); ctx.globalAlpha = 1; return; }
     ctx.fillStyle = k.hex; ctx.fillRect(x, y, T, T);
     if (topOpen) { ctx.fillStyle = k.hi; ctx.fillRect(x, y, T, 2); }
     if (botOpen) { ctx.fillStyle = k.lo; ctx.fillRect(x, y + T - 3, T, 3); }
     if (c === 3) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 4, y + 6, 2, 2); ctx.fillRect(x + 7, y + 4, 2, 2); ctx.fillRect(x + 10, y + 6, 2, 2); }
     else if (c === 2) { ctx.fillStyle = k.hi; ctx.fillRect(x + 3, y + 5, 5, 1); ctx.fillRect(x + 6, y + 9, 6, 1); }
     else if (c === 1) { ctx.fillStyle = k.lo; ctx.fillRect(x + 3, y + 4, 2, 3); ctx.fillRect(x + 7, y + 6, 2, 4); ctx.fillRect(x + 11, y + 4, 2, 3); }
+    if (c === 5) { ctx.fillStyle = '#fff'; for (let i = 0; i < 6; i++) { ctx.fillRect(x + 3 + i, y + 11 - i, 2, 1); } ctx.fillStyle = k.lo; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T); ctx.fillRect(x, y + T - 1, T, 1); }
     if (c === 4 || t === TL.CRACK) { ctx.fillStyle = k.lo; ctx.fillRect(x + 7, y + 2, 2, 4); ctx.fillRect(x + 5, y + 6, 2, 4); ctx.fillRect(x + 9, y + 9, 2, 4); }
     ctx.globalAlpha = 1;
   }
@@ -745,10 +735,10 @@
       if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return;
       const faded = G.filter !== null && G.col[ty][tx] !== G.filter && !G.lock[ty][tx];
       drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined, tx * 7 + ty * 13);
-      if (G.lock[ty][tx] && SNES) ctx.drawImage(GFX.lock(), x + 8, y + 1);
+      if (G.lock[ty][tx] && SOLID) ctx.drawImage(GFX.lock(), x + 8, y + 1);
       else if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
-    } else if (t === TL.STEEL && SNES) {
-      ctx.drawImage(GFX.steel(!solidCell(tx, ty - 1), !solidCell(tx, ty + 1)), x, y);
+    } else if (t === TL.STEEL && TILES) {
+      ctx.drawImage(TILES.steel(!solidCell(tx, ty - 1), !solidCell(tx, ty + 1)), x, y);
     } else if (t === TL.STEEL) {
       ctx.fillStyle = TC.steel; ctx.fillRect(x, y, T, T);
       if (!solidCell(tx, ty - 1)) { ctx.fillStyle = TC.steelL; ctx.fillRect(x, y, T, 2); }
@@ -757,7 +747,7 @@
     }
   }
   function drawWorld() {
-    const lv = G.level, cx = Math.round(G.cam.x + (G.shake && !G.edit.on ? (Math.random() - .5) * G.shake : 0)), cy = Math.round(G.cam.y);
+    const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
     const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const t = G.front[ty][tx]; if (t) drawTile(t, tx * T - cx, ty * T - cy, tx, ty); }
     // 隠した行・列は、点線で示す
@@ -788,7 +778,7 @@
     drawPlayer(cx, cy);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
     // 相棒エナー
-    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (SNES) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
+    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
   }
   function drawPlayer(cx, cy) {
     const p = G.p; if (p.dead) return;
@@ -802,7 +792,7 @@
     const sq = p.squash, sx = 1 + Math.abs(sq) * .0, sy = 1;
     void sx; void sy;
     const x = Math.round(p.x - 3 - cx), y = Math.round(p.y - 2 - cy);
-    if (SNES) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
+    if (SOLID) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
     if (p.dashT > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + 3 - p.face * i * 6, y + 5, 6, 8); }
     if (p.atkT > 0) { // レンチの弧
       const b = attackBox(), prog = 1 - p.atkT / .22; ctx.fillStyle = '#D5DBE6';
@@ -811,24 +801,29 @@
     }
   }
   function drawHUD() {
+    const X = EXCEL; // Excel風: 白い板(コメントのような)の上に、暗い色で描く
+    if (X) { ctx.save(); ctx.translate(GFXX.HW + 2, GFXX.HH + 2); const ph = (G.level.tools.length ? 33 : 24) + (G.filter !== null ? 9 : 0); ctx.fillStyle = '#F3F3F3'; ctx.fillRect(0, 0, 88, ph); ctx.fillStyle = '#ABABAB'; ctx.fillRect(0, 0, 88, 1); ctx.fillRect(0, ph - 1, 88, 1); ctx.fillRect(0, 0, 1, ph); ctx.fillRect(87, 0, 1, ph); }
+    const ink = X ? '#262626' : '#fff', sub = X ? '#595959' : '#D5DBE6';
     // ハート
-    for (let i = 0; i < 3; i++) icon(HEART, 6 + i * 7, 6, i < G.p.hp ? '#E8563F' : '#2F3752');
+    for (let i = 0; i < 3; i++) icon(HEART, 6 + i * 7, 6, i < G.p.hp ? '#E8563F' : (X ? '#D0D0D0' : '#2F3752'));
     // エナジー(編集できないステージでは出さない)
     if (G.level.tools.length) {
-    ctx.fillStyle = '#1F2A44'; ctx.fillRect(5, 15, 62, 7); ctx.fillStyle = '#5B6785'; ctx.fillRect(6, 16, 60, 5);
-    ctx.fillStyle = G.energy < minCost() ? '#E8563F' : '#F5C842'; ctx.fillRect(6, 16, Math.round(60 * G.energy / Math.max(1, G.maxE)), 5);
-    icon(BOLT, 70, 14, '#F5C842'); text(Math.floor(G.energy), 77, 16, '#fff'); }
+      ctx.fillStyle = X ? '#7F7F7F' : '#1F2A44'; ctx.fillRect(5, 15, 62, 7); ctx.fillStyle = X ? '#FFFFFF' : '#5B6785'; ctx.fillRect(6, 16, 60, 5);
+      ctx.fillStyle = G.energy < minCost() ? '#E8563F' : (X ? '#70AD47' : '#F5C842'); ctx.fillRect(6, 16, Math.round(60 * G.energy / Math.max(1, G.maxE)), 5);
+      icon(BOLT, 70, 14, X ? '#C99A1E' : '#F5C842'); text(Math.floor(G.energy), 77, 16, ink);
+    }
     // 宝石
     const gy = G.level.tools.length ? 25 : 16;
-    icon(GEM, 6, gy, '#4C9BE8', '#BFD8FF'); text(G.gems + '/' + G.level.gems.length, 13, gy + 1, '#fff');
-    if (G.filter !== null) { icon(FUNNEL, 6, gy + 9, '#fff'); ctx.fillStyle = COLORS[G.filter].hex; ctx.fillRect(15, gy + 9, 6, 5); }
-    text(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), 36, gy + 1, '#D5DBE6');
+    icon(GEM, 6, gy, '#4C9BE8', X ? '#DDEBF7' : '#BFD8FF'); text(G.gems + '/' + G.level.gems.length, 13, gy + 1, ink);
+    if (G.filter !== null) { icon(FUNNEL, 6, gy + 9, ink); ctx.fillStyle = COLORS[G.filter].hex; ctx.fillRect(15, gy + 9, 6, 5); if (X) { ctx.fillStyle = '#7F7F7F'; ctx.fillRect(15, gy + 9, 6, 1); ctx.fillRect(15, gy + 13, 6, 1); } }
+    text(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), 36, gy + 1, sub);
+    if (X) ctx.restore();
   }
   const FUNNEL = ['1111111', '.11111.', '..111..', '..111..', '...1...'];
   function drawEditOverlay() {
     const E = G.edit, cx = Math.round(G.cam.x), cy = Math.round(G.cam.y);
-    ctx.fillStyle = 'rgba(31,42,68,.35)'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(255,255,255,.12)';
+    ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.07)' : 'rgba(31,42,68,.35)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.18)' : 'rgba(255,255,255,.12)';
     for (let x = -(cx % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(cy % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
     const box = (r, col) => { ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(r.x0 * T - cx + .5, r.y0 * T - cy + .5, (r.x1 - r.x0 + 1) * T - 1, (r.y1 - r.y0 + 1) * T - 1); };
@@ -850,7 +845,9 @@
   }
   function render() {
     if (!G.level) return;
+    G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
     drawBackground(); drawWorld();
+    if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
     drawHUD();
@@ -965,11 +962,8 @@
       const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
       const o = E.opts, id = E.tool;
       if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }, { v: 'trans', label: '転置' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
-      else if (id === 'sort') chips('', [{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }, { v: 'CR', label: '色順(行)' }, { v: 'CC', label: '色順(列)' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
-      else if (id === 'replace') { chips('から', colorItems, o.from, v => { o.from = v; UI.refreshTools(); }); chips('へ', colorItems, o.to, v => { o.to = v; UI.refreshTools(); }); }
-      else if (id === 'hide') chips('', [{ v: 'row', label: '行を隠す' }, { v: 'col', label: '列を隠す' }], o.axis, v => { o.axis = v; UI.refreshTools(); });
+      else if (id === 'sort') chips('', [{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '解除' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
-      else if (id === 'unhide') { const b = document.createElement('button'); b.className = 'chip wide'; b.textContent = 'すべて再表示（' + TOOL_BY.unhide.cost + '）'; b.onclick = () => { runPlan(planFor('unhide', {})); UI.refreshTools(); }; opts.appendChild(b); }
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を動かす' : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
