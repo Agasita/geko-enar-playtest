@@ -31,7 +31,7 @@
       step: 0, src: null, srcCell: null, sel: null, hover: null, kb: null, undo: [], redo: [], pan: false, cursor: [0, 0], msg: '' };
   }
   const $ = (s) => document.querySelector(s);
-  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const cv = $('#cv'); let ctx = cv.getContext('2d'); const mainCtx = ctx;
   ctx.imageSmoothingEnabled = false;
 
   // ===== ドット絵 =====
@@ -737,13 +737,8 @@
       drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined, tx * 7 + ty * 13);
       if (G.lock[ty][tx] && SOLID) ctx.drawImage(GFX.lock(), x + 8, y + 1);
       else if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
-    } else if (t === TL.STEEL && TILES) {
-      ctx.drawImage(TILES.steel(!solidCell(tx, ty - 1), !solidCell(tx, ty + 1)), x, y);
     } else if (t === TL.STEEL) {
-      ctx.fillStyle = TC.steel; ctx.fillRect(x, y, T, T);
-      if (!solidCell(tx, ty - 1)) { ctx.fillStyle = TC.steelL; ctx.fillRect(x, y, T, 2); }
-      if (!solidCell(tx, ty + 1)) { ctx.fillStyle = TC.steelD; ctx.fillRect(x, y + T - 3, T, 3); }
-      ctx.fillStyle = TC.steelD; ctx.fillRect(x + 3, y + 6, 2, 2); ctx.fillRect(x + 11, y + 6, 2, 2);
+      ctx.drawImage(GFX.metal(), x, y);
     }
   }
   function drawWorld() {
@@ -997,22 +992,28 @@
   $('#btn-play').onclick = () => { audio(); UI.select(); };
   $('#btn-back').onclick = () => UI.title();
   let guideFrom = 'title';
+  // 実際のゲームと同じ描画で、見本の絵(16×16)をつくる
+  function tileSample(draw) {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16; const g2 = c.getContext('2d'); g2.imageSmoothingEnabled = false;
+    ctx = g2; try { draw(); } finally { ctx = mainCtx; }
+    return c;
+  }
   function openGuide(from) {
     guideFrom = from; G.mode = from; UI.show('#screen-guide');
+    const blk = (c, alpha) => tileSample(() => drawBlock(TL.STONE, c, 0, 0, true, true, alpha, 0));
     const items = [['h', '色つきブロック（編集で色を変えられる）']];
-    COLORS.forEach(k => items.push([k.hex, k.n + 'ブロック', k.fx, k.hi]));
+    COLORS.forEach((k, i) => items.push([blk(i), k.n + 'ブロック', k.fx]));
     items.push(['h', 'そのほかの地形']);
-    items.push(['#66708C', 'はがね', '編集できない固定の壁・床。どの道具も効かない', '#8D97B3']);
-    items.push(['#C9A15E', 'ひびわれ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）', '#E8CFA0']);
+    items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼（はがね）', '編集できない金属の壁・床・天井。どの道具も効かない']);
+    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）。編集の対象']);
     items.push(['h', '編集のしるし']);
-    items.push(['#1F2A44', '🔒 カギ（保護）', '保護されたブロック。どの編集も受けない。「保護の解除」で外せる', '#F5C842']);
-    items.push(['#ffffff30', '点線の行・列', '「非表示」にした行・列。ブロックも敵も通りぬけられる', '#fff6']);
-    items.push(['#ffffff30', 'うすい色', 'フィルター中。選んだ色以外は通りぬけられる', '#fff4']);
+    items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。どの編集も受けず、フィルターでも消えない。寄せるときの仕切りになる。「保護の解除」で外せる']);
+    items.push([blk(0, .28), 'うすい表示', 'フィルター中。選んだ色以外のブロック（ガラスも）は、うすくなって通りぬけられる']);
     const box = $('#guide'); box.innerHTML = '';
     items.forEach(it => {
       if (it[0] === 'h') { const p = document.createElement('p'); p.className = 'gh'; p.textContent = it[1]; box.appendChild(p); return; }
       const d = document.createElement('div'); d.className = 'gi';
-      d.innerHTML = '<div class="sw" style="background:' + it[0] + '"></div><div><b></b><span></span></div>';
+      d.innerHTML = '<div><b></b><span></span></div>'; d.insertBefore(it[0], d.firstChild); it[0].className = 'gtile';
       d.querySelector('b').textContent = it[1]; d.querySelector('span').textContent = it[2]; box.appendChild(d);
     });
   }

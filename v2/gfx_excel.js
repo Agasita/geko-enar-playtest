@@ -63,9 +63,9 @@
   }
   function drawFrame(ctx, G, lv, W, H) {
     const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
-    const pc = Math.floor((G.p.x + 5) / T), pr = Math.floor((G.p.y + 8) / T);
-    // 選択中のセル(エナーのいるセル): 緑のわく + フィルハンドル
-    if (!G.p.dead) { const x = pc * T - cx, y = pr * T - cy; ctx.fillStyle = '#217346'; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y + T - 1, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T); ctx.fillRect(x + T - 3, y + T - 3, 4, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + T - 2, y + T - 2, 2, 2); }
+    // カーソル(選択中のセル)は、編集中だけ出す。見出しも、そのセルの列・行が緑になる
+    const E = G.edit, cur = E && E.on ? (E.hover || E.cursor) : null, pc = cur ? cur[0] : -999, pr = cur ? cur[1] : -999;
+    if (cur) { const x = pc * T - cx, y = pr * T - cy; ctx.fillStyle = '#217346'; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y + T - 1, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T); ctx.fillRect(x + T - 3, y + T - 3, 4, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + T - 2, y + T - 2, 2, 2); }
     // 列見出し
     ctx.fillStyle = '#E6E6E6'; ctx.fillRect(HW, 0, W - HW, HH); ctx.fillStyle = '#ABABAB'; ctx.fillRect(HW, HH - 1, W - HW, 1);
     for (let c = Math.floor((cx + HW) / T); c * T - cx < W; c++) {
@@ -90,7 +90,7 @@
   window.GFXX = {
     HW, HH,
     block(t, c) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
-    steel() { return cache.s || (cache.s = makeSteel()); },
+    steel() { return window.GFX.metal(); },
     bg: drawBg, frame: drawFrame,
   };
 })();
