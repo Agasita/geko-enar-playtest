@@ -213,6 +213,22 @@
     ],
   }));
 
+  L.push(make({
+    id: '4-3', name: '列のはばを配分する', world: 4, w: 62, tools: ['width'], energy: 10, bg: '#9ADBC0', bg2: '#86CEB0', par: 8,
+    hints: [
+      { x: 4, text: '「セル」タブの「列のはば」: 範囲の列のはばを配分しなおす。合計は変わらない（広げた分、ほかが縮む）' },
+      { x: 12, text: '穴をふくむ範囲を選んで「両端を広く」。穴の列がせまくなって、とびこえられる。広い床の列は、ゆっくり進む' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(4); m.pit(28, 35);
+      m.gem(31, 8); m.gem(46, 8);
+      m.ent('walker', 44, 9);
+      m.check(20, 9);
+      m.flag = [56, 9];
+    },
+    solution: [{ x: 14, edits: [{ tool: 'width', rect: { x0: 22, y0: 0, x1: 37, y1: 11 }, opts: { wd: 'ends' } }] }],
+  }));
+
   // ---- ワールド5: 保護 ----
   L.push(make({
     id: '5-1', name: '保護でのこす', world: 5, w: 62, tools: ['protect', 'filter'], energy: 14, bg: '#F2B6B0', bg2: '#E8A29B', par: 12,
@@ -311,7 +327,7 @@
   // ---- 実験シート: すべての道具を、好きに試す場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
-    tools: ['painter', 'transform', 'sort', 'filter', 'protect', 'unprotect'],
+    tools: ['painter', 'transform', 'width', 'sort', 'filter', 'protect', 'unprotect'],
     hints: [
       { x: 1, text: '実験シート: すべての道具が使える（エナジーは早く回復）。気になる機能を、ためしてみよう' },
       { x: 12, text: '色のちがうブロックの列（ガラスもある）。「並べ替え」「書式のコピー（ガラスだけ）」を試そう' },
