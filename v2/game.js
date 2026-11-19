@@ -763,17 +763,18 @@
       if (e.dead || e.hidden) continue;
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : 'turret';
-      const s = sprite(name, name === 'guard' || name === 'turret' ? 0 : fr, flip);
-      const x = Math.round(e.x - (e.ox || 0) - cx), y = Math.round(e.y - (e.oy || 0) - cy);
+      const fi = name === 'guard' || name === 'turret' ? 0 : fr;
+      const s = EXCEL ? GFXX.enemy(name, fi, e.dir < 0) : sprite(name, fi, flip);
+      const x = Math.round(e.x - (e.ox || 0) - cx) - (EXCEL ? 1 : 0), y = Math.round(e.y - (e.oy || 0) - cy) - (EXCEL ? 1 : 0);
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
-      if (e.type === 'guard') { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
+      if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
     drawPlayer(cx, cy);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
     // 相棒エナー
-    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
+    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (EXCEL) ctx.drawImage(GFXX.bird(p.face < 0), bx - 1, by - 1); else if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
   }
   function drawPlayer(cx, cy) {
     const p = G.p; if (p.dead) return;
@@ -787,7 +788,7 @@
     const sq = p.squash, sx = 1 + Math.abs(sq) * .0, sy = 1;
     void sx; void sy;
     const x = Math.round(p.x - 3 - cx), y = Math.round(p.y - 2 - cy);
-    if (SOLID) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
+    if (EXCEL) ctx.drawImage(GFXX.hero(name, p.face < 0), x - 1, y - 1); else if (SOLID) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
     if (p.dashT > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + 3 - p.face * i * 6, y + 5, 6, 8); }
     if (p.atkT > 0) { // レンチの弧
       const b = attackBox(), prog = 1 - p.atkT / .22; ctx.fillStyle = '#D5DBE6';
