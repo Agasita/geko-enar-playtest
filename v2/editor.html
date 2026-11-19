@@ -75,8 +75,8 @@ a{color:var(--muted)}
   'use strict';
   let H = 12;
   const T = 20, KEY = 'geko-enar-v2-custom';
-  const COLORS = [['茶', '#C9A15E'], ['赤', '#E8563F'], ['青', '#6FD6E8'], ['緑', '#58B368'], ['黄', '#F5C842']];
-  const TOOLS = [['move', '切り取り→貼り付け'], ['swap', '入れ替え'], ['painter', '書式のコピー'], ['transform', '変形'], ['insCol', '列の挿入'], ['delCol', '列の削除'], ['sort', '並べ替え'], ['filter', 'フィルター'], ['replace', '置換'], ['hide', '行・列の非表示'], ['unhide', '再表示'], ['protect', 'シートの保護'], ['unprotect', '保護の解除']];
+  const COLORS = [['茶', '#C9A15E'], ['赤', '#E8563F'], ['青', '#6FD6E8'], ['緑', '#58B368'], ['黄', '#F5C842'], ['ガラス', '#DCEBF3']];
+  const TOOLS = [['painter', '書式のコピー'], ['transform', '変形'], ['sort', '並べ替え（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートの保護'], ['unprotect', '保護の解除']];
   const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95']];
   const $ = (s) => document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d');
@@ -209,7 +209,7 @@ a{color:var(--muted)}
 
   (window.LEVELS || []).forEach((l, i) => { const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
-  loadData(Object.assign(blank(60), { name: 'マイステージ', tools: ['move'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
+  loadData(Object.assign(blank(60), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
   window.__editor = { get L() { return L; }, apply, toData, save, loadData, draw };
 })();
 </script>

@@ -102,3 +102,46 @@ body.editing .hudbtns,body.editing #lvname{display:none}
 @media (orientation:portrait){body.menu #stage{align-items:stretch;padding:0}body.menu #game{width:100vw!important;height:100%!important}.screen{padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}}
 #screen-select header button,#screen-guide header button{white-space:nowrap}
 #screen-select h2{font-size:16px;white-space:nowrap}
+
+/* ===== Excel風テーマ(標準)。?gfx=classic / ?gfx=snes では適用されない ===== */
+body.theme-excel{--bg:#fff;--panel:#F3F3F3;--panel2:#E1E1E1;--ink:#262626;--muted:#595959;--accent:#217346;--green:#217346;--red:#C00000;--blue:#2E75B6;
+  font-family:"Yu Gothic UI","Meiryo UI","Segoe UI",system-ui,-apple-system,"Hiragino Sans",sans-serif}
+body.theme-excel,body.theme-excel html{background:#D9D9D9}
+.theme-excel #game{background:#fff;box-shadow:0 0 0 1px #8C8C8C}
+.theme-excel button{border:1px solid #ABABAB;border-radius:3px;background:linear-gradient(#FAFAFA,#E9E9E9)}
+.theme-excel button:active,.theme-excel button.on{background:#CFE3D6;transform:none}
+.theme-excel button.big{background:#217346;color:#fff;border-color:#185C37;border-radius:3px;font-weight:700}
+.theme-excel button.ghost{background:#F3F3F3;color:#262626;border:1px solid #ABABAB}
+.theme-excel kbd{background:#0001}
+/* ゲーム中 */
+.theme-excel #lvname{top:auto;bottom:0;left:0;right:auto;text-align:left;padding:1px 14px 1px 10px;font-size:calc(var(--s,2)*3px + 3px);background:#fff;color:#217346;border:1px solid #ABABAB;border-top:2px solid #217346;text-shadow:none;font-weight:700}
+.theme-excel .hudbtns button{background:linear-gradient(#FAFAFA,#E9E9E9);border-radius:3px;color:#262626}
+.theme-excel #toast{background:#FFFFE1;color:#000;border:1px solid #000;border-left:1px solid #000;border-radius:0;box-shadow:2px 2px 0 #0004;font-size:12px;text-align:left;top:calc(var(--s,2)*13px + 4px)}
+.theme-excel #touch button{background:#F3F3F3cc;color:#262626;border:1px solid #888}
+.theme-excel #touch .b-jump{background:#217346dd;color:#fff;border-color:#185C37}
+.theme-excel #touch .b-atk{background:#2E75B6dd;color:#fff;border-color:#1F4E79}
+.theme-excel #touch .b-dash{background:#FFC000dd;color:#262626;border-color:#B38600}
+/* 編集バー(リボン) */
+.theme-excel #editbar{background:linear-gradient(90deg,#0000,#F3F3F3f6 22%);color:#262626}
+.theme-excel #edithelp{background:#FFFFE1;color:#000;border:1px solid #000;border-radius:0;box-shadow:2px 2px 0 #0004}
+.theme-excel #tabs button{background:#E1E1E1;color:#262626;border-radius:3px 3px 0 0;border-bottom:0}
+.theme-excel #tabs button.sel{background:#fff;color:#217346;font-weight:800;box-shadow:inset 0 -3px 0 #217346}
+.theme-excel #tools button{background:#fff;color:#262626;border:1px solid #C6C6C6}
+.theme-excel #tools button small{color:#217346}
+.theme-excel #tools button.sel{background:#E2F0D9;box-shadow:inset 3px 0 0 #217346;border-color:#217346}
+.theme-excel #tools kbd{background:#0001}
+.theme-excel .chip{background:#fff;color:#262626;border:1px solid #C6C6C6}
+.theme-excel .chip.sel{outline:2px solid #217346}
+.theme-excel #editfoot{background:#F3F3F3}
+.theme-excel #editfoot button.done{background:#217346;color:#fff;border-color:#185C37}
+.theme-excel #editfoot button.sel{background:#217346;color:#fff}
+@media (orientation:portrait){.theme-excel #editbar{background:#F3F3F3}}
+/* 画面(タイトル・ステージ選択・ずかん・結果): 方眼のシート */
+.theme-excel .screen{background-color:#fff;background-image:linear-gradient(#E1E1E1 1px,transparent 1px),linear-gradient(90deg,#E1E1E1 1px,transparent 1px);background-size:32px 32px;color:#262626}
+.theme-excel .screen h1{color:#217346}.theme-excel .screen h1 span{color:#C99A1E}
+.theme-excel .screen .sub,.theme-excel .keys,.theme-excel .oldlink{color:#595959}
+.theme-excel #total{color:#217346}
+.theme-excel .lv{background:#fff;border:1px solid #ABABAB;border-radius:0;box-shadow:inset 0 0 0 1px #fff}
+.theme-excel .lv b{color:#217346}.theme-excel .lv i{color:#C99A1E}.theme-excel .lv:active{background:#E2F0D9;outline:2px solid #217346;transform:none}
+.theme-excel #screen-result h2{color:#217346}.theme-excel #r-stars{color:#C99A1E}.theme-excel #r-tip{color:#595959}
+.theme-excel .gi{background:#fff;border:1px solid #ABABAB;border-radius:0}.theme-excel .gh{color:#217346}.theme-excel .gi span{color:#595959}
