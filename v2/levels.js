@@ -9,7 +9,7 @@
     const front = [], color = [], lock = [];
     for (let y = 0; y < h; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
     const m = {
-      ents: [], gems: [], sparks: [], checks: [], start: [2, h - 3], flag: [w - 4, h - 3],
+      ents: [], gems: [], sparks: [], checks: [], lifts: [], start: [2, h - 3], flag: [w - 4, h - 3],
       set(x, y, ch) { front[y][x] = ch; },
       rect(x0, y0, x1, y1, ch) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) front[y][x] = ch; },
       floor() { m.rect(0, h - 2, w - 1, h - 1, 'S'); },
@@ -20,6 +20,7 @@
       lockRect(x0, y0, x1, y1) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) lock[y][x] = 1; },
       ent(type, x, y, extra) { m.ents.push(Object.assign({ type, x, y }, extra || {})); },
       gem(x, y) { m.gems.push([x, y]); },
+      lift(x, y, w, dx, dy, period, phase) { m.lifts.push({ x, y, w, dx, dy, period: period || 7, phase: phase || 0 }); },
       spark(x, y) { m.sparks.push([x, y]); },
       check(x, y) { m.checks.push([x, y]); },
     };
@@ -27,7 +28,7 @@
     return {
       id: def.id, name: def.name, world: def.world, w, h, tools: def.tools || [], energy: def.energy !== undefined ? def.energy : 60, regen: def.regen,
       front: front.map(r => r.join('')), color, lock,
-      ents: m.ents, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
+      ents: m.ents, lifts: m.lifts, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
       hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0,
     };
   }
@@ -308,6 +309,42 @@
     solution: [],
   }));
 
+  // ---- ワールド7: リフト ----
+  L.push(make({
+    id: '7-1', name: 'リフトに乗る', world: 7, w: 60, tools: [], energy: 0, bg: '#E3D18F', bg2: '#D8C47C',
+    hints: [
+      { x: 6, text: 'うすく見えるのは、リフトの通り道。リフトは、決まった道を往復する' },
+      { x: 14, text: '穴は広すぎて、とべない。リフトが近づいたら、乗って向こう岸へ' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(22, 33);
+      m.lift(22, 10, 3, 9, 0, 8, 0);
+      m.gem(28, 8); m.gem(46, 8);
+      m.ent('walker', 42, 9);
+      m.check(16, 9);
+      m.flag = [54, 9];
+    },
+    solution: [],
+  }));
+
+  L.push(make({
+    id: '7-2', name: 'リフトで高いところへ', world: 7, w: 60, tools: ['filter'], energy: 8, bg: '#E3D18F', bg2: '#D8C47C', par: 8,
+    hints: [
+      { x: 6, text: '上下に往復するリフトで、高い足場へ。上がったら、茶色の壁をフィルターで通りぬけよう' },
+      { x: 12, text: 'リフトの通り道には、ブロックを動かせない（寄せる・回転・反転も、道をよけて行われる）' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(1);
+      m.rect(27, 5, 52, 9, 'S'); m.pit(24, 26);
+      m.lift(24, 10, 3, 0, -5, 8, 0);
+      m.rect(36, 1, 37, 4, '#');
+      m.blk(30, 4, 2); m.gem(31, 3); m.gem(46, 3);
+      m.ent('walker', 44, 4);
+      m.flag = [56, 9];
+    },
+    solution: [],
+  }));
+
   // ---- 実験シート: すべての道具を、好きに試す場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
@@ -333,7 +370,8 @@
       m.pit(36, 40);
       // E: 壁(フィルター)
       m.rect(46, 3, 47, 9, '#');
-      m.ent('walker', 14, 9); m.ent('guard', 30, 9); m.ent('walker', 52, 9); m.ent('flyer', 22, 6);
+      m.ent('walker', 14, 9); m.ent('guard', 30, 9); m.ent('walker', 56, 9); m.ent('flyer', 22, 6);
+      m.lift(50, 9, 3, 0, -5, 6, 0);
       m.spark(10, 9); m.spark(20, 9); m.spark(32, 9); m.spark(44, 9); m.spark(54, 9);
       m.flag = [60, 9];
     },
