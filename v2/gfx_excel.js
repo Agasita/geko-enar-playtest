@@ -54,29 +54,25 @@
 
   // ---- 背景・見出し・選択わく ----
   const HW = 13, HH = 9; // 行番号の幅 / 列見出しの高さ
-  function cols(G, lv) { return { X: G.cX || null, w: G.cw || null }; }
   function drawBg(ctx, G, lv, W, H) {
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
-    const cx = Math.round(G.cam.x + (G.warp ? 0 : (G.sx || 0))), cy = Math.round(G.cam.y), T = 16;
+    const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
     ctx.fillStyle = '#D4D4D4';
-    if (G.cX) { for (let c = 0; c < G.cw.length; c++) { const x = G.cX[c] - cx; if (x >= W) break; if (x >= 0) ctx.fillRect(x, 0, 1, H); } }
-    else for (let x = -(((cx % T) + T) % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
+    for (let x = -(((cx % T) + T) % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(((cy % T) + T) % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
   }
   function drawFrame(ctx, G, lv, W, H) {
-    const cx = Math.round(G.cam.x + (G.warp ? 0 : (G.sx || 0))), cy = Math.round(G.cam.y), T = 16, X = G.cX, CW = G.cw, nC = CW ? CW.length : lv.w;
-    const colX = (c) => X ? X[c] : c * T, colW = (c) => CW ? CW[c] : T;
-    const colAt = (px) => { if (!X) return Math.floor(px / T); let lo = 0, hi = nC - 1; if (px < 0) return 0; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (X[m] <= px) lo = m; else hi = m - 1; } return lo; };
+    const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
     // カーソル(選択中のセル)は、編集中だけ出す。見出しも、そのセルの列・行が緑になる
     const E = G.edit, cur = E && E.on ? (E.hover || E.cursor) : null, pc = cur ? cur[0] : -999, pr = cur ? cur[1] : -999;
-    if (cur) { const x = colX(pc) - cx, y = pr * T - cy, w = colW(pc); ctx.fillStyle = '#217346'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + T - 1, w, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + w - 1, y, 1, T); ctx.fillRect(x + w - 3, y + T - 3, 4, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + w - 2, y + T - 2, 2, 2); }
+    if (cur) { const x = pc * T - cx, y = pr * T - cy; ctx.fillStyle = '#217346'; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y + T - 1, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T); ctx.fillRect(x + T - 3, y + T - 3, 4, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + T - 2, y + T - 2, 2, 2); }
     // 列見出し
     ctx.fillStyle = '#E6E6E6'; ctx.fillRect(HW, 0, W - HW, HH); ctx.fillStyle = '#ABABAB'; ctx.fillRect(HW, HH - 1, W - HW, 1);
-    for (let c = Math.max(0, colAt(cx + HW)); c < nC && colX(c) - cx < W; c++) {
-      const x = colX(c) - cx, cwid = colW(c); if (x + cwid <= HW) continue;
-      if (c === pc) { ctx.fillStyle = '#C6E0B4'; ctx.fillRect(Math.max(HW, x), 0, x < HW ? x + cwid - HW : cwid, HH - 1); }
+    for (let c = Math.floor((cx + HW) / T); c * T - cx < W; c++) {
+      const x = c * T - cx; if (x + T <= HW) continue;
+      if (c === pc) { ctx.fillStyle = '#C6E0B4'; ctx.fillRect(Math.max(HW, x), 0, x < HW ? x + T - HW : T, HH - 1); }
       ctx.fillStyle = '#ABABAB'; if (x >= HW) ctx.fillRect(x, 0, 1, HH);
-      const name = colName(c); if (x >= HW - 1 && cwid >= name.length * 4 + 2) glyphs(ctx, name, x + Math.round((cwid - name.length * 4 + 1) / 2), 2, c === pc ? '#1E5C3A' : '#444444');
+      const name = colName(c); if (x >= HW - 1) glyphs(ctx, name, x + Math.round((T - name.length * 4 + 1) / 2), 2, c === pc ? '#1E5C3A' : '#444444');
     }
     // 行番号
     ctx.fillStyle = '#E6E6E6'; ctx.fillRect(0, HH, HW, H - HH); ctx.fillStyle = '#ABABAB'; ctx.fillRect(HW - 1, HH, 1, H - HH);
