@@ -109,15 +109,15 @@
       }
       s.set(x + 1, y + 1, c);
     }
-    for (let y = -1; y <= h; y++) for (let x = -1; x <= w; x++) { if (at(x, y)) continue; if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) s.set(x + 1, y + 1, OUT); }
+    for (let y = -1; y <= h; y++) for (let x = -1; x <= w; x++) { if (at(x, y)) continue; if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) s.set(x + 1, y + 1, outCol || OUT); }
     return s.done();
   }
 
   // ---- 主人公(ゲコ): 太い面で組み立てなおす。体の部品(帽子・あたま・どうぎ・うで・あし)を重ねて、全コマを描く ----
   const HC = { y: '#F7CE45', Y: '#FFF0A0', s: '#C28E14', g: '#58C070', G: '#A6EA96', d: '#2F8048', w: '#FFFFFF', p: '#1F2A44', b: '#4C7BE0', B: '#2B4C9B', n: '#F7CE45', m: '#E8563F' };
-  function heroFrame(name) {
-    const g = []; for (let y = 0; y < 16; y++) g.push(new Array(16).fill(null));
-    const R = (x, y, w, h, k) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (x + i >= 0 && x + i < 16 && y + j >= 0 && y + j < 16) g[y + j][x + i] = HC[k]; };
+  function heroFrame(name, HCp) {
+    HCp = HCp || HC; const g = []; for (let y = 0; y < 16; y++) g.push(new Array(16).fill(null));
+    const R = (x, y, w, h, k) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (x + i >= 0 && x + i < 16 && y + j >= 0 && y + j < 16) g[y + j][x + i] = HCp[k]; };
     const P = (x, y, k) => R(x, y, 1, 1, k);
     let B = 0, legs = 'stand', arm = 'down', eye = 'open';
     if (name === 'idle2') B = 1;
@@ -141,7 +141,7 @@
     R(5, 1 + B, 6, 1, 'y'); R(4, 2 + B, 8, 2, 'y'); R(3, 4 + B, 10, 1, 'y'); R(5, 2 + B, 3, 1, 'Y'); P(4, 3 + B, 'Y'); R(2, 5 + B, 13, 1, 's'); R(14, 5 + B, 1, 1, 'y');
     return g;
   }
-  function gridSprite(grid, flip) {
+  function gridSprite(grid, flip, outCol) {
     const h = grid.length, w = grid[0].length, s = surface(w + 2, h + 2), at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? null : grid[y][flip ? w - 1 - x : x];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = at(x, y); if (c) s.set(x + 1, y + 1, c); }
     for (let y = -1; y <= h; y++) for (let x = -1; x <= w; x++) { if (at(x, y)) continue; if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) s.set(x + 1, y + 1, OUT); }
@@ -158,7 +158,7 @@
     steel() { return cache.s || (cache.s = makeSteel()); },
     lock() { return lockImg || (lockImg = makeLock()); },
     metal() { return metalImg || (metalImg = makeMetal()); },
-    bg: drawBg,
+    bg: drawBg, heroFrame, gridSprite,
     hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(heroFrame(name), flip)); },
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(birdGrid(), flip)); },
   };

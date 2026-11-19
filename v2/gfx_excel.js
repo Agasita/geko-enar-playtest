@@ -19,29 +19,31 @@
   function glyphs(ctx, str, x, y, col) { ctx.fillStyle = col; for (const ch of str) { const g = F[ch]; if (g) for (let i = 0; i < 15; i++) if (g[i] === '1') ctx.fillRect(x + (i % 3), y + ((i / 3) | 0), 1, 1); x += 4; } }
   const colName = (c) => { let s = ''; c++; while (c > 0) { const m = (c - 1) % 26; s = String.fromCharCode(65 + m) + s; c = Math.floor((c - 1) / 26); } return s; };
 
-  // ---- ブロック(色つきのセル) ----
-  const FILL = ['#F4B183', '#FF6B5E', '#9DC3E6', '#70AD47', '#FFD966', '#FFFFFF'];
   const cache = {};
-  function cell(c) {
-    const s = surface(16, 16), base = hex(FILL[c]), bd = mix(base, [0, 0, 0], .32), hi = mix(base, [255, 255, 255], .45);
-    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) s.set(x, y, base);
-    for (let i = 0; i < 16; i++) { s.set(i, 0, bd); s.set(i, 15, bd); s.set(0, i, bd); s.set(15, i, bd); }
-    for (let i = 1; i < 15; i++) { s.set(i, 1, hi); s.set(1, i, hi); }
-    return { s, base, bd, hi };
-  }
-  const dots = (s, pts, col) => pts.forEach(([x, y]) => s.set(x, y, col));
+  // ---- ブロック(色つきのセル): Excelの「セルのスタイル」の配色 + 条件付き書式のようなアイコン ----
+  //  茶=入力(オレンジ) 赤=悪い 青=アクセント(青) 緑=良い 黄=標準(黄) ガラス=書式なし
+  const STY = [
+    { fill: '#FFCC99', bd: '#7F7F7F', ic: '#3F3F76' }, { fill: '#FFC7CE', bd: '#D9959D', ic: '#9C0006' }, { fill: '#BDD7EE', bd: '#7FA8D0', ic: '#1F4E79' },
+    { fill: '#C6EFCE', bd: '#7DBB8C', ic: '#00873C' }, { fill: '#FFEB9C', bd: '#BF9000', ic: '#7F5200' }, { fill: '#FFFFFF', bd: '#8FB4DC', ic: '#8FB4DC' },
+  ];
   function makeBlock(c) {
-    const { s, base, bd, hi } = cell(c), W = '#FFFFFF', D = css(mix(base, [0, 0, 0], .55));
-    if (c === 1) { for (let y = 3; y <= 9; y++) { s.set(7, y, W); s.set(8, y, W); } s.set(7, 12, W); s.set(8, 12, W); s.set(7, 13, W); s.set(8, 13, W); } // 「!」(さわると即ミス)
-    else if (c === 2) { for (const [x0, y0] of [[2, 5], [2, 10]]) { dots(s, [[x0, y0 + 1], [x0 + 1, y0], [x0 + 2, y0], [x0 + 3, y0 + 1], [x0 + 4, y0 + 2], [x0 + 5, y0 + 2], [x0 + 6, y0 + 1], [x0 + 7, y0], [x0 + 8, y0], [x0 + 9, y0 + 1], [x0 + 10, y0 + 2], [x0 + 11, y0 + 2]], W); } } // 「〜」(すべる)
-    else if (c === 3) { for (const y0 of [3, 9]) for (let i = 0; i < 5; i++) { s.set(7 - i, y0 + i, W); s.set(8 + i, y0 + i, W); s.set(7 - i, y0 + i + 1, D); s.set(8 + i, y0 + i + 1, D); } } // 「︿」(はずむ)
-    else if (c === 4) { dots(s, [[8, 2], [7, 3], [7, 4], [8, 5], [9, 6], [8, 7], [7, 8], [8, 9], [9, 10], [8, 11], [8, 12], [9, 13]], D); dots(s, [[3, 7], [12, 4], [4, 12], [12, 11]], D); } // ひび(もろい)
-    else if (c === 5) { for (let i = 0; i < 7; i++) { s.set(3 + i, 11 - i, '#BDD7EE'); s.set(4 + i, 11 - i, '#DDEBF7'); s.set(8 + i, 13 - i + 0, '#DDEBF7'); } } // ガラスのつや(未書式)
+    const st = STY[c], s = surface(16, 16), f = hex(st.fill), bd = hex(st.bd), ic = hex(st.ic), hi = mix(f, [255, 255, 255], .55);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) s.set(x, y, f);
+    for (let i = 0; i < 16; i++) { if (c === 4 && (i % 4) >= 2) continue; s.set(i, 0, bd); s.set(i, 15, bd); s.set(0, i, bd); s.set(15, i, bd); }   // 黄は点線のふち(もろい)
+    if (c === 4) for (let i = 0; i < 16; i++) { if ((i % 4) < 2) continue; s.set(i, 0, mix(bd, f, .5)); s.set(i, 15, mix(bd, f, .5)); s.set(0, i, mix(bd, f, .5)); s.set(15, i, mix(bd, f, .5)); }
+    const P = (pts, col) => pts.forEach(([x, y]) => s.set(x, y, col));
+    const R = (x0, y0, w, h, col) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) s.set(x0 + i, y0 + j, col); };
+    if (c === 1) { R(7, 3, 2, 6, ic); R(7, 11, 2, 2, ic); P([[1, 1], [2, 1], [3, 1], [1, 2], [2, 2], [1, 3]], '#00B050'); }              // 「!」と、緑の三角(エラーチェック)
+    else if (c === 2) { R(4, 8, 8, 1, ic); P([[3, 8], [4, 7], [5, 6], [4, 9], [5, 10], [12, 8], [11, 7], [10, 6], [11, 9], [10, 10]], ic); R(3, 8, 1, 1, ic); R(12, 8, 1, 1, ic); }   // 「↔」(すべる)
+    else if (c === 3) { P([[7, 3], [8, 3], [6, 4], [7, 4], [8, 4], [9, 4], [5, 5], [6, 5], [7, 5], [8, 5], [9, 5], [10, 5]], ic); R(7, 6, 2, 6, ic); }                                   // 「↑」(はずむ)
+    else if (c === 4) { P([[8, 2], [7, 3], [7, 4], [8, 5], [9, 6], [8, 7], [7, 8], [8, 9], [9, 10], [8, 11], [8, 12], [9, 13]], ic); }                                                 // ひび(もろい)
+    else if (c === 5) { for (let i = 1; i < 15; i++) { s.set(i, 1, '#EAF3FB'); s.set(1, i, '#EAF3FB'); s.set(i, 14, '#EAF3FB'); s.set(14, i, '#EAF3FB'); } }                         // 書式なしのセル
+    else { R(5, 5, 6, 1, mix(f, bd, .55)); R(5, 7, 4, 1, mix(f, bd, .55)); R(5, 9, 5, 1, mix(f, bd, .55)); }                                                                      // 茶: 入力セルの文字のような線
     return s.done();
   }
   function makeCrack() {
     const s = surface(16, 16); s.g.drawImage(makeBlock(0), 0, 0);
-    const g = s.g; g.fillStyle = '#8C4A1F'; for (const [x, y] of [[8, 2], [7, 3], [7, 4], [8, 5], [9, 6], [8, 7], [7, 8], [8, 9], [9, 11], [8, 12], [8, 13]]) g.fillRect(x, y, 2, 1);
+    const g = s.g; g.fillStyle = '#7F4F1F'; for (const [x, y] of [[8, 2], [7, 3], [7, 4], [8, 5], [9, 6], [8, 7], [7, 8], [8, 9], [9, 11], [8, 12], [8, 13]]) g.fillRect(x, y, 2, 1);
     return s.c;
   }
   function makeSteel() { // 鋼: 編集できないセル(しゃ線)
@@ -54,29 +56,25 @@
 
   // ---- 背景・見出し・選択わく ----
   const HW = 13, HH = 9; // 行番号の幅 / 列見出しの高さ
-  function cols(G, lv) { return { X: G.cX || null, w: G.cw || null }; }
   function drawBg(ctx, G, lv, W, H) {
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
-    const cx = Math.round(G.cam.x + (G.warp ? 0 : (G.sx || 0))), cy = Math.round(G.cam.y), T = 16;
+    const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
     ctx.fillStyle = '#D4D4D4';
-    if (G.cX) { for (let c = 0; c < G.cw.length; c++) { const x = G.cX[c] - cx; if (x >= W) break; if (x >= 0) ctx.fillRect(x, 0, 1, H); } }
-    else for (let x = -(((cx % T) + T) % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
+    for (let x = -(((cx % T) + T) % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(((cy % T) + T) % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
   }
   function drawFrame(ctx, G, lv, W, H) {
-    const cx = Math.round(G.cam.x + (G.warp ? 0 : (G.sx || 0))), cy = Math.round(G.cam.y), T = 16, X = G.cX, CW = G.cw, nC = CW ? CW.length : lv.w;
-    const colX = (c) => X ? X[c] : c * T, colW = (c) => CW ? CW[c] : T;
-    const colAt = (px) => { if (!X) return Math.floor(px / T); let lo = 0, hi = nC - 1; if (px < 0) return 0; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (X[m] <= px) lo = m; else hi = m - 1; } return lo; };
+    const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
     // カーソル(選択中のセル)は、編集中だけ出す。見出しも、そのセルの列・行が緑になる
     const E = G.edit, cur = E && E.on ? (E.hover || E.cursor) : null, pc = cur ? cur[0] : -999, pr = cur ? cur[1] : -999;
-    if (cur) { const x = colX(pc) - cx, y = pr * T - cy, w = colW(pc); ctx.fillStyle = '#217346'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + T - 1, w, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + w - 1, y, 1, T); ctx.fillRect(x + w - 3, y + T - 3, 4, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + w - 2, y + T - 2, 2, 2); }
+    if (cur) { const x = pc * T - cx, y = pr * T - cy; ctx.fillStyle = '#217346'; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y + T - 1, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T); ctx.fillRect(x + T - 3, y + T - 3, 4, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + T - 2, y + T - 2, 2, 2); }
     // 列見出し
     ctx.fillStyle = '#E6E6E6'; ctx.fillRect(HW, 0, W - HW, HH); ctx.fillStyle = '#ABABAB'; ctx.fillRect(HW, HH - 1, W - HW, 1);
-    for (let c = Math.max(0, colAt(cx + HW)); c < nC && colX(c) - cx < W; c++) {
-      const x = colX(c) - cx, cwid = colW(c); if (x + cwid <= HW) continue;
-      if (c === pc) { ctx.fillStyle = '#C6E0B4'; ctx.fillRect(Math.max(HW, x), 0, x < HW ? x + cwid - HW : cwid, HH - 1); }
+    for (let c = Math.floor((cx + HW) / T); c * T - cx < W; c++) {
+      const x = c * T - cx; if (x + T <= HW) continue;
+      if (c === pc) { ctx.fillStyle = '#C6E0B4'; ctx.fillRect(Math.max(HW, x), 0, x < HW ? x + T - HW : T, HH - 1); }
       ctx.fillStyle = '#ABABAB'; if (x >= HW) ctx.fillRect(x, 0, 1, HH);
-      const name = colName(c); if (x >= HW - 1 && cwid >= name.length * 4 + 2) glyphs(ctx, name, x + Math.round((cwid - name.length * 4 + 1) / 2), 2, c === pc ? '#1E5C3A' : '#444444');
+      const name = colName(c); if (x >= HW - 1) glyphs(ctx, name, x + Math.round((T - name.length * 4 + 1) / 2), 2, c === pc ? '#1E5C3A' : '#444444');
     }
     // 行番号
     ctx.fillStyle = '#E6E6E6'; ctx.fillRect(0, HH, HW, H - HH); ctx.fillStyle = '#ABABAB'; ctx.fillRect(HW - 1, HH, 1, H - HH);
@@ -91,10 +89,45 @@
     ctx.fillStyle = '#B4B4B4'; ctx.fillRect(7, 2, 4, 1); ctx.fillRect(8, 3, 3, 1); ctx.fillRect(9, 4, 2, 1); ctx.fillRect(10, 5, 1, 1);
   }
 
+
+  // ---- キャラクター(エナー・ゲコ・敵): Officeの配色のフラットな絵。縁は濃い灰色 ----
+  const OUTX = '#404040';
+  const HCX = { y: '#FFC000', Y: '#FFE699', s: '#BF9000', g: '#70AD47', G: '#A9D18E', d: '#548235', w: '#FFFFFF', p: '#262626', b: '#4472C4', B: '#2F5597', n: '#FFC000', m: '#C00000' };
+  const BCX = { W: '#FFFFFF', S: '#D9D9D9', U: '#5B9BD5', V: '#9DC3E6', O: '#ED7D31', e: '#262626', f: '#C55A11' };
+  const BIRD = ['............', '....WWWW....', '...WWWWWW...', '..WWWWWWeW..', '..WWWWWWWWOO', '.UUWWWWWWW..', 'UUUVWWWWWW..', '.UUUUWWWSW..', '...UUUSSSS..', '.....f.f....', '............', '............'];
+  function grid16() { const g = []; for (let y = 0; y < 16; y++) g.push(new Array(16).fill(null)); return g; }
+  function prims(g) { return { R(x, y, w, h, col) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (x + i >= 0 && x + i < 16 && y + j >= 0 && y + j < 16) g[y + j][x + i] = col; }, P(x, y, col) { if (x >= 0 && x < 16 && y >= 0 && y < 16) g[y][x] = col; } }; }
+  function enemyGrid(name, fr) { // 右向き。ゲーム側で、むきに合わせて左右を入れかえる
+    const g = grid16(), { R, P } = prims(g), W = '#FFFFFF', K = '#262626';
+    if (name === 'walker') { // ノイズ: 赤いエラーのかたまり
+      const body = '#C0504D', lt = '#E6B8B7', dk = '#8C2F2D';
+      R(3, 5, 10, 8, body); R(4, 4, 8, 1, body); R(4, 13, 8, 1, dk); R(3, 12, 10, 1, dk); R(4, 5, 4, 1, lt);
+      R(4, 7, 3, 3, W); R(9, 7, 3, 3, W); R(6, 8, 1, 2, K); R(11, 8, 1, 2, K); R(4, 6, 3, 1, dk); R(9, 6, 3, 1, dk); R(6, 11, 4, 1, K);
+      if (fr) { R(4, 14, 3, 2, dk); R(9, 14, 3, 2, dk); } else { R(3, 14, 3, 2, dk); R(10, 14, 3, 2, dk); }
+    } else if (name === 'guard') { // ガード: 青い体と、青いたて
+      const body = '#2F5597', lt = '#4472C4', sh = '#9DC3E6';
+      R(3, 5, 9, 8, body); R(4, 4, 7, 1, body); R(4, 5, 4, 1, lt); R(4, 7, 3, 3, W); R(6, 8, 1, 2, K); R(4, 6, 3, 1, '#1F3864');
+      R(11, 4, 4, 9, sh); R(12, 3, 2, 1, sh); R(12, 13, 2, 1, sh); R(12, 5, 2, 7, W); R(11, 8, 4, 2, W); P(11, 4, '#DDEBF7');
+      R(3, 14, 3, 2, '#1F3864'); R(8, 14, 3, 2, '#1F3864');
+    } else if (name === 'flyer') { // フライヤー: むらさきの玉と、はばたくはね
+      const body = '#7030A0', lt = '#9B59C9', wg = '#CDB8E6';
+      R(5, 5, 6, 7, body); R(4, 6, 8, 5, body); R(6, 4, 4, 1, body); R(6, 12, 4, 1, '#4B1F6E'); R(6, 5, 3, 1, lt);
+      R(7, 7, 3, 3, W); R(9, 8, 1, 2, '#C00000');
+      if (fr) { R(0, 8, 4, 3, wg); R(12, 8, 4, 3, wg); } else { R(0, 3, 4, 3, wg); R(12, 3, 4, 3, wg); }
+    } else { // タレット: 灰いろの砲台
+      R(3, 10, 10, 4, '#595959'); R(2, 14, 12, 1, '#404040'); R(4, 6, 8, 5, '#7F7F7F'); R(5, 5, 6, 1, '#7F7F7F'); R(5, 6, 4, 1, '#BFBFBF');
+      R(10, 7, 5, 3, '#404040'); R(6, 8, 2, 2, '#C00000'); P(4, 12, '#BFBFBF'); P(11, 12, '#BFBFBF');
+    }
+    return g;
+  }
+
   window.GFXX = {
     HW, HH,
     block(t, c) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
     steel() { return window.GFX.metal(); },
+    hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.heroFrame(name, HCX), flip, OUTX)); },
+    bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(BIRD.map(r => [...r].map(ch => (ch === '.' ? null : BCX[ch]))), flip, OUTX)); },
+    enemy(name, fr, flip) { const k = 'e' + name + fr + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr), flip, OUTX)); },
     bg: drawBg, frame: drawFrame,
   };
 })();

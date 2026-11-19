@@ -19,7 +19,6 @@
   const TOOLS = [
     { id: 'painter', tab: 'home', name: '書式のコピー', mode: 'painter', cost: 2, help: '①色をまねるブロックをタップ → ②ガラスのある範囲をドラッグ（ガラスにだけ色がつく）' },
     { id: 'transform', tab: 'cell', name: '変形', mode: 'rect', cost: 8, help: '範囲のブロックを反転・回転・転置（回転と転置は正方形）' },
-    { id: 'width', tab: 'cell', name: '列のはば', mode: 'rect', cost: 8, help: '範囲の列の「はば」を配分しなおす（合計は変わらない）。広い列はゆっくり進み、せまい列は速くこえられる' },
     { id: 'sort', tab: 'data', name: '並べ替え', mode: 'rect', cost: 10, help: '範囲のブロックを、上下左右に寄せる（保護ブロックと鋼で区切られる）' },
     { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: '色を選ぶ → その色のブロックだけが残り、他は通りぬけられる' },
     { id: 'protect', tab: 'view', name: 'シートの保護', mode: 'rect', cost: 4, help: '範囲のブロックを保護する。保護されたブロックは、どの編集も受けない' },
@@ -28,7 +27,7 @@
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   function newEdit(lv) {
     const first = lv && lv.tools.length ? TOOL_BY[lv.tools[0]] : TOOLS[0];
-    return { on: false, tab: first.tab, tool: first.id, opts: { color: 1, tf: 'flipH', sort: 'L', wd: 'eq', from: 1, to: 2, axis: 'row', fcolor: 2 },
+    return { on: false, tab: first.tab, tool: first.id, opts: { color: 1, tf: 'flipH', sort: 'L', from: 1, to: 2, axis: 'row', fcolor: 2 },
       step: 0, src: null, srcCell: null, sel: null, hover: null, kb: null, undo: [], redo: [], pan: false, cursor: [0, 0], msg: '' };
   }
   const $ = (s) => document.querySelector(s);
@@ -149,7 +148,6 @@
     const lv = LEVELS[i]; G.levelIdx = i; G.level = lv;
     G.front = lv.front.map(r => Array.from(r).map(c => CH2TILE[c] || 0));
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
-    G.cw = new Array(lv.w).fill(T); recomputeCols();
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // 実験シート以外は、ステージごとの「コスト上限」だけ。回復しない
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
     G.pick = [];
@@ -179,14 +177,8 @@
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
     return base;
   }
-  // 列のはば(Excelの列幅)。物理(当たり判定)は、どの列も1マス=16の「論理」の世界で行う。
-  // 画面にだすときだけ列ごとに横にのばす/ちぢめ、移動の速さは「画面でのはや さ」を保つ（広い列ではゆっくり進む）。
-  function recomputeCols() { const cw = G.cw, X = [0]; for (let c = 0; c < cw.length; c++) X.push(X[c] + cw[c]); G.cX = X; G.warp = cw.some(v => v !== 16); }
-  function colAtScreen(px) { const X = G.cX; let lo = 0, hi = G.cw.length - 1; if (px < 0) return 0; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (X[m] <= px) lo = m; else hi = m - 1; } return lo; }
-  function sx(xl) { const c = clamp(Math.floor(xl / T), 0, G.cw.length - 1); return G.cX[c] + (xl - c * T) / T * G.cw[c]; }
-  function scaleAt(xl) { return G.cw[clamp(Math.floor(xl / T), 0, G.cw.length - 1)] / T; }
   function snapCam() {
-    const lv = G.level; G.cam.x = Math.round(clamp(sx(G.p.x) - W / 2, 0, lv.w * T - W)); G.cam.y = Math.round(clamp(G.p.y - H * .6, 0, Math.max(0, lv.h * T - H)));
+    const lv = G.level; G.cam.x = Math.round(clamp(G.p.x - W / 2, 0, lv.w * T - W)); G.cam.y = Math.round(clamp(G.p.y - H * .6, 0, Math.max(0, lv.h * T - H)));
   }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -265,7 +257,7 @@
     if (input.atkP && p.atkCd <= 0 && p.stun <= 0) { p.atkT = .22; p.atkCd = .3; p.atkHit = new Set(); p.pogo = input.down && !p.ground; SFX.swing(); }
     if (p.atkT > 0) { p.atkT -= dt; if (p.atkT < .17 && p.atkT > .05) doAttack(); }
     // 移動と衝突(x→y)
-    moveX(p, p.vx * dt / scaleAt(p.x + p.w / 2)); moveY(p, p.vy * dt);
+    moveX(p, p.vx * dt); moveY(p, p.vy * dt);
     // 着地
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
     if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); spawnParts(p.x + 5, p.y + 14, 3, '#fff', 20); }
@@ -345,7 +337,7 @@
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
-        if (!floorAhead || wall) e.dir = -e.dir; else moveX(e, e.dir * spd * dt / scaleAt(e.x + e.w / 2));
+        if (!floorAhead || wall) e.dir = -e.dir; else moveX(e, e.dir * spd * dt);
       } else if (e.type === 'flyer') {
         const px = e.x;
         e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
@@ -362,7 +354,7 @@
       }
     }
     for (const b of G.bullets) {
-      b.x += b.vx * dt / scaleAt(b.x);
+      b.x += b.vx * dt;
       if (boxHitsSolid(b.x, b.y, b.w, b.h) || b.x < 0 || b.x > G.level.w * T) b.dead = true;
       if (!G.p.dead && overlap(b.x, b.y, b.w, b.h, p.x, p.y, p.w, p.h)) { b.dead = true; hurtPlayer(null); }
     }
@@ -468,19 +460,6 @@
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === GLASS) cells.push([x, y]); }); // 書式をつけられるのは、ガラス(未書式)だけ
     if (!cells.length) return fail('ガラスがありません（書式をつけられるのは、ガラスだけ）', { rects: [r] });
     return { ok: true, cost: costOf(id), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.col[y][x] = c; } };
-  }
-  // 列のはばの再配分: 範囲の列のはばの合計(＝面積)は変えず、配分だけを変える。4刻みで、せまくて8・広くて32まで
-  function planWidth(r, preset) {
-    const x0 = r.x0, x1 = r.x1, n = x1 - x0 + 1; if (n < 2) return fail('2列以上を選んでね', { rects: [r] });
-    let S = 0; for (let c = x0; c <= x1; c++) S += G.cw[c];
-    const raw = []; for (let i = 0; i < n; i++) { const u = i / (n - 1); raw.push(preset === 'left' ? 1 + (1 - u) * 2 : preset === 'right' ? 1 + u * 2 : preset === 'center' ? 1 + 2 * (1 - Math.abs(2 * u - 1)) : preset === 'ends' ? 1 + 2 * Math.abs(2 * u - 1) : 1); }
-    const rs = raw.reduce((a, b) => a + b, 0), ideal = raw.map(v => v / rs * S), units = S / 4, q = ideal.map(v => Math.floor(v / 4)); let left = units - q.reduce((a, b) => a + b, 0);
-    const order = ideal.map((v, i) => [v / 4 - q[i], i]).sort((a, b) => b[0] - a[0]); for (let k = 0; left > 0; k = (k + 1) % n, left--) q[order[k][1]]++;
-    const w = q.map(v => v * 4);
-    if (w.some(v => v < 8 || v > 32)) return fail('その配分では、はばが 8〜32 に収まりません', { rects: [r] });
-    if (w.every((v, i) => v === G.cw[x0 + i])) return fail('はばが同じです', { rects: [r] });
-    const rect = { x0, x1, y0: 0, y1: G.level.h - 1 };
-    return { ok: true, cost: costOf('width'), rects: [rect], run() { for (let i = 0; i < n; i++) G.cw[x0 + i] = w[i]; recomputeCols(); } };
   }
   function planTransform(r, op) {
     const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
@@ -603,7 +582,6 @@
       case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('ガラスの色（未書式）はコピーできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
       case 'sort': return planSort(a.rect, o.sort);
-      case 'width': return planWidth(a.rect, o.wd);
       case 'filter': return planFilter(a.fcolor !== undefined ? a.fcolor : o.fcolor);
       case 'protect': return planProtect(a.rect, true);
       case 'unprotect': return planProtect(a.rect, false);
@@ -616,14 +594,14 @@
   function snapshot() {
     return {
       front: G.front.map(r => r.slice()), col: G.col.map(r => r.slice()), lock: G.lock.map(r => r.slice()),
-      hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, cw: G.cw.slice(),
+      hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter,
       en: G.enemies.map(e => ({ e, x: e.x, y: e.y, bx: e.bx, dead: e.dead })), pick: G.pick.map(k => ({ k, x: k.x, gone: !!k.gone })),
       checks: G.checks.map(c => ({ c, x: c.x, gone: !!c.gone })), flagX: G.flag.x, resp: { x: G.respawn.x, y: G.respawn.y }, px: G.p.x,
     };
   }
   function restoreSnap(s) {
     G.front = s.front.map(r => r.slice()); G.col = s.col.map(r => r.slice()); G.lock = s.lock.map(r => r.slice());
-    G.hideRow = new Set(s.hideRow); G.hideCol = new Set(s.hideCol); G.filter = s.filter; G.cw = s.cw.slice(); recomputeCols();
+    G.hideRow = new Set(s.hideRow); G.hideCol = new Set(s.hideCol); G.filter = s.filter;
     for (const o of s.en) { o.e.x = o.x; o.e.y = o.y; if (o.bx !== undefined) o.e.bx = o.bx; o.e.dead = o.dead; }
     for (const o of s.pick) { o.k.x = o.x; o.k.gone = o.gone; }
     for (const o of s.checks) { o.c.x = o.x; o.c.gone = o.gone; }
@@ -711,7 +689,7 @@
     // ヒント
     for (const h of G.level.hints) if (!G.hintShown[h.x] && G.p.x / T >= h.x) { G.hintShown[h.x] = true; UI.toast(h.text, 4200); }
     // カメラ
-    const tx = clamp(sx(G.p.x) - W / 2 + G.p.face * 22, 0, G.level.w * T - W), ty = clamp(G.p.y - H * .6, 0, Math.max(0, G.level.h * T - H));
+    const tx = clamp(G.p.x - W / 2 + G.p.face * 22, 0, G.level.w * T - W), ty = clamp(G.p.y - H * .6, 0, Math.max(0, G.level.h * T - H));
     G.cam.x += (tx - G.cam.x) * Math.min(1, dt * 7); G.cam.y += (ty - G.cam.y) * Math.min(1, dt * 5);
     if (G.cleared) G.clearT += dt;
     input.jumpP = input.atkP = input.dashP = input.editP = false;
@@ -765,7 +743,7 @@
   }
   function drawWorld() {
     const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
-    const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + (G.vw || W)) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
+    const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const t = G.front[ty][tx]; if (t) drawTile(t, tx * T - cx, ty * T - cy, tx, ty); }
     // 隠した行・列は、点線で示す
     ctx.fillStyle = 'rgba(255,255,255,.55)';
@@ -785,17 +763,18 @@
       if (e.dead || e.hidden) continue;
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : 'turret';
-      const s = sprite(name, name === 'guard' || name === 'turret' ? 0 : fr, flip);
-      const x = Math.round(e.x - (e.ox || 0) - cx), y = Math.round(e.y - (e.oy || 0) - cy);
+      const fi = name === 'guard' || name === 'turret' ? 0 : fr;
+      const s = EXCEL ? GFXX.enemy(name, fi, e.dir < 0) : sprite(name, fi, flip);
+      const x = Math.round(e.x - (e.ox || 0) - cx) - (EXCEL ? 1 : 0), y = Math.round(e.y - (e.oy || 0) - cy) - (EXCEL ? 1 : 0);
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
-      if (e.type === 'guard') { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
+      if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
     drawPlayer(cx, cy);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
     // 相棒エナー
-    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
+    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (EXCEL) ctx.drawImage(GFXX.bird(p.face < 0), bx - 1, by - 1); else if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
   }
   function drawPlayer(cx, cy) {
     const p = G.p; if (p.dead) return;
@@ -809,7 +788,7 @@
     const sq = p.squash, sx = 1 + Math.abs(sq) * .0, sy = 1;
     void sx; void sy;
     const x = Math.round(p.x - 3 - cx), y = Math.round(p.y - 2 - cy);
-    if (SOLID) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
+    if (EXCEL) ctx.drawImage(GFXX.hero(name, p.face < 0), x - 1, y - 1); else if (SOLID) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
     if (p.dashT > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + 3 - p.face * i * 6, y + 5, 6, 8); }
     if (p.atkT > 0) { // レンチの弧
       const b = attackBox(), prog = 1 - p.atkT / .22; ctx.fillStyle = '#D5DBE6';
@@ -841,39 +820,29 @@
     const E = G.edit, cx = Math.round(G.cam.x), cy = Math.round(G.cam.y);
     ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.07)' : 'rgba(31,42,68,.35)'; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.18)' : 'rgba(255,255,255,.12)';
-    for (let c = 0; c < G.cw.length; c++) { const x = G.cX[c] - cx; if (x >= W) break; if (x + G.cw[c] >= 0) ctx.fillRect(x, 0, 1, H); }
+    for (let x = -(cx % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(cy % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
-    const box = (r, col) => { ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(G.cX[r.x0] - cx + .5, r.y0 * T - cy + .5, G.cX[r.x1 + 1] - G.cX[r.x0] - 1, (r.y1 - r.y0 + 1) * T - 1); };
+    const box = (r, col) => { ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(r.x0 * T - cx + .5, r.y0 * T - cy + .5, (r.x1 - r.x0 + 1) * T - 1, (r.y1 - r.y0 + 1) * T - 1); };
     if (E.step === 1 && E.src) box(E.src, '#4C9BE8');                       // 切り取り元・入れ替え元
     if (E.srcCell) box({ x0: E.srcCell[0], y0: E.srcCell[1], x1: E.srcCell[0], y1: E.srcCell[1] }, '#F5C842'); // 書式のコピー元
     const d = toolDef();
     const plan = previewPlan();
     if (plan) {
       const ok = plan.ok, col = ok ? '#8FD18A' : '#E8563F';
-      if (plan.cols) for (const x of plan.cols) { ctx.fillStyle = ok ? 'rgba(143,209,138,.3)' : 'rgba(232,86,63,.3)'; ctx.fillRect(G.cX[x] - cx, 0, G.cw[x], H); ctx.fillStyle = col; ctx.fillRect(G.cX[x] - cx, 0, 1, H); ctx.fillRect(G.cX[x] - cx + G.cw[x] - 1, 0, 1, H); }
-      if (plan.rects) for (const r of plan.rects) { if (!plan.pre) { ctx.fillStyle = ok ? 'rgba(143,209,138,.16)' : 'rgba(232,86,63,.16)'; ctx.fillRect(G.cX[r.x0] - cx, r.y0 * T - cy, G.cX[r.x1 + 1] - G.cX[r.x0], (r.y1 - r.y0 + 1) * T); } box(r, plan.pre ? '#fff' : col); }
-      if (plan.hl) for (const [x, y] of plan.hl) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(G.cX[x] - cx + 1, y * T - cy + 1, G.cw[x] - 2, T - 2); }
-      if (plan.ghost) for (const g of plan.ghost) drawBlock(g.t, g.c, G.cX[g.x] - cx, g.y * T - cy, true, true, .65);
-      if (!plan.pre && plan.cost !== undefined) { const r = (plan.rects && plan.rects[plan.rects.length - 1]) || { x0: plan.cols ? plan.cols[0] : 0, y0: 1 }; text(plan.cost, G.cX[r.x0] - cx + 2, Math.max(2, r.y0 * T - cy - 7), ok ? '#fff' : '#E8563F'); }
+      if (plan.cols) for (const x of plan.cols) { ctx.fillStyle = ok ? 'rgba(143,209,138,.3)' : 'rgba(232,86,63,.3)'; ctx.fillRect(x * T - cx, 0, T, H); ctx.fillStyle = col; ctx.fillRect(x * T - cx, 0, 1, H); ctx.fillRect(x * T - cx + T - 1, 0, 1, H); }
+      if (plan.rects) for (const r of plan.rects) { if (!plan.pre) { ctx.fillStyle = ok ? 'rgba(143,209,138,.16)' : 'rgba(232,86,63,.16)'; ctx.fillRect(r.x0 * T - cx, r.y0 * T - cy, (r.x1 - r.x0 + 1) * T, (r.y1 - r.y0 + 1) * T); } box(r, plan.pre ? '#fff' : col); }
+      if (plan.hl) for (const [x, y] of plan.hl) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x * T - cx + 1, y * T - cy + 1, T - 2, T - 2); }
+      if (plan.ghost) for (const g of plan.ghost) drawBlock(g.t, g.c, g.x * T - cx, g.y * T - cy, true, true, .65);
+      if (!plan.pre && plan.cost !== undefined) { const r = (plan.rects && plan.rects[plan.rects.length - 1]) || { x0: plan.cols ? plan.cols[0] : 0, y0: 1 }; text(plan.cost, r.x0 * T - cx + 2, Math.max(2, r.y0 * T - cy - 7), ok ? '#fff' : '#E8563F'); }
       if (!ok && plan.msg) E.hint = plan.msg; else E.hint = '';
     } else if (d && (d.mode === 'col' || E.cursor) && !E.sel && !E.pan) {
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(G.cX[E.cursor[0]] - cx + .5, E.cursor[1] * T - cy + .5, G.cw[E.cursor[0]] - 1, T - 1); E.hint = '';
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(E.cursor[0] * T - cx + .5, E.cursor[1] * T - cy + .5, T - 1, T - 1); E.hint = '';
     }
-  }
-  // 列のはばがかわっているとき: 論理の世界を別のキャンバスに描き、列ごとに横にのばして画面に写す
-  let OFFC = null;
-  function drawWarped() {
-    const lv = G.level, X = G.cX, camX = G.cam.x, c0 = colAtScreen(camX); let c1 = c0; while (c1 < lv.w && X[c1] - camX < W) c1++;
-    const lw = Math.max(1, c1 - c0) * T; if (!OFFC) OFFC = document.createElement('canvas'); if (OFFC.width !== lw) OFFC.width = lw; if (OFFC.height !== H) OFFC.height = H;
-    const og = OFFC.getContext('2d'); og.imageSmoothingEnabled = false; og.clearRect(0, 0, lw, H);
-    const saveCam = G.cam.x, saveSx = G.sx; G.cam.x = c0 * T; G.sx = 0; G.vw = lw; ctx = og;
-    try { drawWorld(); } finally { ctx = mainCtx; G.cam.x = saveCam; G.sx = saveSx; G.vw = 0; }
-    for (let c = c0; c < c1; c++) { const d0 = Math.round(X[c] - camX), d1 = Math.round(X[c + 1] - camX); if (d1 > d0) ctx.drawImage(OFFC, (c - c0) * T, 0, T, H, d0, 0, d1 - d0, H); }
   }
   function render() {
     if (!G.level) return;
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
-    drawBackground(); if (G.warp) drawWarped(); else drawWorld();
+    drawBackground(); drawWorld();
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
@@ -932,7 +901,7 @@
   function toWorld(e) {
     const r = cv.getBoundingClientRect(), s = r.width / W;
     const px = (e.clientX - r.left) / s + Math.round(G.cam.x), py = (e.clientY - r.top) / s + Math.round(G.cam.y);
-    return { px, py, tx: colAtScreen(px), ty: clamp(Math.floor(py / T), 0, G.level.h - 1) };
+    return { px, py, tx: clamp(Math.floor(px / T), 0, G.level.w - 1), ty: clamp(Math.floor(py / T), 0, G.level.h - 1) };
   }
   let dragging = false, panLast = null, tapMode = false;
   const wantsRect = () => { const d = toolDef(), E = G.edit; return d && (d.mode === 'rect' || (d.mode === 'two' && E.step === 0) || (d.mode === 'painter' && E.step === 1)); };
@@ -989,7 +958,6 @@
       const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
       const o = E.opts, id = E.tool;
       if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }, { v: 'trans', label: '転置' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
-      else if (id === 'width') chips('配分', [{ v: 'eq', label: '均等' }, { v: 'left', label: '左を広く' }, { v: 'right', label: '右を広く' }, { v: 'center', label: '中央を広く' }, { v: 'ends', label: '両端を広く' }], o.wd, v => { o.wd = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '解除' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を動かす' : (E.msg || E.hint || (d ? d.help : ''));
