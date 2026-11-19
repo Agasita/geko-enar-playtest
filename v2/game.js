@@ -17,8 +17,6 @@
   const TOOLS = [
     { id: 'move', tab: 'home', name: '切り取り→貼り付け', mode: 'two', cost: 8, help: '①動かす範囲をドラッグ → ②行き先（左上）をタップ' },
     { id: 'swap', tab: 'home', name: '入れ替え', mode: 'two', cost: 8, help: '①範囲Aをドラッグ → ②入れ替え先（左上）をタップ' },
-    { id: 'clear', tab: 'home', name: '内容の消去', mode: 'rect', cost: 2, help: '範囲のブロックを消す（Delete）' },
-    { id: 'color', tab: 'home', name: '塗りつぶし', mode: 'rect', cost: 3, help: '範囲のブロックを選んだ色にする。色には性質がある' },
     { id: 'painter', tab: 'home', name: '書式のコピー', mode: 'painter', cost: 2, help: '①まねしたいブロックをタップ → ②範囲をドラッグ' },
     { id: 'transform', tab: 'cell', name: '変形', mode: 'rect', cost: 8, help: '範囲のブロックを反転・回転・転置（回転と転置は正方形）' },
     { id: 'insCol', tab: 'cell', name: '列の挿入', mode: 'col', cost: 12, help: '列をタップ → その手前に空の列を入れる（右が1つずれる）' },
@@ -194,7 +192,7 @@
   function tileAt(tx, ty) { if (tx < 0 || tx >= G.level.w || ty < 0) return TL.STEEL; if (ty >= G.level.h) return 0; return G.front[ty][tx]; }
   const isBlockT = (t) => t === TL.STONE || t === TL.CRACK;
   // 行・列の非表示とフィルターの結果、いま実際に「ある」ブロックか
-  function blockVisible(tx, ty) { if (G.hideRow.has(ty) || G.hideCol.has(tx)) return false; return G.filter === null || G.col[ty][tx] === G.filter; }
+  function blockVisible(tx, ty) { if (G.lock[ty][tx]) return true; if (G.hideRow.has(ty) || G.hideCol.has(tx)) return false; return G.filter === null || G.col[ty][tx] === G.filter; }
   function solidCell(tx, ty) {
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
     const t = G.front[ty][tx]; if (t === TL.STEEL) return true;
@@ -591,8 +589,6 @@
     switch (tool) {
       case 'move': return planMove(a.rect, a.dst[0], a.dst[1]);
       case 'swap': return planSwap(a.rect, a.dst[0], a.dst[1]);
-      case 'clear': return planClear(a.rect);
-      case 'color': return planColor(a.rect, o.color, 'color');
       case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
       case 'insCol': return planInsCol(a.col);
@@ -746,8 +742,8 @@
   }
   function drawTile(t, x, y, tx, ty) {
     if (isBlockT(t)) {
-      if (G.hideRow.has(ty) || G.hideCol.has(tx)) return;
-      const faded = G.filter !== null && G.col[ty][tx] !== G.filter;
+      if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return;
+      const faded = G.filter !== null && G.col[ty][tx] !== G.filter && !G.lock[ty][tx];
       drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined, tx * 7 + ty * 13);
       if (G.lock[ty][tx] && SNES) ctx.drawImage(GFX.lock(), x + 8, y + 1);
       else if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
@@ -968,8 +964,7 @@
       };
       const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
       const o = E.opts, id = E.tool;
-      if (id === 'color') chips('色', colorItems, o.color, v => { o.color = v; UI.refreshTools(); });
-      else if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }, { v: 'trans', label: '転置' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
+      if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }, { v: 'trans', label: '転置' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }, { v: 'CR', label: '色順(行)' }, { v: 'CC', label: '色順(列)' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'replace') { chips('から', colorItems, o.from, v => { o.from = v; UI.refreshTools(); }); chips('へ', colorItems, o.to, v => { o.to = v; UI.refreshTools(); }); }
       else if (id === 'hide') chips('', [{ v: 'row', label: '行を隠す' }, { v: 'col', label: '列を隠す' }], o.axis, v => { o.axis = v; UI.refreshTools(); });
