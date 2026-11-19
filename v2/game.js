@@ -18,7 +18,7 @@
   // Excelの機能を、世界の編集に転用した道具。何もないところにブロックは生まれない(動かす・並べる・色・隠す・消す、だけ)。
   const TOOLS = [
     { id: 'painter', tab: 'home', name: '書式のコピー', mode: 'painter', cost: 2, help: '①色をまねるブロックをタップ → ②ガラスのある範囲をドラッグ（ガラスにだけ色がつく）' },
-    { id: 'transform', tab: 'cell', name: '変形', mode: 'rect', cost: 8, help: '範囲のブロックを反転・回転・転置（回転と転置は正方形）' },
+    { id: 'transform', tab: 'cell', name: '変形', mode: 'rect', cost: 8, help: '範囲のブロックを反転・回転（回転は正方形の範囲）' },
     { id: 'sort', tab: 'data', name: '並べ替え', mode: 'rect', cost: 10, help: '範囲のブロックを、上下左右に寄せる（保護ブロックと鋼で区切られる）' },
     { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: '色を選ぶ → その色のブロックだけが残り、他は通りぬけられる' },
     { id: 'protect', tab: 'view', name: 'シートの保護', mode: 'rect', cost: 4, help: '範囲のブロックを保護する。保護されたブロックは、どの編集も受けない' },
@@ -957,7 +957,7 @@
       };
       const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
       const o = E.opts, id = E.tool;
-      if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }, { v: 'trans', label: '転置' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
+      if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '解除' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を動かす' : (E.msg || E.hint || (d ? d.help : ''));
