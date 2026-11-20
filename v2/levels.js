@@ -20,7 +20,7 @@
       lockRect(x0, y0, x1, y1) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) lock[y][x] = 1; },
       ent(type, x, y, extra) { m.ents.push(Object.assign({ type, x, y }, extra || {})); },
       gem(x, y) { m.gems.push([x, y]); },
-      lift(x, y, w, dx, dy, period, phase) { m.lifts.push({ x, y, w, dx, dy, period: period || 7, phase: phase || 0 }); },
+      lift(x, y, w, dx, dy, period, phase, col) { m.lifts.push({ x, y, w, dx, dy, period: period || 7, phase: phase || 0, col: col || 0 }); },
       spark(x, y) { m.sparks.push([x, y]); },
       check(x, y) { m.checks.push([x, y]); },
     };
@@ -345,6 +345,24 @@
     solution: [],
   }));
 
+  L.push(make({
+    id: '7-3', name: 'ガラスのリフト', world: 7, w: 62, tools: ['painter'], energy: 4, bg: '#E3D18F', bg2: '#D8C47C', par: 2,
+    hints: [
+      { x: 4, text: 'このリフトは、ガラス（未書式）。性質をもたない。書式のコピーで、ブロックのように色（性質）をつけられる' },
+      { x: 10, text: '向こう岸の高い壁は、ふつうではのぼれない。浮かぶ緑のブロックの色を、リフトにコピーしよう（はずむリフトになる）' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(1); m.pit(22, 31);
+      m.lift(22, 10, 3, 7, 0, 8, 0, 5);
+      m.rect(32, 5, 52, 9, 'S');
+      m.blk(14, 6, 3);
+      m.gem(26, 8); m.gem(40, 4);
+      m.check(16, 9);
+      m.flag = [46, 4];
+    },
+    solution: [],
+  }));
+
   // ---- 実験シート: すべての道具を、好きに試す場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
@@ -371,7 +389,7 @@
       // E: 壁(フィルター)
       m.rect(46, 3, 47, 9, '#');
       m.ent('walker', 14, 9); m.ent('guard', 30, 9); m.ent('walker', 56, 9); m.ent('flyer', 22, 6);
-      m.lift(50, 9, 3, 0, -5, 6, 0);
+      m.lift(50, 9, 3, 0, -5, 6, 0, 5);
       m.spark(10, 9); m.spark(20, 9); m.spark(32, 9); m.spark(44, 9); m.spark(54, 9);
       m.flag = [60, 9];
     },
