@@ -920,8 +920,7 @@
       const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j);
       if (j.on) { ctx.globalAlpha = .16; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
       // Excelの「コメント」のしるし: かどの さんかく。いろ＝はんていの しゅるい(そんざい=むらさき / あき=こいはい / いろ=そのいろ)
-      for (let i = 0; i < 11; i++) { ctx.fillStyle = '#000000'; ctx.fillRect(x + T - (11 - i), y + i, 11 - i, 1); }
-      for (let i = 0; i < 9; i++) { ctx.fillStyle = c; ctx.fillRect(x + T - (9 - i), y + i, 9 - i, 1); }
+      for (let i = 0; i < 10; i++) { ctx.fillStyle = c; ctx.fillRect(x + T - (10 - i), y + i, 10 - i, 1); }
       outlinedNum(idNum(j.id), x + 1, y + T - 7, '#262626'); // つながる ばんごう
       if (j.on) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + T - 8, y + T - 9, 7, 7); ctx.fillStyle = '#217346'; ctx.fillRect(x + T - 7, y + T - 6, 2, 2); ctx.fillRect(x + T - 6, y + T - 5, 2, 2); ctx.fillRect(x + T - 5, y + T - 4, 2, 2); ctx.fillRect(x + T - 4, y + T - 5, 2, 2); ctx.fillRect(x + T - 3, y + T - 7, 2, 3); }
     }
