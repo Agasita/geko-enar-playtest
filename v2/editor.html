@@ -369,7 +369,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   }
   function refreshSaved() { const s = $('#s-saved'); s.innerHTML = ''; readAll().forEach(l => { const o = document.createElement('option'); o.value = l.id; o.textContent = l.id + ' ' + l.name; s.appendChild(o); }); if (editingId) s.value = editingId; }
   $('#b-save').onclick = save;
-  $('#b-test').onclick = () => { const d = save(); if (d) location.href = 'index.html?test=' + encodeURIComponent(d.id); };
+  $('#b-test').onclick = () => { const d = save(); if (d) location.href = 'index.html?from=editor&test=' + encodeURIComponent(d.id); };
   $('#b-undo').onclick = undo;
   $('#b-new').onclick = () => { if (!confirm('あたらしいステージをつくります（ほぞんしていないものはきえます）')) return; editingId = null; loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: [], energy: 20 })); msg('あたらしいステージです'); };
   $('#b-w').onclick = () => { pushUndo(); resize($('#f-w').value, $('#f-h').value); $('#f-w').value = L.w; $('#f-h').value = L.h; };
@@ -382,6 +382,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   (window.LEVELS || []).forEach((l, i) => { if (l.custom) return; const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
   loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
+  { const q = /[?&]edit=([^&]+)/.exec(location.search); if (q) { const l = readAll().find(x => x.id === decodeURIComponent(q[1])); if (l) { loadData(l); msg('テストプレイから戻りました（' + l.id + '）'); } } } // テストプレイから もどったら、そのステージを ひらく
   window.__editor = { get L() { return L; }, get sel() { return sel; }, apply, toData, save, loadData, draw, newLift, check };
 })();
 </script>
