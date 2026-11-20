@@ -3,214 +3,336 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ステージ作成 ゲコ＆エナー v2</title>
+<title>ステージをつくる ゲコ＆エナー v2</title>
 <style>
-:root{--bg:#1f2a44;--panel:#2e3b5e;--panel2:#3a4a75;--ink:#fff;--muted:#aeb8d0;--accent:#f5c842;--green:#58b368}
+:root{--bg:#F3F3F3;--line:#ABABAB;--ink:#262626;--sub:#595959;--green:#217346;--gdark:#185C37;--sel:#E2F0D9;--note:#FFFFE1}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Yu Gothic","Hiragino Sans",sans-serif}
-header{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#17203a;position:sticky;top:0;z-index:5;flex-wrap:wrap}
-header h1{font-size:16px;margin:0 8px 0 0}
+body{margin:0;background:#D9D9D9;color:var(--ink);font:14px/1.5 "Yu Gothic UI","Meiryo UI","Hiragino Sans",system-ui,sans-serif}
+header{display:flex;gap:6px;align-items:center;padding:6px 10px;background:var(--bg);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header h1{font-size:15px;margin:0 8px 0 0;color:var(--green)}
 button,select,input,textarea{font:inherit;color:inherit}
-button{border:0;border-radius:10px;background:var(--panel);padding:6px 12px;cursor:pointer;min-height:34px}
-button:active,button.sel{background:var(--accent);color:var(--bg)}
-button.modebtn{font-weight:700;min-width:150px}
-button.go{background:var(--green);font-weight:700}
-input[type=text],input[type=number],select,textarea{background:#17203a;border:1px solid #ffffff30;border-radius:8px;padding:5px 8px;max-width:100%}
-main{padding:10px 12px;display:flex;flex-direction:column;gap:10px}
+button{border:1px solid var(--line);border-radius:3px;background:linear-gradient(#FAFAFA,#E9E9E9);padding:4px 10px;cursor:pointer;min-height:32px}
+button:active,button.sel{background:var(--sel);border-color:var(--green)}
+button.sel{box-shadow:inset 3px 0 0 var(--green);font-weight:700}
+button.go{background:var(--green);border-color:var(--gdark);color:#fff;font-weight:700}
+button.warn{color:#C00000}
+input[type=text],input[type=number],select,textarea{background:#fff;border:1px solid var(--line);border-radius:2px;padding:3px 6px;max-width:100%}
+main{padding:8px 10px;display:flex;flex-direction:column;gap:8px}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.lbl{color:var(--muted);font-size:12px;margin-right:2px}
-.pal button{min-width:44px}
-.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px}
-#wrap{overflow:auto;border:1px solid #ffffff30;border-radius:8px;background:#000;max-width:100%}
+.lbl{color:var(--sub);font-size:12px}
+.sw{display:inline-block;width:14px;height:14px;border:1px solid #0004;vertical-align:-2px;margin-right:4px}
+#wrap{overflow:auto;border:1px solid var(--line);background:#fff;max-width:100%;max-height:70vh}
 canvas{display:block;image-rendering:pixelated}
-.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 8px}
-.tools label{font-size:13px}
-details{background:#ffffff0c;border-radius:10px;padding:6px 10px}
-summary{cursor:pointer;color:var(--accent)}
-textarea{width:100%;height:110px;font-size:11px}
-#msg{color:var(--accent);min-height:1.4em}
-a{color:var(--muted)}
+fieldset,details{background:#fff;border:1px solid var(--line);border-radius:0;padding:6px 10px;margin:0}
+legend,summary{color:var(--green);font-weight:700;cursor:pointer;font-size:13px}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 8px}
+#msg{background:var(--note);border:1px solid #000;padding:2px 8px;min-height:1.8em}
+#lp{display:none}
+#lp.on{display:block}
+#lp .row{margin:3px 0}
+#lp input[type=number]{width:64px}
+textarea{width:100%;height:90px;font-size:11px}
+a{color:var(--green)}
+table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px solid #E1E1E1}
 </style>
 </head>
 <body>
 <header>
-  <h1>ステージ作成</h1>
-  <button id="b-save">保存</button>
-  <button id="b-test" class="go">▶ テストプレイ</button>
-  <button id="b-new">新規</button>
+  <h1>ステージをつくる</h1>
+  <button id="b-save">ほぞん</button>
+  <button id="b-test" class="go">▶ ためしにあそぶ</button>
+  <button id="b-undo">↶ もどす</button>
+  <button id="b-new">あたらしく</button>
   <a href="index.html">ゲームにもどる</a>
 </header>
 <main>
-  <div class="row"><span class="lbl">名前</span><input id="f-name" type="text" value="マイステージ" size="16">
-    <span class="lbl">はば</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
-    <span class="lbl">たかさ</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
-    <button id="b-w">はば・たかさを変える</button>
-    <span class="lbl">コスト上限</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:70px"></div>
-  <div class="row"><span class="lbl">ヒント(スタートで表示)</span><input id="f-hint" type="text" size="40" placeholder="（なくてもOK）"></div>
+  <fieldset><legend>ステージのせってい</legend>
+    <div class="row"><span class="lbl">なまえ</span><input id="f-name" type="text" value="マイステージ" size="16">
+      <span class="lbl">よこ(マス)</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
+      <span class="lbl">たて(マス)</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
+      <button id="b-w">おおきさをかえる</button></div>
+    <div class="row" style="margin-top:4px"><span class="lbl">コストのうえげん</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:64px">
+      <span class="lbl">かいふく(びょう)</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">(0=なし。エナジーのたまをひろう)</span>
+      <span class="lbl">もくひょうコスト</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
+      <span class="lbl">いろ(せかい)</span><select id="f-theme"></select></div>
+  </fieldset>
 
-  <div class="row"><button id="b-mode" class="modebtn"></button><span class="lbl">「動かす」のあいだは、さわってもブロックは置かれません。道具をえらぶと「置く」になります</span></div>
+  <fieldset><legend>ヒント(その場所にきたときに出ることば)</legend>
+    <table id="hints"></table>
+    <div class="row" style="margin-top:4px"><button id="b-hint">ヒントをふやす</button><span class="lbl">「よこ」は、なんマスめで出すか。シートのうえにカーソルを合わせると、すうじが出ます</span></div>
+  </fieldset>
+
+  <div class="row"><button id="b-mode" style="font-weight:700;min-width:190px"></button><span class="lbl">「うごかす」のあいだは、さわってもブロックはおかれません</span></div>
   <div class="row pal" id="pal"></div>
   <div class="row pal" id="pal2"></div>
-  <div class="row"><label><input type="checkbox" id="f-lock"> 保護（カギつき）にする</label>
-    <button id="b-floor">ゆか（下2行）をはる</button><span class="lbl" id="cursor"></span></div>
+  <div class="row"><label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label>
+    <button id="b-floor">ゆか（した2ぎょう）をはる</button><span class="lbl" id="cursor"></span></div>
+
+  <div id="lp"><fieldset><legend>えらんだリフト</legend>
+    <div class="row"><span class="lbl">いろ</span><select id="l-col"></select>
+      <span class="lbl">ながさ(マス)</span><input id="l-w" type="number" min="1" max="8">
+      <span class="lbl">よこにうごく(マス)</span><input id="l-dx" type="number" min="-40" max="40">
+      <span class="lbl">たてにうごく(マス)</span><input id="l-dy" type="number" min="-40" max="40"></div>
+    <div class="row"><span class="lbl">いったりきたりの じかん(びょう)</span><input id="l-period" type="number" min="2" max="30" step="0.5">
+      <span class="lbl">はじまりのいち</span><select id="l-phase"><option value="0">はしっこ</option><option value="0.25">すこしすすんだところ</option><option value="0.5">はんたいのはしっこ</option><option value="0.75">もどりぎわ</option></select>
+      <button id="l-del" class="warn">このリフトをけす</button></div>
+    <div class="lbl">シートのうえでは、■（はじまり）をドラッグ=いどう、●（おわり）をドラッグ=うごくみち、右はしの▮をドラッグ=ながさ。たて・よこのどちらかにだけ、うごけます。</div>
+  </fieldset></div>
 
   <div id="wrap"><canvas id="cv"></canvas></div>
   <div id="msg"></div>
 
-  <details open><summary>使える道具（このステージで解放するもの）</summary><div class="tools" id="tools"></div></details>
+  <details open><summary>つかえるどうぐ（このステージでつかえるもの）</summary><div class="tools" id="tools"></div></details>
 
-  <details><summary>保存したステージ ／ 既存ステージから読みこむ</summary>
-    <div class="row" style="margin-top:6px"><select id="s-saved"></select><button id="b-load">読みこむ</button><button id="b-del">削除</button></div>
-    <div class="row" style="margin-top:6px"><select id="s-base"></select><button id="b-base">ひな形にする</button></div>
+  <details><summary>ほぞんしたステージ ／ ゲームのステージからひながたをよみこむ</summary>
+    <div class="row" style="margin-top:6px"><select id="s-saved"></select><button id="b-load">よみこむ</button><button id="b-del" class="warn">けす</button></div>
+    <div class="row" style="margin-top:6px"><select id="s-base"></select><button id="b-base">ひながたにする</button></div>
   </details>
 
-  <details><summary>書き出し ／ 読み込み（ほかの人に渡す・バックアップ）</summary>
-    <div class="row" style="margin:6px 0"><button id="b-exp">書き出す</button><button id="b-imp">この内容を読み込む</button></div>
-    <textarea id="t-json" placeholder="ここにステージのデータ（JSON）が出ます。貼りつけて「読み込む」もできます"></textarea>
+  <details><summary>かきだし ／ よみこみ（ほかのひとにわたす・バックアップ）</summary>
+    <div class="row" style="margin:6px 0"><button id="b-exp">かきだす</button><button id="b-imp">このなかみをよみこむ</button></div>
+    <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。はりつけて「よみこむ」もできます"></textarea>
   </details>
 </main>
 <script src="levels.js"></script>
 <script>
 (function () {
   'use strict';
-  let H = 12;
   const T = 20, KEY = 'geko-enar-v2-custom';
-  const COLORS = [['茶', '#C9A15E'], ['赤', '#E8563F'], ['青', '#6FD6E8'], ['緑', '#58B368'], ['黄', '#F5C842'], ['ガラス', '#DCEBF3']];
-  const TOOLS = [['painter', '書式のコピー'], ['transform', '変形'], ['sort', '並べ替え（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートの保護'], ['unprotect', '保護の解除']];
+  const COLORS = [['ちゃいろ', '#C9A15E', '#E8CFA0', '#735630'], ['あか', '#E8563F', '#F7A08F', '#A8403F'], ['あお', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['みどり', '#58B368', '#8FD18A', '#3F8F52'], ['きいろ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
+  const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（よせる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
   const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95']];
+  const THEMES = [['あおみどり', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['あおぞら', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
   const $ = (s) => document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d');
-  let L = null, cur = { kind: 'block', color: 0 }, editingId = null, down = false, last = null;
-  let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw'; // スマホは、まず「動かす」(うっかり置かない)
-  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; const b = $('#b-mode'); b.textContent = m === 'scroll' ? '✋ いま：動かす（タップで切りかえ）' : '✏ いま：置く（タップで切りかえ）'; b.classList.toggle('sel', m === 'draw'); }
+  let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
+  let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw';
+  const msg = (t) => { $('#msg').textContent = t; };
+  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ いま：うごかす（おすと「おく」に）' : '✏ いま：おく（おすと「うごかす」に）'; }
 
+  // ---- データ ----
   function blank(w, h) {
-    H = h || H;
     const front = [], color = [], lock = [];
-    for (let y = 0; y < H; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
-    for (let y = H - 2; y < H; y++) front[y].fill('S');
-    return { w, front, color, lock, ents: [], gems: [], checks: [], start: [2, H - 3], flag: [w - 4, H - 3] };
+    for (let y = 0; y < h; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
+    for (let y = h - 2; y < h; y++) front[y].fill('S');
+    return { w, h, front, color, lock, ents: [], gems: [], checks: [], sparks: [], lifts: [], start: [2, h - 3], flag: [w - 4, h - 3] };
   }
-  function fromLevel(lv) { // 既存ステージ → 編集用(文字の2次元配列)
-    H = lv.front.length;
-    return { w: lv.w, front: lv.front.map(r => Array.from(r)), color: lv.color.map(r => r.slice()), lock: lv.lock.map(r => r.slice()), ents: lv.ents.map(e => ({ type: e.type, x: e.x, y: e.y })), gems: lv.gems.map(g => g.slice()), checks: lv.checks.map(c => c.slice()), start: lv.start.slice(), flag: lv.flag.slice() };
+  function fromLevel(lv) {
+    const h = lv.front.length;
+    return { w: lv.w, h, front: lv.front.map(r => Array.from(r)), color: lv.color.map(r => r.slice()), lock: (lv.lock || lv.front.map(() => new Array(lv.w).fill(0))).map(r => r.slice()),
+      ents: (lv.ents || []).map(e => ({ type: e.type, x: e.x, y: e.y })), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
+      lifts: (lv.lifts || []).map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period || 7, phase: l.phase || 0, col: l.col || 0 })), start: lv.start.slice(), flag: lv.flag.slice() };
+  }
+  const snap = () => JSON.stringify({ L, meta: collectMeta() });
+  function pushUndo() { undoStack.push(snap()); if (undoStack.length > 60) undoStack.shift(); }
+  function undo() { const s = undoStack.pop(); if (!s) return msg('もどせるものがありません'); const d = JSON.parse(s); L = d.L; H = L.h; applyMeta(d.meta); sel = -1; fit(); showLift(); }
+  function collectMeta() {
+    return { name: $('#f-name').value.trim() || 'マイステージ', energy: Math.max(0, Math.min(100, +$('#f-energy').value || 0)), regen: Math.max(0, +$('#f-regen').value || 0), par: Math.max(0, +$('#f-par').value || 0), theme: +$('#f-theme').value || 0,
+      hints: meta.hints.map(h => ({ x: h.x, text: h.text })), tools: [...document.querySelectorAll('#tools input:checked')].map(i => i.dataset.t) };
+  }
+  function applyMeta(m) {
+    $('#f-name').value = m.name || 'マイステージ'; $('#f-energy').value = m.energy | 0; $('#f-regen').value = m.regen || 0; $('#f-par').value = m.par || 0; $('#f-theme').value = m.theme | 0;
+    meta.hints = (m.hints || []).map(h => ({ x: h.x | 0, text: h.text || '' })); document.querySelectorAll('#tools input').forEach(i => { i.checked = (m.tools || []).includes(i.dataset.t); }); $('#f-w').value = L.w; $('#f-h').value = L.h; drawHints();
   }
   function resize(w, h) {
-    w = Math.max(20, Math.min(160, w | 0)); h = Math.max(12, Math.min(60, h | 0)); const oldH = L.front.length, dy = h - oldH;
-    const n = blank(w, h);
-    for (let y = 0; y < oldH; y++) { const ny = y + dy; if (ny < 0) continue;
-      for (let x = 0; x < Math.min(w, L.w); x++) { n.front[ny][x] = L.front[y][x]; n.color[ny][x] = L.color[y][x]; n.lock[ny][x] = L.lock[y][x]; } }
-    if (false) for (let y = 0; y < H; y++) for (let x = 0; x < Math.min(w, L.w); x++) { n.front[y][x] = L.front[y][x]; n.color[y][x] = L.color[y][x]; n.lock[y][x] = L.lock[y][x]; }
-    n.ents = L.ents.filter(e => e.x < w && e.y + dy >= 0).map(e => ({ type: e.type, x: e.x, y: e.y + dy })); n.gems = L.gems.filter(g => g[0] < w && g[1] + dy >= 0).map(g => [g[0], g[1] + dy]); n.checks = L.checks.filter(c => c[0] < w && c[1] + dy >= 0).map(c => [c[0], c[1] + dy]);
-    n.start = L.start[0] < w && L.start[1] + dy >= 0 ? [L.start[0], L.start[1] + dy] : [2, h - 3]; n.flag = L.flag[0] < w && L.flag[1] + dy >= 1 ? [L.flag[0], L.flag[1] + dy] : [w - 4, h - 3];
-    L = n; fit();
+    w = Math.max(20, Math.min(160, w | 0)); h = Math.max(12, Math.min(60, h | 0)); const dy = h - L.h, n = blank(w, h);
+    for (let y = 0; y < L.h; y++) { const ny = y + dy; if (ny < 0) continue; for (let x = 0; x < Math.min(w, L.w); x++) { n.front[ny][x] = L.front[y][x]; n.color[ny][x] = L.color[y][x]; n.lock[ny][x] = L.lock[y][x]; } }
+    const ok = (x, y) => x >= 0 && x < w && y + dy >= 0;
+    n.ents = L.ents.filter(e => ok(e.x, e.y)).map(e => ({ type: e.type, x: e.x, y: e.y + dy })); n.gems = L.gems.filter(g => ok(g[0], g[1])).map(g => [g[0], g[1] + dy]);
+    n.checks = L.checks.filter(c => ok(c[0], c[1])).map(c => [c[0], c[1] + dy]); n.sparks = L.sparks.filter(c => ok(c[0], c[1])).map(c => [c[0], c[1] + dy]);
+    n.lifts = L.lifts.filter(l => ok(l.x, l.y) && l.x + l.w <= w).map(l => Object.assign({}, l, { y: l.y + dy }));
+    n.start = ok(L.start[0], L.start[1]) ? [L.start[0], L.start[1] + dy] : [2, h - 3]; n.flag = ok(L.flag[0], L.flag[1]) && L.flag[1] + dy >= 1 ? [L.flag[0], L.flag[1] + dy] : [w - 4, h - 3];
+    L = n; H = h; sel = -1; fit(); showLift();
   }
-  function fit() { cv.width = L.w * T; cv.height = H * T; draw(); }
+  function fit() { cv.width = L.w * T; cv.height = L.h * T; H = L.h; draw(); }
 
+  // ---- 描く ----
   function draw() {
-    ctx.fillStyle = '#42B8C2'; ctx.fillRect(0, 0, cv.width, cv.height);
-    for (let y = 0; y < H; y++) for (let x = 0; x < L.w; x++) {
-      const c = L.front[y][x], px = x * T, py = y * T;
-      if (c === '#') { ctx.fillStyle = COLORS[L.color[y][x]][1]; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#0003'; ctx.fillRect(px, py + T - 3, T, 3); if (L.lock[y][x]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(px + T - 9, py + 2, 7, 8); ctx.fillStyle = '#F5C842'; ctx.fillRect(px + T - 8, py + 5, 5, 4); } }
-      else if (c === 'S') { ctx.fillStyle = '#66708C'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#2F3752'; ctx.fillRect(px + 4, py + 8, 3, 3); ctx.fillRect(px + 13, py + 8, 3, 3); }
-      else if (c === 'c') { ctx.fillStyle = '#C9A15E'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#735630'; ctx.fillRect(px + 9, py + 3, 3, 6); ctx.fillRect(px + 6, py + 8, 3, 6); ctx.fillRect(px + 12, py + 12, 3, 5); }
+    const th = THEMES[+$('#f-theme').value || 0]; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.strokeStyle = '#E1E1E1'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = 0; x <= L.w; x++) { ctx.moveTo(x * T + .5, 0); ctx.lineTo(x * T + .5, cv.height); } for (let y = 0; y <= L.h; y++) { ctx.moveTo(0, y * T + .5); ctx.lineTo(cv.width, y * T + .5); } ctx.stroke();
+    for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) {
+      const c = L.front[y][x], px = x * T, py = y * T; if (c === '.') continue;
+      if (c === '#') { cell(px, py, COLORS[L.color[y][x]], L.color[y][x] === 5); if (L.lock[y][x]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(px + T - 9, py + 3, 7, 7); ctx.fillRect(px + T - 8, py, 5, 4); ctx.fillStyle = '#fff'; ctx.fillRect(px + T - 6, py + 5, 2, 3); } }
+      else if (c === 'S') { ctx.fillStyle = '#5F6F8C'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#2B3550'; ctx.fillRect(px, py, T, 1); ctx.fillRect(px, py + T - 1, T, 1); ctx.fillRect(px, py, 1, T); ctx.fillRect(px + T - 1, py, 1, T); ctx.fillStyle = '#9FB0C8'; ctx.fillRect(px + 3, py + 3, 2, 2); ctx.fillRect(px + T - 5, py + 3, 2, 2); ctx.fillRect(px + 3, py + T - 5, 2, 2); ctx.fillRect(px + T - 5, py + T - 5, 2, 2); }
+      else if (c === 'c') { cell(px, py, COLORS[0]); ctx.fillStyle = '#735630'; ctx.fillRect(px + 9, py + 3, 2, 6); ctx.fillRect(px + 6, py + 8, 2, 6); ctx.fillRect(px + 12, py + 11, 2, 5); }
     }
-    ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1; ctx.beginPath();
-    for (let x = 0; x <= L.w; x++) { ctx.moveTo(x * T + .5, 0); ctx.lineTo(x * T + .5, cv.height); if (x % 10 === 0) { } }
-    for (let y = 0; y <= H; y++) { ctx.moveTo(0, y * T + .5); ctx.lineTo(cv.width, y * T + .5); }
-    ctx.stroke();
-    ctx.fillStyle = '#ffffff66'; ctx.font = '9px sans-serif'; for (let x = 0; x < L.w; x += 5) ctx.fillText(x, x * T + 2, 9);
-    const glyph = (x, y, t, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); ctx.textAlign = 'left'; };
+    ctx.fillStyle = '#595959'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left'; for (let x = 0; x < L.w; x += 5) ctx.fillText(x, x * T + 2, 9);
+    for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
+    const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
     for (const e of L.ents) { const d = ENTS.find(q => q[0] === e.type); glyph(e.x, e.y, d[1][0], d[2]); }
-    for (const g of L.gems) glyph(g[0], g[1], '◆', '#4C9BE8');
+    for (const g of L.gems) { ctx.fillStyle = '#217346'; ctx.fillRect(g[0] * T + 2, g[1] * T + 2, T - 4, T - 4); ctx.fillStyle = '#fff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Σ', g[0] * T + T / 2, g[1] * T + T - 5); }
+    for (const c of L.sparks) glyph(c[0], c[1], 'エ', '#E0A800', 6);
     for (const c of L.checks) glyph(c[0], c[1], '旗', '#8D97B3');
-    glyph(L.start[0], L.start[1], 'ス', '#58B368');
-    glyph(L.flag[0], L.flag[1], 'ゴ', '#E8563F'); glyph(L.flag[0], L.flag[1] - 1, 'ー', '#E8563F');
+    glyph(L.start[0], L.start[1], 'ス', '#58B368'); glyph(L.flag[0], L.flag[1], 'ゴ', '#E8563F'); glyph(L.flag[0], L.flag[1] - 1, 'ー', '#E8563F');
+    for (const h of meta.hints) { ctx.fillStyle = '#FFFFE1'; ctx.strokeStyle = '#000'; ctx.fillRect(h.x * T, 10, 8, 8); ctx.strokeRect(h.x * T + .5, 10.5, 7, 7); }
+    ctx.fillStyle = th[1]; ctx.fillRect(0, cv.height - 3, cv.width, 3);
+  }
+  function cell(px, py, c, glass) {
+    ctx.fillStyle = c[1]; ctx.fillRect(px, py, T, T); ctx.fillStyle = c[2]; ctx.fillRect(px, py, T, 2); ctx.fillRect(px, py, 2, T); ctx.fillStyle = c[3]; ctx.fillRect(px, py + T - 2, T, 2); ctx.fillRect(px + T - 2, py, 2, T);
+    if (glass) { ctx.strokeStyle = '#9DB9C8'; ctx.strokeRect(px + 3.5, py + 3.5, T - 7, T - 7); }
+  }
+  function drawLift(l, on) {
+    const ax = l.x * T, ay = l.y * T, bx = (l.x + l.dx) * T, by = (l.y + l.dy) * T, w = l.w * T;
+    const rx = Math.min(ax, bx), ry = Math.min(ay, by), rw = Math.abs(bx - ax) + w, rh = Math.abs(by - ay) + T;
+    ctx.fillStyle = 'rgba(33,115,70,.10)'; ctx.fillRect(rx, ry, rw, rh); ctx.strokeStyle = on ? '#217346' : 'rgba(33,115,70,.5)'; ctx.setLineDash([4, 3]); ctx.lineWidth = on ? 2 : 1; ctx.strokeRect(rx + .5, ry + .5, rw - 1, rh - 1); ctx.setLineDash([]); ctx.lineWidth = 1;
+    const bar = (x, y, a) => { ctx.globalAlpha = a; const c = COLORS[l.col]; ctx.fillStyle = c[1]; ctx.fillRect(x, y + 4, w, T - 8); ctx.fillStyle = c[3]; ctx.fillRect(x, y + T - 6, w, 2); ctx.fillStyle = c[2]; ctx.fillRect(x, y + 4, w, 2); ctx.strokeStyle = '#26262688'; ctx.strokeRect(x + .5, y + 4.5, w - 1, T - 9); ctx.globalAlpha = 1; };
+    bar(bx, by, .35); bar(ax, ay, 1);
+    ctx.strokeStyle = '#217346'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ax + w / 2, ay + T / 2); ctx.lineTo(bx + w / 2, by + T / 2); ctx.stroke(); ctx.lineWidth = 1;
+    if (on) { ctx.fillStyle = '#217346'; ctx.fillRect(ax + 1, ay + 1, 6, 6); ctx.beginPath(); ctx.arc(bx + w / 2, by + T / 2, 5, 0, 7); ctx.fill(); ctx.fillRect(ax + w - 4, ay + 4, 4, T - 8); }
   }
 
-  function cell(e) { const r = cv.getBoundingClientRect(), s = r.width / cv.width; return [Math.floor((e.clientX - r.left) / s / T), Math.floor((e.clientY - r.top) / s / T)]; }
-  const inb = (x, y) => x >= 0 && y >= 0 && x < L.w && y < H;
+  // ---- さわる ----
+  const pos = (e) => { const r = cv.getBoundingClientRect(), s = r.width / cv.width; return [(e.clientX - r.left) / s, (e.clientY - r.top) / s]; };
+  const cellOf = (e) => { const p = pos(e); return [Math.floor(p[0] / T), Math.floor(p[1] / T)]; };
+  const inb = (x, y) => x >= 0 && y >= 0 && x < L.w && y < L.h;
   function eraseAt(x, y) {
     L.front[y][x] = '.'; L.color[y][x] = 0; L.lock[y][x] = 0;
-    L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.gems = L.gems.filter(g => !(g[0] === x && g[1] === y)); L.checks = L.checks.filter(c => !(c[0] === x && c[1] === y));
+    L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.gems = L.gems.filter(g => !(g[0] === x && g[1] === y)); L.checks = L.checks.filter(c => !(c[0] === x && c[1] === y)); L.sparks = L.sparks.filter(c => !(c[0] === x && c[1] === y));
+    const n = L.lifts.length; L.lifts = L.lifts.filter(l => !(y === l.y && x >= l.x && x < l.x + l.w)); if (L.lifts.length !== n) { sel = -1; showLift(); }
   }
   function apply(x, y) {
-    if (!inb(x, y)) return;
-    const k = cur.kind;
+    if (!inb(x, y)) return; const k = cur.kind;
     if (k === 'erase') return eraseAt(x, y);
     if (k === 'block') { L.front[y][x] = '#'; L.color[y][x] = cur.color; L.lock[y][x] = $('#f-lock').checked ? 1 : 0; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); return; }
     if (k === 'steel') { eraseAt(x, y); L.front[y][x] = 'S'; return; }
     if (k === 'crack') { eraseAt(x, y); L.front[y][x] = 'c'; return; }
-    if (k === 'ent') { if (L.front[y][x] !== '.') return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push({ type: cur.type, x, y }); return; }
-    if (k === 'gem') { if (L.front[y][x] !== '.') return; if (!L.gems.some(g => g[0] === x && g[1] === y)) L.gems.push([x, y]); return; }
-    if (k === 'check') { if (L.front[y][x] !== '.') return; if (!L.checks.some(c => c[0] === x && c[1] === y)) L.checks.push([x, y]); return; }
+    const free = L.front[y][x] === '.';
+    if (k === 'ent') { if (!free) return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push({ type: cur.type, x, y }); return; }
+    if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) L.gems.push([x, y]); return; }
+    if (k === 'spark') { if (free && !L.sparks.some(g => g[0] === x && g[1] === y)) L.sparks.push([x, y]); return; }
+    if (k === 'check') { if (free && !L.checks.some(c => c[0] === x && c[1] === y)) L.checks.push([x, y]); return; }
     if (k === 'start') { L.start = [x, y]; return; }
     if (k === 'flag') { L.flag = [x, y]; return; }
   }
-  function line(a, b) { // ドラッグが速くても、とびとびにならないように
+  function line(a, b) {
     let [x0, y0] = a; const [x1, y1] = b, dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let err = dx - dy;
     for (;;) { apply(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x0 += sx; } if (e2 < dx) { err += dx; y0 += sy; } }
   }
-  cv.addEventListener('pointerdown', (e) => { if (mode !== 'draw') return; e.preventDefault(); cv.setPointerCapture(e.pointerId); down = true; last = cell(e); apply(last[0], last[1]); draw(); });
-  cv.addEventListener('pointermove', (e) => { const c = cell(e); $('#cursor').textContent = inb(c[0], c[1]) ? '(' + c[0] + ', ' + c[1] + ')' : ''; if (!down) return; if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } });
-  const up = () => { down = false; last = null; };
-  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  // リフト: ■=はじまり ●=おわり ▮=ながさ
+  function liftHit(e) {
+    const p = pos(e);
+    if (sel >= 0) { const l = L.lifts[sel], ax = l.x * T, ay = l.y * T, w = l.w * T, bx = (l.x + l.dx) * T + w / 2, by = (l.y + l.dy) * T + T / 2;
+      if (Math.hypot(p[0] - bx, p[1] - by) < 11) return [sel, 'end'];
+      if (p[0] >= ax + w - 7 && p[0] <= ax + w + 4 && p[1] >= ay && p[1] <= ay + T) return [sel, 'width']; }
+    for (let i = L.lifts.length - 1; i >= 0; i--) { const l = L.lifts[i]; if (p[0] >= l.x * T && p[0] < (l.x + l.w) * T && p[1] >= l.y * T && p[1] < (l.y + 1) * T) return [i, 'move']; }
+    for (let i = L.lifts.length - 1; i >= 0; i--) { const l = L.lifts[i], bx = (l.x + l.dx) * T; if (p[0] >= bx && p[0] < bx + l.w * T && p[1] >= (l.y + l.dy) * T && p[1] < (l.y + l.dy + 1) * T) return [i, 'end']; }
+    return null;
+  }
+  function liftDrag(c) {
+    const l = L.lifts[sel]; if (!l || !down) return; const [cx, cy] = c;
+    if (down.what === 'move') { l.x = Math.max(0, Math.min(L.w - l.w, cx - down.ox)); l.y = Math.max(0, Math.min(L.h - 1, cy - down.oy)); fixRoute(l); }
+    else if (down.what === 'end') { const dx = cx - l.x, dy = cy - l.y; if (Math.abs(dx) >= Math.abs(dy)) { l.dx = dx; l.dy = 0; } else { l.dx = 0; l.dy = dy; } if (!l.dx && !l.dy) l.dx = 1; fixRoute(l); }
+    else if (down.what === 'width') { l.w = Math.max(1, Math.min(8, cx - l.x + 1)); fixRoute(l); }
+    showLift();
+  }
+  function fixRoute(l) { l.x = Math.max(0, Math.min(L.w - l.w, l.x)); l.dx = Math.max(-l.x, Math.min(L.w - l.w - l.x, l.dx)); l.dy = Math.max(-l.y, Math.min(L.h - 1 - l.y, l.dy)); if (!l.dx && !l.dy) l.dx = Math.min(1, L.w - l.w - l.x) || -1; }
+  function newLift(x, y) {
+    const w = 3; x = Math.max(0, Math.min(L.w - w, x)); const dx = x + w + 4 <= L.w - 0 ? 4 : -Math.min(4, x);
+    L.lifts.push({ x, y, w, dx: dx || 1, dy: 0, period: 7, phase: 0, col: 0 }); sel = L.lifts.length - 1; showLift();
+  }
+  cv.addEventListener('pointerdown', (e) => {
+    if (mode !== 'draw') return; e.preventDefault(); cv.setPointerCapture(e.pointerId); pushUndo();
+    const c = cellOf(e);
+    if (cur.kind === 'lift') {
+      const h = liftHit(e);
+      if (h) { sel = h[0]; down = { what: h[1], ox: c[0] - L.lifts[sel].x, oy: c[1] - L.lifts[sel].y }; showLift(); }
+      else { if (inb(c[0], c[1])) newLift(c[0], c[1]); down = { what: 'none' }; }
+      draw(); return;
+    }
+    down = { what: 'paint' }; last = c; apply(c[0], c[1]); draw();
+  });
+  cv.addEventListener('pointermove', (e) => {
+    const c = cellOf(e); $('#cursor').textContent = inb(c[0], c[1]) ? '(' + c[0] + ', ' + c[1] + ')' : '';
+    if (!down) return;
+    if (down.what === 'paint') { if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } }
+    else if (down.what !== 'none') { liftDrag(c); draw(); }
+  });
+  const up = () => { down = null; last = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); } if ((e.key === 'Delete' || e.key === 'Backspace') && sel >= 0 && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { L.lifts.splice(sel, 1); sel = -1; showLift(); draw(); } });
+
+  // ---- リフトのパネル ----
+  function showLift() {
+    const p = $('#lp'), l = L.lifts[sel]; p.classList.toggle('on', !!l); if (!l) return;
+    $('#l-col').value = l.col; $('#l-w').value = l.w; $('#l-dx').value = l.dx; $('#l-dy').value = l.dy; $('#l-period').value = l.period; $('#l-phase').value = String(l.phase);
+  }
+  function liftEdit() {
+    const l = L.lifts[sel]; if (!l) return; pushUndo();
+    l.col = +$('#l-col').value; l.w = Math.max(1, Math.min(8, +$('#l-w').value | 0 || 1)); let dx = +$('#l-dx').value | 0, dy = +$('#l-dy').value | 0;
+    if (dx && dy) { if (document.activeElement.id === 'l-dy') dx = 0; else dy = 0; } l.dx = dx; l.dy = dy; l.period = Math.max(2, Math.min(30, +$('#l-period').value || 7)); l.phase = +$('#l-phase').value;
+    fixRoute(l); showLift(); draw();
+  }
+  ['l-col', 'l-w', 'l-dx', 'l-dy', 'l-period', 'l-phase'].forEach(id => $('#' + id).addEventListener('change', liftEdit));
+  $('#l-del').onclick = () => { if (sel < 0) return; pushUndo(); L.lifts.splice(sel, 1); sel = -1; showLift(); draw(); };
+
+  // ---- ヒント ----
+  function drawHints() {
+    const t = $('#hints'); t.innerHTML = '';
+    meta.hints.forEach((h, i) => { const tr = document.createElement('tr'); tr.innerHTML = '<td style="width:78px">よこ <input type="number" min="0" max="159" style="width:54px" value="' + h.x + '"></td><td><input type="text" style="width:100%" placeholder="（ひらがなで、みじかく）"></td><td style="width:50px"><button class="warn">けす</button></td>';
+      const [nx, tx] = tr.querySelectorAll('input'); tx.value = h.text; nx.onchange = () => { h.x = Math.max(0, +nx.value | 0); draw(); }; tx.oninput = () => { h.text = tx.value; }; tr.querySelector('button').onclick = () => { meta.hints.splice(i, 1); drawHints(); draw(); }; t.appendChild(tr); });
+  }
+  $('#b-hint').onclick = () => { const c = $('#cursor').textContent.match(/\((\d+)/); meta.hints.push({ x: c ? +c[1] : 0, text: '' }); drawHints(); draw(); };
 
   // ---- パレット ----
-  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); }
+  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
   function addBtn(box, html, v) { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => setCur(b, v); box.appendChild(b); return b; }
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
     COLORS.forEach((c, i) => { const b = addBtn(p, '<span class="sw" style="background:' + c[1] + '"></span>' + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) b.classList.add('sel'); });
-    addBtn(p, '鋼（固定）', { kind: 'steel' }); addBtn(p, 'ひび割れ壁', { kind: 'crack' }); addBtn(p, '消しゴム', { kind: 'erase' });
+    addBtn(p, 'はがね（うごかない）', { kind: 'steel' }); addBtn(p, 'ひびわれかべ', { kind: 'crack' }); addBtn(p, 'けしゴム', { kind: 'erase' });
+    addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => addBtn(p2, '<span class="sw" style="background:' + e[2] + ';border-radius:50%"></span>' + e[1], { kind: 'ent', type: e[0] }));
-    addBtn(p2, '宝石', { kind: 'gem' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
+    addBtn(p2, 'Σ(ほうせき)', { kind: 'gem' }); addBtn(p2, 'エナジーのたま', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
     TOOLS.forEach(t => { const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" data-t="' + t[0] + '"> ' + t[1]; $('#tools').appendChild(l); });
+    COLORS.forEach((c, i) => { const o = document.createElement('option'); o.value = i; o.textContent = c[0]; $('#l-col').appendChild(o); });
+    THEMES.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = t[0]; $('#f-theme').appendChild(o); });
+    $('#f-theme').onchange = draw;
   })();
 
-  // ---- 保存・読みこみ ----
-  function readAll() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
-  function writeAll(a) { localStorage.setItem(KEY, JSON.stringify(a)); }
-  function toData() {
-    return { id: editingId || nextId(), name: $('#f-name').value.trim() || 'マイステージ', w: L.w, tools: [...document.querySelectorAll('#tools input:checked')].map(i => i.dataset.t), energy: Math.max(0, Math.min(100, $('#f-energy').value | 0)),
-      hint: $('#f-hint').value.trim(), front: L.front.map(r => r.join('')), color: L.color.map(r => r.slice()), lock: L.lock.map(r => r.slice()), ents: L.ents.map(e => ({ type: e.type, x: e.x, y: e.y })), gems: L.gems.map(g => g.slice()), checks: L.checks.map(c => c.slice()), start: L.start.slice(), flag: L.flag.slice() };
-  }
+  // ---- ほぞん・よみこみ ----
+  const readAll = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+  const writeAll = (a) => localStorage.setItem(KEY, JSON.stringify(a));
   function nextId() { const used = new Set(readAll().map(l => l.id)); let n = 1; while (used.has('MY-' + n)) n++; return 'MY-' + n; }
-  function msg(t) { $('#msg').textContent = t; }
+  function toData() {
+    const m = collectMeta(), th = THEMES[m.theme] || THEMES[0];
+    return { id: editingId || nextId(), name: m.name, w: L.w, tools: m.tools, energy: m.energy, regen: m.regen || undefined, par: m.par, theme: m.theme, bg: th[1], bg2: th[2],
+      hints: m.hints.filter(h => h.text.trim()), front: L.front.map(r => r.join('')), color: L.color.map(r => r.slice()), lock: L.lock.map(r => r.slice()),
+      ents: L.ents.map(e => ({ type: e.type, x: e.x, y: e.y })), gems: L.gems.map(g => g.slice()), checks: L.checks.map(c => c.slice()), sparks: L.sparks.map(c => c.slice()),
+      lifts: L.lifts.map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period, phase: l.phase, col: l.col })), start: L.start.slice(), flag: L.flag.slice() };
+  }
   function check(d) {
-    if (L.front[d.start[1] + 1] && L.front[d.start[1] + 1][d.start[0]] === '.') return 'スタートの足もとに、地面がありません';
-    if (d.flag[1] + 1 < H && L.front[d.flag[1] + 1][d.flag[0]] === '.') return 'ゴールの足もとに、地面がありません';
-    return '';
+    const out = [], solid = (x, y) => y >= 0 && y < L.h && x >= 0 && x < L.w && L.front[y][x] !== '.';
+    if (!solid(d.start[0], d.start[1] + 1)) out.push('スタートのあしもとに、じめんがありません');
+    if (d.flag[1] + 1 < L.h && !solid(d.flag[0], d.flag[1] + 1)) out.push('ゴールのあしもとに、じめんがありません');
+    d.lifts.forEach((l, i) => { const x0 = Math.min(l.x, l.x + l.dx), x1 = Math.max(l.x, l.x + l.dx) + l.w - 1, y0 = Math.min(l.y, l.y + l.dy), y1 = Math.max(l.y, l.y + l.dy); let hit = false;
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (solid(x, y)) hit = true; if (hit) out.push('リフト' + (i + 1) + 'のみちに、ブロックがあります（ぶつかります）'); });
+    if (d.regen && !d.sparks.length) out.push('かいふくがありますが、エナジーのたまがありません'); return out.join(' / ');
   }
   function save() {
-    const d = toData(); const warn = check(d); const all = readAll(); const i = all.findIndex(l => l.id === d.id);
-    if (i >= 0) all[i] = d; else all.push(d);
-    try { writeAll(all); } catch (e) { msg('保存できませんでした（ブラウザの保存領域がいっぱい？）'); return null; }
-    editingId = d.id; refreshSaved(); msg('保存しました（' + d.id + '）' + (warn ? ' ※' + warn : '')); return d;
+    const d = toData(), warn = check(d), all = readAll(), i = all.findIndex(l => l.id === d.id); if (i >= 0) all[i] = d; else all.push(d);
+    try { writeAll(all); } catch (e) { msg('ほぞんできませんでした（ブラウザのほぞんばしょがいっぱい？）'); return null; }
+    editingId = d.id; refreshSaved(); msg('ほぞんしました（' + d.id + '）' + (warn ? '  ※' + warn : '')); return d;
   }
   function loadData(d) {
-    L = fromLevel(d); editingId = d.id || null; $('#f-name').value = d.name || 'マイステージ'; $('#f-w').value = L.w; $('#f-h').value = H; $('#f-energy').value = d.energy | 0; $('#f-hint').value = d.hint || (d.hints && d.hints[0] ? d.hints[0].text : '');
-    document.querySelectorAll('#tools input').forEach(i => { i.checked = (d.tools || []).includes(i.dataset.t); }); fit();
+    L = fromLevel(d); H = L.h; editingId = d.id || null; sel = -1; undoStack = [];
+    const th = Math.max(0, THEMES.findIndex(t => t[1] === d.bg)); applyMeta({ name: d.name, energy: d.energy, regen: d.regen, par: d.par, theme: d.theme !== undefined ? d.theme : th, hints: d.hints && d.hints.length ? d.hints : (d.hint ? [{ x: 0, text: d.hint }] : []), tools: d.tools }); fit(); showLift();
   }
-  function refreshSaved() {
-    const s = $('#s-saved'); s.innerHTML = ''; readAll().forEach(l => { const o = document.createElement('option'); o.value = l.id; o.textContent = l.id + ' ' + l.name; s.appendChild(o); });
-    if (editingId) s.value = editingId;
-  }
+  function refreshSaved() { const s = $('#s-saved'); s.innerHTML = ''; readAll().forEach(l => { const o = document.createElement('option'); o.value = l.id; o.textContent = l.id + ' ' + l.name; s.appendChild(o); }); if (editingId) s.value = editingId; }
   $('#b-save').onclick = save;
   $('#b-test').onclick = () => { const d = save(); if (d) location.href = 'index.html?test=' + encodeURIComponent(d.id); };
-  $('#b-new').onclick = () => { if (!confirm('新しいステージを作ります（保存していない内容は消えます）')) return; editingId = null; loadData(Object.assign(blank(60), { name: 'マイステージ', tools: [], energy: 20 })); editingId = null; msg(''); };
-  $('#b-w').onclick = () => { resize($('#f-w').value, $('#f-h').value); $('#f-w').value = L.w; $('#f-h').value = H; };
-  $('#b-floor').onclick = () => { for (let y = H - 2; y < H; y++) for (let x = 0; x < L.w; x++) { L.front[y][x] = 'S'; L.color[y][x] = 0; L.lock[y][x] = 0; } draw(); };
-  $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('読みこみました'); } };
-  $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' を削除しますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('削除しました'); };
-  $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひな形にします（いまの内容は消えます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー' })); editingId = null; msg('ひな形を読みこみました。保存すると新しいステージになります'); };
-  $('#b-exp').onclick = () => { $('#t-json').value = JSON.stringify(toData()); $('#t-json').select(); msg('書き出しました。コピーして渡せます'); };
-  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました。保存すると新しいステージになります'); } catch (e) { msg('読みこめませんでした（データが正しくありません）'); } };
-
-  (window.LEVELS || []).forEach((l, i) => { const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
+  $('#b-undo').onclick = undo;
+  $('#b-new').onclick = () => { if (!confirm('あたらしいステージをつくります（ほぞんしていないものはきえます）')) return; editingId = null; loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: [], energy: 20 })); msg('あたらしいステージです'); };
+  $('#b-w').onclick = () => { pushUndo(); resize($('#f-w').value, $('#f-h').value); $('#f-w').value = L.w; $('#f-h').value = L.h; };
+  $('#b-floor').onclick = () => { pushUndo(); for (let y = L.h - 2; y < L.h; y++) for (let x = 0; x < L.w; x++) { L.front[y][x] = 'S'; L.color[y][x] = 0; L.lock[y][x] = 0; } draw(); };
+  $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('よみこみました'); } };
+  $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' をけしますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('けしました'); };
+  $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひながたにします（いまのものはきえます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー', hint: '' })); msg('ひながたをよみこみました（ほぞんすると、あたらしいステージになります）'); };
+  $('#b-exp').onclick = () => { $('#t-json').value = JSON.stringify(toData()); $('#t-json').select(); msg('かきだしました。コピーしてわたせます'); };
+  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('よみこみました（ほぞんすると、あたらしいステージになります）'); } catch (e) { msg('よみこめませんでした。データがこわれているかもしれません'); } };
+  (window.LEVELS || []).forEach((l, i) => { if (l.custom) return; const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
-  loadData(Object.assign(blank(60), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
-  window.__editor = { get L() { return L; }, apply, toData, save, loadData, draw };
+  loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
+  window.__editor = { get L() { return L; }, get sel() { return sel; }, apply, toData, save, loadData, draw, newLift, check };
 })();
 </script>
 </body>
