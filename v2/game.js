@@ -681,7 +681,7 @@
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
     if (!G.level.tools.length) { UI.toast('このステージでは編集できないよ'); return; }
     E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
-    if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)]; G.cam.x = clamp(G.cam.x + 30, 0, G.level.w * T - W); } else SFX.editOff();
+    if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
   }
 
@@ -917,7 +917,7 @@
     }
   }
   function drawHUD() {
-    if (EXCEL) return;
+    return; // HUDは、ウィンドウのリボンに出す(キャンバスには描かない)
     const X = EXCEL; // Excel風: 白い板(コメントのような)の上に、暗い色で描く
     if (X) { ctx.save(); ctx.translate(GFXX.HW + 2, GFXX.HH + 2); const ph = (G.level.tools.length ? 33 : 24) + (G.filter !== null ? 9 : 0); ctx.fillStyle = '#F3F3F3'; ctx.fillRect(0, 0, 88, ph); ctx.fillStyle = '#ABABAB'; ctx.fillRect(0, 0, 88, 1); ctx.fillRect(0, ph - 1, 88, 1); ctx.fillRect(0, 0, 1, ph); ctx.fillRect(87, 0, 1, ph); }
     const ink = X ? '#262626' : '#fff', sub = X ? '#595959' : '#D5DBE6';
@@ -965,7 +965,7 @@
   // Excelのリボン(画面の上): ライフ・コスト・Σ・タイム・ボタンを、リボンのグループの見た目で
   const RB = { hp: -1, cost: -1, max: -1, gems: -1, ng: -1, time: '', play: null, mute: null, edit: null };
   function updateRibbon() {
-    const rib = $('#ribbon'); if (!rib || !EXCEL) return;
+    const rib = $('#ribbon'); if (!rib) return;
     const play = G.mode === 'play' && !!G.level;
     if (RB.play !== play) { RB.play = play; rib.classList.toggle('idle', !play); }
     if (!play) return;
@@ -1165,7 +1165,6 @@
   $('#btn-guide2').onclick = () => openGuide('select');
   $('#btn-guide-back').onclick = () => (guideFrom === 'select' ? UI.select() : UI.title());
   document.querySelectorAll('[data-proxy]').forEach(b => { b.onclick = () => $(b.dataset.proxy).click(); });
-  if (EXCEL) { $('#ribbon').classList.remove('hide'); document.body.classList.add('has-ribbon'); }
   $('#btn-edit').onclick = () => toggleEdit();
   $('#btn-restart').onclick = () => UI.restart();
   $('#btn-menu').onclick = () => UI.select();
@@ -1177,12 +1176,17 @@
   $('#btn-reset').onclick = () => { if (confirm('セーブデータを消しますか？')) { save = { levels: {}, muted }; persist(); UI.buildSelect(); } };
 
   // ===== 拡大表示(整数倍) =====
+  // ウィンドウ全体(リボン・シート・ペイン)を、画面にあわせて拡大する。シートは、いつも320×180(マス目の世界)。
   function fit() {
-    const wrap = $('#stage'), rib = $('#ribbon'), rh = rib && rib.offsetParent !== null ? rib.offsetHeight : 0, cw = wrap.clientWidth, ch = wrap.clientHeight - rh;
-    let s = Math.floor(Math.min(cw / W, ch / H)); if (s < 2) s = Math.min(cw / W, ch / H); // 狭い画面では小数倍にして大きく見せる
+    const wrap = $('#stage'), vw = wrap.clientWidth, vh = wrap.clientHeight, portrait = vw < vh;
+    const RH = 24, PW = 96; let LW = portrait ? W : W + PW, LH = RH + H;
+    let s = Math.min(vw / LW, vh / (portrait ? RH + H + 90 : LH)); if (s >= 2) s = Math.floor(s);
+    let ph = 100;
+    if (portrait) { ph = Math.max(90, Math.min(300, Math.floor(vh / s) - RH - H)); LH = RH + H + ph; if (LH * s > vh) s = vh / LH; }
+    const r = document.documentElement.style; r.setProperty('--s', s); r.setProperty('--rh', RH); r.setProperty('--pw', PW); r.setProperty('--ph', ph);
     cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px';
-    $('#game').style.width = W * s + 'px'; $('#game').style.height = H * s + 'px';
-    document.documentElement.style.setProperty('--s', s);
+    $('#game').style.width = LW * s + 'px'; $('#game').style.height = LH * s + 'px';
+    document.body.classList.toggle('s3', s >= 2.7);
   }
   addEventListener('resize', fit); fit();
 

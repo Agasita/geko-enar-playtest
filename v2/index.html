@@ -11,20 +11,22 @@
 </head>
 <body>
 <div id="stage">
-  <div id="ribbon" class="hide">
-    <div class="rb-tab">ホーム</div>
-    <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
-    <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
-    <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
-    <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
-    <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
-      <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="編集">✎ 編集 <kbd>E</kbd></button>
-      <button class="rb-btn" data-proxy="#btn-restart" aria-label="やりなおし">↻</button>
-      <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊</button>
-      <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージえらび">☰</button>
-    </div><div class="rb-cap">操作</div></div>
-  </div>
   <div id="game">
+    <div id="ribbon">
+      <div class="rb-tab">ホーム</div>
+      <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
+      <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
+      <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
+      <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
+      <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
+        <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="編集">✎<span class="lbl"> 編集</span> <kbd>E</kbd></button>
+        <button class="rb-btn" data-proxy="#btn-restart" aria-label="やりなおし">↻</button>
+        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊</button>
+        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージえらび">☰</button>
+      </div><div class="rb-cap">操作</div></div>
+    </div>
+
+    <div id="sheet">
     <canvas id="cv" width="320" height="180"></canvas>
 
     <div id="hud" class="hide">
@@ -37,6 +39,20 @@
       </div>
     </div>
     <div id="toast" class="hide"></div>
+    </div>
+    <div id="pane">
+      <div id="keyhelp"><b>キー操作</b><br>← → 移動<br>Z / Space はばたき<br>（空中で押しつづけると、ふわり）<br>E 編集（時間停止）<br>R やりなおし</div>
+    <div id="touch" class="hide">
+      <div class="pad">
+        <button data-btn="left" aria-label="左">◀</button>
+        <button data-btn="right" aria-label="右">▶</button>
+      </div>
+      <div class="acts">
+        <button data-btn="dash" class="b-dash">ダッシュ</button>
+        <button data-btn="attack" class="b-atk">攻撃</button>
+        <button data-btn="jump" class="b-jump">はばたき</button>
+      </div>
+    </div>
 
     <div id="editbar" class="hide">
       <div id="edithelp"></div>
@@ -50,6 +66,9 @@
         <button id="e-done" class="done">編集を終える</button>
       </div>
     </div>
+
+    </div>
+
 
     <section id="screen-title" class="screen">
       <h1>ゲコ<span>＆</span>エナー</h1>
@@ -81,18 +100,6 @@
     </section>
   </div>
 </div>
-    <div id="touch" class="hide">
-      <div class="pad">
-        <button data-btn="left" aria-label="左">◀</button>
-        <button data-btn="right" aria-label="右">▶</button>
-      </div>
-      <div class="acts">
-        <button data-btn="dash" class="b-dash">ダッシュ</button>
-        <button data-btn="attack" class="b-atk">攻撃</button>
-        <button data-btn="jump" class="b-jump">はばたき</button>
-      </div>
-    </div>
-
 <script>
 // 毎回あたらしいファイルを読み込む（スマホで古いキャッシュが残らないように）。順番どおりに実行される。
 (function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
