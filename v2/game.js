@@ -119,6 +119,9 @@
   const SAVE_KEY = DEMO ? 'geko-enar-v2-demo' : 'geko-enar-v2';
   let save = { levels: {}, muted: false };
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.levels) save = s; } catch (e) { /* ほぞんできなくても遊べる */ }
+  const PRACTICE_KEY = SAVE_KEY + '-practice';
+  let practice = false; try { practice = localStorage.getItem(PRACTICE_KEY) === '1'; } catch (e) { /* ignore */ }
+  const setPractice = (v) => { practice = v; try { localStorage.setItem(PRACTICE_KEY, v ? '1' : '0'); } catch (e) { /* ignore */ } };
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
   muted = !!save.muted;
   // 自作ステージ(ステージさくせいページで保存したもの)を、ステージ一覧のおわりに足す
@@ -169,7 +172,8 @@
     G.flag = { x: lv.flag[0] * T, y: lv.flag[1] * T - 16, w: 16, h: 32 };
     G.respawn = { x: lv.start[0] * T + 3, y: lv.start[1] * T + 2 };
     G.bullets = []; G.parts = [];
-    G.energy = lv.energy; G.gems = 0; G.deaths = 0; G.hits = 0; G.time = 0; G.hintShown = {};
+    G.spent = 0; G.assisted = false; G.energy = lv.energy; G.gems = 0; G.deaths = 0; G.hits = 0; G.time = 0; G.hintShown = {};
+    if (!practice && lv.tools.length && !lv.regen && save.fails && (save.fails[lv.id] || 0) >= 3 && !EDITOR_TEST) { G.maxE = G.energy = Math.ceil(lv.energy * 1.5); G.assisted = true; }
     G.edit = newEdit(lv); G.edit.cursor = [lv.start[0], lv.start[1]];
     G.p = newPlayer(G.respawn.x, G.respawn.y);
     G.cam.x = 0; G.cam.y = 0; snapCam();
@@ -435,22 +439,30 @@
   // ステージを つくる ページからの テストプレイ(?from=editor): クリアしても きろくを のこさず、すぐ つくる がめんに もどる
   const EDITOR_TEST = /[?&]from=editor/.test(location.search);
   const backToEditor = () => { location.href = 'editor.html?edit=' + encodeURIComponent(G.level.id); };
+  // ランク: Σぜんぶ・ノーミス・ムダなし(つかったコスト ≦ もくひょうコスト)の たっせい数。ムダなしが ないステージ(どうぐなし等)は 2つで はかる
+  const parApplies = (lv) => lv.par > 0 && lv.tools.length > 0 && !lv.regen;
+  const rankOf = (goals, lv) => { const poss = parApplies(lv) ? 3 : 2, got = (goals[1] ? 1 : 0) + (goals[2] ? 1 : 0) + (parApplies(lv) && goals[3] ? 1 : 0); return ['S', 'A', 'B', 'C'][poss - got]; };
+  const RANK_ORD = { S: 0, A: 1, B: 2, C: 3 };
   function winLevel() {
     G.cleared = true; G.clearT = 0; SFX.win();
     if (EDITOR_TEST) { UI.toast('クリア！ ステージ作成に戻ります', 1500); setTimeout(() => { if (G.cleared) backToEditor(); }, 1300); return; }
-    // 3つのもくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない)
-    const goals = [true, G.gems >= G.level.gems.length, G.deaths === 0 && G.hits === 0];
-    const prev = save.levels[G.level.id] || { goals: [false, false, false] };
+    // もくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない) ④ムダなし(コストが もくひょう いか)
+    const lv = G.level, goals = [true, G.gems >= lv.gems.length, G.deaths === 0 && G.hits === 0, parApplies(lv) && G.spent <= lv.par];
+    const rank = rankOf(goals, lv); G.lastRank = rank; G.lastGoals = goals;
+    if (practice) { setTimeout(() => { if (G.cleared) UI.showResult(goals); }, 800); return; } // れんしゅうモードは、きろくを のこさない
+    const prev = save.levels[lv.id] || { goals: [false, false, false, false] };
     const merged = goals.map((v, i) => v || !!(prev.goals && prev.goals[i]));
-    save.levels[G.level.id] = { goals: merged, gemsBest: Math.max(prev.gemsBest || (prev.goals && prev.goals[1] ? G.level.gems.length : 0), G.gems), time: Math.min(prev.time || 1e9, Math.round(G.time * 10) / 10) };
-    persist(); G.lastGoals = goals;
+    const bestRank = prev.rank && RANK_ORD[prev.rank] < RANK_ORD[rank] ? prev.rank : rank;
+    save.levels[lv.id] = { goals: merged, rank: bestRank, gemsBest: Math.max(prev.gemsBest || (prev.goals && prev.goals[1] ? lv.gems.length : 0), G.gems), time: Math.min(prev.time || 1e9, Math.round(G.time * 10) / 10) };
+    if (save.fails) save.fails[lv.id] = 0; // たすけぶねは、クリアで おわり
+    persist();
     setTimeout(() => { if (G.cleared) UI.showResult(goals); }, 800);
   }
   // 3つのもくひょうのバッジ: ✓クリア / Σが3つそろう / ノーミス（ダメージをうけない）
-  function badgesHTML(goals, gemsGot, total, big) {
+  function badgesHTML(goals, gemsGot, total, big, par) {
     const n = (total === undefined ? 3 : total); let sg = '';
     for (let i = 0; i < Math.min(n, 5); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '">Σ</i>';
-    return '<span class="bds' + (big ? ' big' : '') + '"><span class="bd ck' + (goals[0] ? ' on' : '') + '">✓</span>' + (n ? '<span class="bd sgs' + (goals[1] ? ' all' : '') + '">' + sg + '</span>' : '') + '<span class="bd pf' + (goals[2] ? ' on' : '') + '">ノーミス</span></span>';
+    return '<span class="bds' + (big ? ' big' : '') + '"><span class="bd ck' + (goals[0] ? ' on' : '') + '">✓</span>' + (n ? '<span class="bd sgs' + (goals[1] ? ' all' : '') + '">' + sg + '</span>' : '') + '<span class="bd pf' + (goals[2] ? ' on' : '') + '">ノーミス</span>' + (par ? '<span class="bd pf' + (goals[3] ? ' on' : '') + '">ムダなし</span>' : '') + '</span>';
   }
   const gemsOf = (lv, s) => (s ? (s.gemsBest !== undefined ? s.gemsBest : (s.goals && s.goals[1] ? lv.gems.length : 0)) : 0);
 
@@ -677,20 +689,20 @@
   function runPlan(plan) {
     const E = G.edit;
     if (!plan.ok) { E.msg = plan.msg; SFX.bad(); return false; }
-    if (plan.cost > G.energy) { E.msg = 'エナジー不足（' + plan.cost + '）'; SFX.bad(); return false; }
+    if (!practice && plan.cost > G.energy) { E.msg = 'エナジー不足（' + plan.cost + '）'; SFX.bad(); return false; }
     E.undo.push({ state: snapshot(), cost: plan.cost }); E.redo.length = 0;
-    plan.run(); G.mgs = []; G.energy -= plan.cost; E.msg = ''; SFX.place();
-    if (!G.regen && G.energy < minCost()) UI.toast('コストを使い切り、もう編集できません。Rで最初から', 3500);
+    plan.run(); G.mgs = []; if (!practice) G.energy -= plan.cost; G.spent += plan.cost; E.msg = ''; SFX.place();
+    if (!practice && !G.regen && G.energy < minCost()) UI.toast('コストを使い切り、もう編集できません。Rで最初から', 3500);
     return true;
   }
   function undoEdit() {
     const E = G.edit, u = E.undo.pop(); if (!u) { SFX.bad(); return; }
-    E.redo.push({ state: snapshot(), cost: u.cost }); restoreSnap(u.state); G.energy = Math.min(G.maxE, G.energy + u.cost); SFX.place(); E.step = 0; E.src = null; E.msg = '';
+    E.redo.push({ state: snapshot(), cost: u.cost }); restoreSnap(u.state); G.spent = Math.max(0, G.spent - u.cost); if (!practice) G.energy = Math.min(G.maxE, G.energy + u.cost); SFX.place(); E.step = 0; E.src = null; E.msg = '';
   }
   function redoEdit() {
     const E = G.edit, r = E.redo.pop(); if (!r) { SFX.bad(); return; }
-    if (G.energy < r.cost) { E.redo.push(r); E.msg = 'エナジーが足りません'; SFX.bad(); return; }
-    E.undo.push({ state: snapshot(), cost: r.cost }); restoreSnap(r.state); G.energy -= r.cost; SFX.place();
+    if (!practice && G.energy < r.cost) { E.redo.push(r); E.msg = 'エナジーが足りません'; SFX.bad(); return; }
+    E.undo.push({ state: snapshot(), cost: r.cost }); restoreSnap(r.state); if (!practice) G.energy -= r.cost; G.spent += r.cost; SFX.place();
   }
   function setEdit(on) {
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
@@ -1165,8 +1177,8 @@
     if (!play) return;
     if (RB.hp !== G.p.hp) { RB.hp = G.p.hp; let h = ''; for (let i = 0; i < 3; i++) h += '<i class="hp' + (i < G.p.hp ? ' on' : '') + '">♥</i>'; $('#rb-hearts').innerHTML = h; }
     const has = G.level.tools.length > 0; $('#rb-g-cost').style.display = has ? '' : 'none';
-    const e = Math.floor(G.energy);
-    if (has && (RB.cost !== e || RB.max !== G.maxE)) { RB.cost = e; RB.max = G.maxE; $('#rb-bar').firstElementChild.style.width = (100 * G.energy / Math.max(1, G.maxE)) + '%'; $('#rb-bar').classList.toggle('low', G.energy < minCost()); $('#rb-cost').textContent = e; }
+    const e = practice ? '∞' : Math.floor(G.energy);
+    if (has && (RB.cost !== e || RB.max !== G.maxE)) { RB.cost = e; RB.max = G.maxE; $('#rb-bar').firstElementChild.style.width = practice ? '100%' : (100 * G.energy / Math.max(1, G.maxE)) + '%'; $('#rb-bar').classList.toggle('low', !practice && G.energy < minCost()); $('#rb-cost').textContent = e; }
     const ng = G.level.gems.length; $('#rb-g-sigma').style.display = ng ? '' : 'none';
     if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 5) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
     const t = Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'); if (RB.time !== t) { RB.time = t; $('#rb-time').textContent = t; }
@@ -1298,8 +1310,9 @@
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
-    restart() { if (G.mode !== 'play') return; loadLevel(G.levelIdx); UI.show(null); },
-    start(i) { G.mode = 'play'; loadLevel(i); UI.show(null); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
+    restart() { if (G.mode !== 'play') return; const id = G.level.id; if (!practice && !G.cleared && !EDITOR_TEST) { save.fails = save.fails || {}; save.fails[id] = (save.fails[id] || 0) + 1; persist(); } loadLevel(G.levelIdx); UI.show(null); UI.assistNote(); },
+    assistNote() { if (G.assisted) UI.toast('なんども ちょうせん している ね！ エナジーを 5わり ふやしたよ（クリアすると もとに もどる）', 4500); },
+    start(i) { G.mode = 'play'; loadLevel(i); UI.show(null); UI.assistNote(); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
     title() { G.mode = 'title'; UI.show('#screen-title'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); },
     select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
     unlocked(i) { return true; }, // ためしあそびよう: ステージはじゆうにえらべる
@@ -1308,24 +1321,26 @@
       LEVELS.forEach((lv, i) => {
         const s = save.levels[lv.id], b = document.createElement('button'); const ok = UI.unlocked(i); if (s && s.goals && s.goals[2]) perfect++; sigma += gemsOf(lv, s); sigmaAll += lv.gems.length;
         b.className = 'lv' + (ok ? '' : ' lock'); b.disabled = !ok;
-        b.innerHTML = '<b>' + lv.id + '</b><span>' + lv.name + '</span>' + badgesHTML(s ? s.goals : [false, false, false], gemsOf(lv, s), lv.gems.length, false);
+        b.innerHTML = '<b>' + lv.id + '</b>' + (s && s.rank ? '<i class="rk rk' + s.rank + '">' + s.rank + '</i>' : '') + '<span>' + lv.name + '</span>' + badgesHTML(s ? s.goals : [false, false, false, false], gemsOf(lv, s), lv.gems.length, false, parApplies(lv));
         b.onclick = () => UI.start(i); box.appendChild(b);
       });
       $('#total').textContent = 'ノーミス ' + perfect + '/' + LEVELS.length + '　Σ ' + sigma + '/' + sigmaAll;
     },
     showResult(goals) {
       G.mode = 'result'; UI.show('#screen-result');
-      $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true);
+      $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true, parApplies(G.level));
       const lv = G.level;
-      $('#r-info').innerHTML = 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回';
-      const tips = []; if (!goals[1]) tips.push('Σをすべて集める'); if (!goals[2]) tips.push('ダメージを受けずにクリア');
-      $('#r-tip').textContent = tips.length ? tips.join('　') : 'パーフェクト！';
+      $('#r-info').innerHTML = (practice ? '' : 'ランク <b class="rk rk' + G.lastRank + '">' + G.lastRank + '</b>　') + 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回' + (parApplies(lv) ? '　つかったコスト ' + G.spent + '（もくひょう ' + lv.par + '）' : '');
+      const tips = []; if (!goals[1]) tips.push('Σをすべて集める'); if (!goals[2]) tips.push('ダメージを受けずにクリア'); if (parApplies(lv) && !goals[3]) tips.push('コストを ' + lv.par + ' 以下で');
+      $('#r-tip').textContent = practice ? 'れんしゅうモード（記録は残りません）' : (tips.length ? tips.join('　') : 'パーフェクト！');
       const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージ選択へ' : '次のステージへ';
     },
   };
   $('#e-undo').onclick = () => undoEdit(); $('#e-redo').onclick = () => redoEdit(); $('#e-done').onclick = () => setEdit(false);
   $('#e-pan').onclick = () => { G.edit.pan = !G.edit.pan; UI.refreshTools(); };
   $('#btn-play').onclick = () => { audio(); UI.select(); };
+  const practiceBtn = $('#btn-practice'); const refreshPractice = () => { if (practiceBtn) { practiceBtn.textContent = 'れんしゅう：' + (practice ? 'ON' : 'OFF'); practiceBtn.classList.toggle('on', practice); } };
+  if (practiceBtn) { practiceBtn.onclick = () => { setPractice(!practice); refreshPractice(); UI.toast(practice ? 'れんしゅうモード：エナジー むせいげん（記録は のこりません）' : 'ふつうの モードに もどしました', 2200); }; refreshPractice(); }
   $('#btn-back').onclick = () => UI.title();
   let guideFrom = 'title';
   // 実際のゲームとおなじ描画で、み本のえ(16×16)をつくる
