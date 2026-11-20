@@ -901,10 +901,6 @@
   // はんていセルのわく(ブロックのうえに かさねる): しゅるいごとの いろの、ふとめの てんせん。ON=うすく いろをぬり、チェック
   const JUDGE_COL = { exist: '#8A4FD0', empty: '#4D4D4D' };
   const judgeColor = (j) => j.type === 'color' ? ((COLORS[j.color] || COLORS[0]).hex) : JUDGE_COL[j.type];
-  function dashedFrame(x, y, c, th) { // 3ドットのせん・2ドットのすきま。かどは かならず ぬる
-    ctx.fillStyle = c;
-    for (let k = 0; k < T; k += 5) { const l = Math.min(3, T - k); ctx.fillRect(x + k, y, l, th); ctx.fillRect(x + k, y + T - th, l, th); ctx.fillRect(x, y + k, th, l); ctx.fillRect(x + T - th, y + k, th, l); }
-  }
   const idNum = (n) => String(n + 1);
   function outlinedNum(str, x, y, col) { text(str, x + 1, y, '#FFFFFF'); text(str, x - 1, y, '#FFFFFF'); text(str, x, y + 1, '#FFFFFF'); text(str, x, y - 1, '#FFFFFF'); text(str, x, y, col); }
   function drawLinks(cx, cy) { // どのはんていセルが、どのとびら・リフトに つながっているか(おなじ いろの てんせん)
@@ -921,19 +917,13 @@
   function drawJudges(cx, cy) {
     drawLinks(cx, cy);
     for (const j of G.judges) {
-      const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j), ic = SW_COL[j.id % 4];
-      const filled = inb(j.x, j.y) && G.front[j.y][j.x] !== 0; // ブロックが あるときは、ブロックが 見えるように、しるしを けす
-      if (j.on) { ctx.globalAlpha = filled ? .12 : .22; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 1, y - 1, T + 2, 1); ctx.fillRect(x - 1, y + T, T + 2, 1); ctx.fillRect(x - 1, y, 1, T); ctx.fillRect(x + T, y, 1, T);
-      dashedFrame(x, y, c, 2);
-      if (filled) { /* しるしは なし */ } else if (j.type === 'exist') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); }
-      else if (j.type === 'empty') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
-      else { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
-      // Excelの「コメント」のしるし: かどの さんかく(つながる ばんごうの いろ)
-      for (let i = 0; i < 9; i++) { ctx.fillStyle = '#000000'; ctx.fillRect(x + T - (9 - i), y + i, 9 - i, 1); }
-      for (let i = 0; i < 7; i++) { ctx.fillStyle = ic; ctx.fillRect(x + T - (7 - i), y + i, 7 - i, 1); }
-      outlinedNum(idNum(j.id), x + 1, y + T - 7, '#262626');
-      if (j.on) { ctx.fillStyle = '#217346'; ctx.fillRect(x + 8, y + 10, 2, 2); ctx.fillRect(x + 9, y + 11, 2, 2); ctx.fillRect(x + 10, y + 12, 2, 2); ctx.fillRect(x + 11, y + 11, 2, 2); ctx.fillRect(x + 12, y + 10, 2, 2); ctx.fillRect(x + 13, y + 9, 2, 2); ctx.fillStyle = '#fff'; ctx.fillRect(x + 9, y + 11, 1, 1); }
+      const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j);
+      if (j.on) { ctx.globalAlpha = .16; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
+      // Excelの「コメント」のしるし: かどの さんかく。いろ＝はんていの しゅるい(そんざい=むらさき / あき=こいはい / いろ=そのいろ)
+      for (let i = 0; i < 11; i++) { ctx.fillStyle = '#000000'; ctx.fillRect(x + T - (11 - i), y + i, 11 - i, 1); }
+      for (let i = 0; i < 9; i++) { ctx.fillStyle = c; ctx.fillRect(x + T - (9 - i), y + i, 9 - i, 1); }
+      outlinedNum(idNum(j.id), x + 1, y + T - 7, '#262626'); // つながる ばんごう
+      if (j.on) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + T - 8, y + T - 9, 7, 7); ctx.fillStyle = '#217346'; ctx.fillRect(x + T - 7, y + T - 6, 2, 2); ctx.fillRect(x + T - 6, y + T - 5, 2, 2); ctx.fillRect(x + T - 5, y + T - 4, 2, 2); ctx.fillRect(x + T - 4, y + T - 5, 2, 2); ctx.fillRect(x + T - 3, y + T - 7, 2, 3); }
     }
   }
   function drawDoors(cx, cy) {

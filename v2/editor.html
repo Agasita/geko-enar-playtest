@@ -183,11 +183,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     ctx.fillStyle = '#595959'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left'; for (let x = 0; x < L.w; x += 5) ctx.fillText(x, x * T + 2, 9);
     L.doors.forEach(d => { const c = IDCOL[d[3] % 4]; ctx.fillStyle = '#3B3F4D'; ctx.fillRect(d[0] * T + 3, d[1] * T, T - 6, d[2] * T); ctx.fillStyle = c; ctx.fillRect(d[0] * T + 3, d[1] * T, T - 6, 3); ctx.fillRect(d[0] * T + 3, (d[1] + d[2]) * T - 3, T - 6, 3); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(d[3] + 1, d[0] * T + T / 2, d[1] * T + T / 2 + 4); });
     L.switches.forEach(s => { ctx.fillStyle = '#595959'; ctx.fillRect(s[0] * T + 2, s[1] * T + T - 5, T - 4, 5); ctx.fillStyle = IDCOL[s[2] % 4]; ctx.fillRect(s[0] * T + 3, s[1] * T + T - 9, T - 6, 4); ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(s[2], s[0] * T + T / 2, s[1] * T + T - 11); });
-    L.judges.forEach(j => { const x = j[0] * T, y = j[1] * T, c = j[2] === 'color' ? COLORS[j[3]][1] : (j[2] === 'exist' ? '#8A4FD0' : '#4D4D4D'), ic = IDCOL[j[4] % 4];
-      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.strokeRect(x - .5, y - .5, T + 1, T + 1);
-      ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.setLineDash([6, 4]); ctx.strokeRect(x + 1.5, y + 1.5, T - 3, T - 3); ctx.setLineDash([]); ctx.lineWidth = 1; ctx.fillStyle = c;
-      if (L.front[j[1]][j[0]] === '.') { if (j[2] === 'exist') ctx.fillRect(x + 6, y + 6, 8, 8); else if (j[2] === 'empty') ctx.strokeRect(x + 6.5, y + 6.5, 7, 7); else ctx.fillRect(x + 6, y + 6, 8, 8); }
-      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 10, y); ctx.lineTo(x + T, y + 10); ctx.fill(); ctx.fillStyle = ic; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 8, y); ctx.lineTo(x + T, y + 8); ctx.fill();
+    L.judges.forEach(j => { const x = j[0] * T, y = j[1] * T, c = j[2] === 'color' ? COLORS[j[3]][1] : (j[2] === 'exist' ? '#8A4FD0' : '#4D4D4D');
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 12, y); ctx.lineTo(x + T, y + 12); ctx.fill(); ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 10, y); ctx.lineTo(x + T, y + 10); ctx.fill();
       ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(j[4] + 1, x + 2, y + T - 3); });
     // つながり: はんていセルから、おなじ ばんごうの とびら・リフトへ てんせん
     ctx.setLineDash([2, 4]); ctx.lineWidth = 2;
