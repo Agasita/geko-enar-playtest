@@ -982,14 +982,14 @@
     glyphCache.set(key, cvs); return cvs;
   }
   function textW(str, size, scale) { let w = 0; for (const ch of String(str)) w += charAdv(ch, size || 10) * (scale || 1); return w; }
+  const TXT_FONT = '"Yu Gothic UI","Meiryo UI","Hiragino Sans","Noto Sans CJK JP","Noto Sans JP",sans-serif';
   function drawText(str, x, y, color, size, scale) {
-    size = size || 10; scale = scale || 1; color = color || '#262626'; let cx = x;
+    size = size || 10; scale = scale || 1; color = color || '#1A1A1A'; let cx = x;
+    ctx.fillStyle = color; ctx.textBaseline = 'top'; ctx.font = '600 ' + Math.round(size * scale * 1.05 * 10) / 10 + 'px ' + TXT_FONT;
     for (const ch of String(str)) {
       if (ch === '\n') { cx = x; y += size * scale + 1; continue; }
-      const adv = charAdv(ch, size) * scale, g2 = glyphImg(ch, size, color);
-      if (g2) ctx.drawImage(g2, Math.round(cx), Math.round(y), g2.width * scale, g2.height * scale);
-      else if (ch !== ' ' && ch !== '　') { ctx.fillStyle = color; ctx.font = (size * scale - 1) + 'px "Yu Gothic UI","Meiryo UI","Hiragino Sans",sans-serif'; ctx.textBaseline = 'top'; ctx.fillText(ch, Math.round(cx), Math.round(y)); }
-      cx += adv;
+      if (ch !== ' ' && ch !== '\u3000') ctx.fillText(ch, cx, y - 1);
+      cx += charAdv(ch, size) * scale;
     }
     return cx - x;
   }
@@ -1056,7 +1056,7 @@
     UIC.hits.push({ x, y, w, h, type: 'scroll', id }); return s;
   }
   function scrollbar(s, x, y, h, total) { if (s.max <= 0) return; const th = Math.max(10, h * h / total), ty = y + (h - th) * s.off / s.max; box(x, y, 3, h, '#E1E1E1'); box(x, Math.round(ty), 3, Math.round(th), COL.green); }
-  const toLogical = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (cv.width / r.width), y: (e.clientY - r.top) * (cv.height / r.height) }; };
+  const toLogical = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (VIEW.w / r.width), y: (e.clientY - r.top) * (VIEW.h / r.height) }; };
 
   // ===== 入力 =====
   const KEYS = {
@@ -1372,7 +1372,7 @@
     btn(cx - 71, y, 68, 16, { label: 'もう一度', fn: () => UI.start(G.levelIdx) }); btn(cx + 3, y, 68, 16, { label: 'ステージえらび', fn: () => UI.select() });
   }
   function render() {
-    if (!G.level) return; ctx.imageSmoothingEnabled = false;
+    if (!G.level) return; ctx.setTransform(VIEW.k || 1, 0, 0, VIEW.k || 1, 0, 0); ctx.imageSmoothingEnabled = false;
     UIC.hits.length = 0; ctx.fillStyle = '#D9D9D9'; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
     if (G.mode === 'play') drawPlayWindow(); else if (G.mode === 'title') drawTitle(); else if (G.mode === 'select') drawSelect(); else if (G.mode === 'guide') drawGuide(); else if (G.mode === 'result') drawResult();
   }
@@ -1384,7 +1384,8 @@
     let s = Math.min(vw / LW, vh / (portrait ? LH + 90 : LH)); if (s >= 2) s = Math.floor(s); // 整数倍に、ぴったり入れる(ドット文字を読みやすく)
     if (portrait) { ph = Math.max(90, Math.min(300, Math.floor(vh / s) - RH - H)); LH = RH + H + ph; if (LH * s > vh) s = vh / LH; }
     Object.assign(VIEW, { w: LW, h: LH, portrait, ph, s }); SX = portrait ? 0 : LPW; SY = RH;
-    if (cv.width !== LW || cv.height !== LH) { cv.width = LW; cv.height = LH; ctx.imageSmoothingEnabled = false; }
+    const k = Math.max(1, Math.min(6, Math.round(s * (window.devicePixelRatio || 1)))); VIEW.k = k; // 文字をくっきり描くため、実際の画素にあわせた解像度で描く
+    if (cv.width !== LW * k || cv.height !== LH * k) { cv.width = LW * k; cv.height = LH * k; ctx.imageSmoothingEnabled = false; }
     cv.style.width = LW * s + 'px'; cv.style.height = LH * s + 'px';
     $('#game').style.width = LW * s + 'px'; $('#game').style.height = LH * s + 'px';
   }
