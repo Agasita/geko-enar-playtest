@@ -34,6 +34,17 @@ legend,summary{color:var(--green);font-weight:700;cursor:pointer;font-size:13px}
 textarea{width:100%;height:90px;font-size:11px}
 a{color:var(--green)}
 table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px solid #E1E1E1}
+details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
+.toolbtn{min-width:170px;text-align:left;border-color:var(--green);background:var(--sel);font-weight:700}
+.toolbtn small{color:var(--sub);font-weight:400;margin-right:4px}
+#drawer{position:fixed;z-index:20;left:0;top:0;bottom:0;width:min(300px,86vw);background:var(--bg);border-right:1px solid var(--line);box-shadow:3px 0 0 #0003;padding:8px 10px 20px;overflow:auto;transform:translateX(-105%);transition:transform .16s ease-out}
+#drawer.open{transform:none}
+#drawer .dh{display:flex;justify-content:space-between;align-items:center;color:var(--green);margin-bottom:4px}
+#drawer .dg{margin:10px 0 4px;color:var(--sub);font-size:12px;border-bottom:1px solid #D4D4D4}
+#drawer .pal button{min-width:0;flex:1 1 44%;text-align:left}
+#scrim{position:fixed;inset:0;z-index:19;background:#0002;display:none}
+#scrim.on{display:block}
+#wrap{max-height:76vh}
 </style>
 </head>
 <body>
@@ -46,7 +57,7 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
   <a href="index.html">ゲームにもどる</a>
 </header>
 <main>
-  <fieldset><legend>ステージのせってい</legend>
+  <details class="fs"><summary>ステージのせってい（なまえ・おおきさ・コスト）</summary>
     <div class="row"><span class="lbl">なまえ</span><input id="f-name" type="text" value="マイステージ" size="16">
       <span class="lbl">よこ(マス)</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
       <span class="lbl">たて(マス)</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
@@ -55,20 +66,23 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
       <span class="lbl">かいふく(びょう)</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">(0=なし。エナジーのたまをひろう)</span>
       <span class="lbl">もくひょうコスト</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
       <span class="lbl">いろ(せかい)</span><select id="f-theme"></select></div>
-  </fieldset>
+  </details>
 
-  <fieldset><legend>ヒント(その場所にきたときに出ることば)</legend>
+  <details class="fs"><summary>ヒント（その場所にきたときに出ることば）</summary>
     <table id="hints"></table>
     <div class="row" style="margin-top:4px"><button id="b-hint">ヒントをふやす</button><span class="lbl">「よこ」は、なんマスめで出すか。シートのうえにカーソルを合わせると、すうじが出ます</span></div>
-  </fieldset>
+  </details>
 
-  <div class="row"><button id="b-mode" style="font-weight:700;min-width:190px"></button><span class="lbl">「うごかす」のあいだは、さわってもブロックはおかれません</span></div>
-  <div class="row pal" id="pal"></div>
-  <div class="row pal" id="pal2"></div>
-  <div class="row"><span class="lbl">スイッチ・とびらの いろ</span><select id="f-id"><option value="0">0 あか</option><option value="1">1 あお</option><option value="2">2 みどり</option><option value="3">3 きいろ</option></select>
-    <label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label>
-    <button id="b-floor">ゆか（した2ぎょう）をはる</button><span class="lbl" id="cursor"></span></div>
-
+  <div class="row" id="toolbar"><button id="b-tool" class="toolbtn"></button><button id="b-mode" style="font-weight:700"></button><span class="lbl" id="cursor"></span><span class="lbl">「うごかす」のあいだは、さわってもブロックはおかれません</span></div>
+  <aside id="drawer" aria-label="どうぐ">
+    <div class="dh"><b>どうぐをえらぶ</b><button id="d-x">×</button></div>
+    <div class="dg">ブロック</div><div class="row pal" id="pal"></div>
+    <div class="dg">しかけ・キャラクター</div><div class="row pal" id="pal2"></div>
+    <div class="dg">オプション</div>
+    <div class="row"><span class="lbl">スイッチ・とびらの いろ</span><select id="f-id"><option value="0">0 あか</option><option value="1">1 あお</option><option value="2">2 みどり</option><option value="3">3 きいろ</option></select></div>
+    <div class="row"><label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label></div>
+    <div class="row"><button id="b-floor">ゆか（した2ぎょう）をはる</button></div>
+  </aside>
   <div id="lp"><fieldset><legend>えらんだリフト</legend>
     <div class="row"><span class="lbl">いろ</span><select id="l-col"></select>
       <span class="lbl">ながさ(マス)</span><input id="l-w" type="number" min="1" max="8">
@@ -95,6 +109,7 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。はりつけて「よみこむ」もできます"></textarea>
   </details>
 </main>
+<div id="scrim"></div>
 <script src="levels.js"></script>
 <script>
 (function () {
@@ -291,11 +306,14 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
   $('#b-hint').onclick = () => { const c = $('#cursor').textContent.match(/\((\d+)/); meta.hints.push({ x: c ? +c[1] : 0, text: '' }); drawHints(); draw(); };
 
   // ---- パレット ----
-  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
+  function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').classList.toggle('on', open); }
+  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>どうぐ</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
+  $('#b-tool').onclick = () => drawer(true); $('#d-x').onclick = () => drawer(false); $('#scrim').onclick = () => drawer(false);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
   function addBtn(box, html, v) { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => setCur(b, v); box.appendChild(b); return b; }
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
-    COLORS.forEach((c, i) => { const b = addBtn(p, '<span class="sw" style="background:' + c[1] + '"></span>' + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) b.classList.add('sel'); });
+    COLORS.forEach((c, i) => { const b = addBtn(p, '<span class="sw" style="background:' + c[1] + '"></span>' + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>どうぐ</small>' + b.innerHTML + ' ▸'; } });
     addBtn(p, 'はがね（うごかない）', { kind: 'steel' }); addBtn(p, 'ひびわれかべ', { kind: 'crack' }); addBtn(p, 'けしゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => addBtn(p2, '<span class="sw" style="background:' + e[2] + ';border-radius:50%"></span>' + e[1], { kind: 'ent', type: e[0] }));
