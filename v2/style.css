@@ -165,33 +165,59 @@ body.theme-excel,body.theme-excel html{background:#D9D9D9}
 /* エナーは、攻撃とダッシュがない */
 body.ener .b-atk,body.ener .b-dash{display:none!important}
 
-/* ===== Excelのリボン(画面の上)。ライフ・コスト・Σ・タイム・ボタンが、リボンのグループになっている ===== */
-#ribbon{display:none}
-body.has-ribbon #stage{flex-direction:column;justify-content:flex-start}
-body.has-ribbon #ribbon{display:flex;align-items:stretch;width:100%;height:32px;flex:none;background:linear-gradient(#FFFFFF,#F0F0F0);border-bottom:1px solid #C6C6C6;box-shadow:0 1px 0 #fff inset;color:#262626;font-size:12px;overflow:hidden}
-body.has-ribbon #game{margin:auto 0}
-.rb-tab{display:flex;align-items:center;padding:0 12px;font-weight:700;color:#217346;border-right:1px solid #D4D4D4;box-shadow:inset 0 -3px 0 #217346;background:#fff;flex:none}
-.rb-group{display:flex;flex-direction:column;justify-content:center;padding:0 10px;border-right:1px solid #D4D4D4;flex:none;position:relative}
+/* ===== ゲームのウィンドウ: リボン(上)・シート(まん中)・ペイン(横/下)が、ぜんぶ1つのウィンドウの中。UIは、シートに かぶらない ===== */
+:root{--s:2;--rh:24;--pw:96;--ph:100}
+#stage{display:flex;align-items:center;justify-content:center}
+#game{position:relative;display:grid;grid-template-columns:calc(var(--s)*320px) calc(var(--s)*var(--pw)*1px);grid-template-rows:calc(var(--s)*var(--rh)*1px) calc(var(--s)*180px);background:#D9D9D9;overflow:hidden;width:auto;height:auto}
+#ribbon{grid-column:1/3;grid-row:1;display:flex;align-items:stretch;min-width:0;overflow:hidden;background:#F3F3F3;border-bottom:calc(var(--s)*.5px) solid #ABABAB;color:#262626;font-size:max(11px,calc(var(--s)*5px))}
+#sheet{grid-column:1;grid-row:2;position:relative;overflow:hidden;width:calc(var(--s)*320px);height:calc(var(--s)*180px);background:#fff}
+#sheet canvas{position:absolute;left:0;top:0}
+#pane{grid-column:2;grid-row:2;min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:#F3F3F3;border-left:calc(var(--s)*.5px) solid #ABABAB;color:#262626;font-size:max(11px,calc(var(--s)*5px));padding:calc(var(--s)*3px)}
+#hud{position:absolute;inset:0;pointer-events:none}
+#toast{top:calc(var(--s)*4px)}
+/* リボン */
+.rb-tab{display:flex;align-items:center;padding:0 calc(var(--s)*5px);font-weight:700;color:#217346;border-right:1px solid #D4D4D4;box-shadow:inset 0 -3px 0 #217346;background:#fff;flex:none}
+.rb-group{display:flex;flex-direction:column;justify-content:center;padding:0 calc(var(--s)*4px);border-right:1px solid #D4D4D4;flex:none}
 .rb-group.rb-right{margin-left:auto;border-right:0;border-left:1px solid #D4D4D4}
-.rb-items{display:flex;align-items:center;gap:4px;height:100%}
-.rb-cap{display:none;text-align:center;font-size:9px;color:#666;line-height:1;padding-bottom:2px}
+.rb-items{display:flex;align-items:center;gap:calc(var(--s)*2px);flex:1}
+.rb-cap{display:none;text-align:center;font-size:max(8px,calc(var(--s)*3.2px));color:#666;line-height:1;padding-bottom:1px}
+body.s3 .rb-cap{display:block}body.s3 .rb-items{flex:none;height:calc(var(--s)*16px)}
 #ribbon.idle .rb-group{visibility:hidden}
-#ribbon .hp{font-style:normal;color:#D0D0D0;font-size:16px;line-height:1}#ribbon .hp.on{color:#E04444}
-#rb-bar{width:70px;height:10px;background:#fff;border:1px solid #8C8C8C}#rb-bar i{display:block;height:100%;background:#70AD47}#rb-bar.low i{background:#E04444}
+#ribbon .hp{font-style:normal;color:#D0D0D0;font-size:calc(var(--s)*7px);line-height:1}#ribbon .hp.on{color:#E04444}
+#rb-bar{width:calc(var(--s)*28px);height:calc(var(--s)*4.5px);background:#fff;border:1px solid #8C8C8C}#rb-bar i{display:block;height:100%;background:#70AD47}#rb-bar.low i{background:#E04444}
 #ribbon b{font-weight:700;font-variant-numeric:tabular-nums}
-#ribbon .sg{width:17px;height:18px;font-size:12px}
-.rb-btn{min-height:24px;height:24px;padding:0 9px;border:1px solid #BFBFBF;border-radius:3px;background:linear-gradient(#FFFFFF,#E9E9E9);color:#262626;font-size:12px;touch-action:manipulation}
-.rb-btn:active{background:#CFE3D6}.rb-btn kbd{background:#0001;font-size:9px}
+#ribbon .sg{width:calc(var(--s)*7px);height:calc(var(--s)*8px);font-size:calc(var(--s)*5px);min-width:14px;min-height:15px}
+.rb-btn{min-height:0;height:calc(var(--s)*12px);min-width:calc(var(--s)*12px);padding:0 calc(var(--s)*3px);border:1px solid #ABABAB;border-radius:0;background:linear-gradient(#FFFFFF,#E9E9E9);color:#262626;font-size:max(11px,calc(var(--s)*5px));touch-action:manipulation}
+.rb-btn:active{background:#CFE3D6;transform:none}.rb-btn kbd{background:#0001;font-size:.7em}
 @media (hover:none){.rb-btn kbd{display:none}}
-@media (min-height:520px){body.has-ribbon #ribbon{height:58px}.rb-cap{display:block}.rb-items{height:auto;flex:1}.rb-btn{height:30px}}
-@media (orientation:portrait){body.has-ribbon.menu #ribbon{display:none}body.has-ribbon #ribbon{height:auto;flex-wrap:wrap;font-size:11px}.rb-tab{display:none}.rb-group{padding:0 8px;min-height:30px;border-bottom:1px solid #E0E0E0}.rb-group.rb-right{width:100%;margin-left:0;border-left:0;border-top:1px solid #D4D4D4}.rb-right .rb-items{width:100%;justify-content:space-around;padding:3px 0}.rb-btn{height:32px;min-width:64px}body.has-ribbon #stage{justify-content:flex-start}body.has-ribbon #game{margin:0}}
-/* 操作ボタンは、画面(ゲームのわく)の外。横向きは左右のあき、縦向きは下 */
-#touch{position:fixed;inset:0;height:auto;pointer-events:none}
-#touch .pad,#touch .acts{position:absolute;bottom:10px;display:flex;gap:6px;align-items:flex-end;pointer-events:auto}
-#touch .pad{left:calc(8px + env(safe-area-inset-left))}#touch .acts{right:calc(8px + env(safe-area-inset-right))}
-body.ener #touch button{width:48px;height:56px;border-radius:12px;font-size:20px}
-body.ener #touch .b-jump{width:72px;height:72px;border-radius:50%;font-size:12px}
-.theme-excel #touch button{background:#F3F3F3;border:1px solid #8C8C8C;color:#262626}
-.theme-excel #touch .b-jump{background:#217346;color:#fff;border-color:#185C37}
-.theme-excel .hudbtns{display:none}
-@media (orientation:portrait){#touch{position:fixed;inset:auto 0 0 0;height:240px}body.ener #touch button{width:64px;height:64px}body.ener #touch .b-jump{width:88px;height:88px}}
+/* ペイン: 遊ぶとき=操作ボタン／キー操作、編集のとき=道具 */
+#pane #keyhelp{display:none;font-size:.95em;line-height:1.55;color:#595959}
+@media (hover:hover) and (pointer:fine){#pane #keyhelp{display:block}body.editing #pane #keyhelp{display:none}#pane #touch{display:none!important}}
+#pane #touch{position:static;inset:auto;height:auto;flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:calc(var(--s)*4px);pointer-events:auto}
+#pane #touch.hide{display:none}
+#pane #touch .pad,#pane #touch .acts{position:static;display:flex;gap:calc(var(--s)*3px);justify-content:center;align-items:center;pointer-events:auto}
+#pane #touch button{width:calc(var(--s)*26px);height:calc(var(--s)*28px);border:1px solid #8C8C8C;border-radius:0;background:linear-gradient(#FFFFFF,#E5E5E5);color:#262626;font-size:calc(var(--s)*9px);padding:0;font-weight:700;touch-action:none}
+#pane #touch button:active,#pane #touch button.on{background:#CFE3D6;transform:none}
+#pane #touch .b-jump{width:calc(var(--s)*56px);height:calc(var(--s)*30px);background:#217346;color:#fff;border-color:#185C37;font-size:calc(var(--s)*6px);white-space:nowrap}
+#pane #touch .b-jump:active{background:#185C37}
+/* 編集のパネル(ペインの中。シートにかぶらない) */
+#pane #editbar{position:static;inset:auto;width:auto;flex:1;min-height:0;padding:0;background:none;display:flex;flex-direction:column;gap:calc(var(--s)*2px);overflow-y:auto}
+#pane #editbar.hide{display:none}
+#pane #edithelp{position:static;width:auto;left:auto;top:auto;pointer-events:auto;background:#FFFFE1;color:#000;border:1px solid #000;border-radius:0;font-size:max(10px,calc(var(--s)*4.2px));line-height:1.35;padding:calc(var(--s)*1.5px) calc(var(--s)*3px);text-align:left;box-shadow:none}
+#pane #tabs{margin-top:0}
+#pane #editfoot{position:sticky;bottom:0;background:#F3F3F3}
+#pane #tools button{min-height:calc(var(--s)*11px);font-size:max(11px,calc(var(--s)*5px))}
+.theme-excel .hudbtns{display:none}.hudbtns{display:none}
+/* 縦向き: ペインは、シートの下 */
+@media (orientation:portrait){
+  #game{grid-template-columns:calc(var(--s)*320px);grid-template-rows:calc(var(--s)*var(--rh)*1px) calc(var(--s)*180px) calc(var(--s)*var(--ph)*1px)}
+  #pane{grid-column:1;grid-row:3;border-left:0;border-top:calc(var(--s)*.5px) solid #ABABAB}
+  .rb-tab{display:none}.rb-btn .lbl{display:none}.rb-group{padding:0 calc(var(--s)*3px)}
+  #pane #touch{flex-direction:row;align-items:center;justify-content:space-between;padding:0 calc(var(--s)*6px)}
+  #pane #touch .pad{gap:calc(var(--s)*4px)}
+  #pane #touch button{width:calc(var(--s)*38px);height:calc(var(--s)*34px)}#pane #touch .b-jump{width:calc(var(--s)*64px);height:calc(var(--s)*34px)}
+  body.menu #game{width:100vw!important;height:100%!important;display:block}
+}
+@media (orientation:landscape){body.menu #game{display:grid}}
+
+body.editing #toast{display:none!important} /* 編集のあいだは、ヒントの吹き出しでシートをかくさない */
