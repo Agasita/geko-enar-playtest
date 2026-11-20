@@ -184,7 +184,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     L.doors.forEach(d => { const c = IDCOL[d[3] % 4]; ctx.fillStyle = '#3B3F4D'; ctx.fillRect(d[0] * T + 3, d[1] * T, T - 6, d[2] * T); ctx.fillStyle = c; ctx.fillRect(d[0] * T + 3, d[1] * T, T - 6, 3); ctx.fillRect(d[0] * T + 3, (d[1] + d[2]) * T - 3, T - 6, 3); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(d[3] + 1, d[0] * T + T / 2, d[1] * T + T / 2 + 4); });
     L.switches.forEach(s => { ctx.fillStyle = '#595959'; ctx.fillRect(s[0] * T + 2, s[1] * T + T - 5, T - 4, 5); ctx.fillStyle = IDCOL[s[2] % 4]; ctx.fillRect(s[0] * T + 3, s[1] * T + T - 9, T - 6, 4); ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(s[2], s[0] * T + T / 2, s[1] * T + T - 11); });
     L.judges.forEach(j => { const x = j[0] * T, y = j[1] * T, c = j[2] === 'color' ? COLORS[j[3]][1] : (j[2] === 'exist' ? '#8A4FD0' : '#4D4D4D');
-      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 12, y); ctx.lineTo(x + T, y + 12); ctx.fill(); ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 10, y); ctx.lineTo(x + T, y + 10); ctx.fill();
+      ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 11, y); ctx.lineTo(x + T, y + 11); ctx.fill();
       ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(j[4] + 1, x + 2, y + T - 3); });
     // つながり: はんていセルから、おなじ ばんごうの とびら・リフトへ てんせん
     ctx.setLineDash([2, 4]); ctx.lineWidth = 2;
