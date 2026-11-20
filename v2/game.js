@@ -125,6 +125,7 @@
   function normalizeCustom(l) {
     const w = l.w | 0, h = Array.isArray(l.front) ? l.front.length : 0;
     if (w < 20 || w > 160 || h < 12 || h > 60 || !Array.isArray(l.color) || l.color.length !== h) throw new Error('bad level');
+    if (Array.isArray(l.gems) && l.gems.length > 5) l = Object.assign({}, l, { gems: l.gems.slice(0, 5) });
     return Object.assign({ world: 9, hints: [], solution: [], bg: '#9ADBC0', bg2: '#86CEB0', par: 0, sparks: [], lifts: [], switches: [], doors: [], checks: [], gems: [], ents: [], start: [2, 9], flag: [w - 4, 9], custom: true },
       l, { w, h, energy: l.energy | 0, tools: (l.tools || []).filter(id => TOOL_BY[id]), lock: l.lock || l.front.map(() => new Array(w).fill(0)), hints: l.hint ? [{ x: 0, text: l.hint }] : (l.hints || []) });
   }
@@ -440,7 +441,7 @@
   // 3つのもくひょうのバッジ: ✓クリア / Σが3つそろう / ノーミス（ダメージをうけない）
   function badgesHTML(goals, gemsGot, total, big) {
     const n = (total === undefined ? 3 : total); let sg = '';
-    for (let i = 0; i < Math.min(n, 3); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '">Σ</i>';
+    for (let i = 0; i < Math.min(n, 5); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '">Σ</i>';
     return '<span class="bds' + (big ? ' big' : '') + '"><span class="bd ck' + (goals[0] ? ' on' : '') + '">✓</span>' + (n ? '<span class="bd sgs' + (goals[1] ? ' all' : '') + '">' + sg + '</span>' : '') + '<span class="bd pf' + (goals[2] ? ' on' : '') + '">ノーミス</span></span>';
   }
   const gemsOf = (lv, s) => (s ? (s.gemsBest !== undefined ? s.gemsBest : (s.goals && s.goals[1] ? lv.gems.length : 0)) : 0);
@@ -1026,7 +1027,7 @@
     // ほうせき
     const gy = G.level.tools.length ? 25 : 16;
     const ng = G.level.gems.length;
-    if (X && ng === 3) for (let i = 0; i < 3; i++) sigmaTile(6 + i * 11, gy - 1, 9, i < G.gems);
+    if (X && ng <= 5 && ng > 0) for (let i = 0; i < ng; i++) sigmaTile(6 + i * 11, gy - 1, 9, i < G.gems);
     else if (ng) { if (X) sigmaTile(6, gy - 1, 9, true); else icon(GEM, 6, gy, '#4C9BE8', '#BFD8FF'); text(G.gems + '/' + ng, X ? 17 : 13, gy + 1, ink); }
     if (G.filter !== null) { icon(FUNNEL, 6, gy + 9, ink); ctx.fillStyle = COLORS[G.filter].hex; ctx.fillRect(15, gy + 9, 6, 5); if (X) { ctx.fillStyle = '#7F7F7F'; ctx.fillRect(15, gy + 9, 6, 1); ctx.fillRect(15, gy + 13, 6, 1); } }
     text(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), 42, gy + 1, sub);
@@ -1068,7 +1069,7 @@
     const e = Math.floor(G.energy);
     if (has && (RB.cost !== e || RB.max !== G.maxE)) { RB.cost = e; RB.max = G.maxE; $('#rb-bar').firstElementChild.style.width = (100 * G.energy / Math.max(1, G.maxE)) + '%'; $('#rb-bar').classList.toggle('low', G.energy < minCost()); $('#rb-cost').textContent = e; }
     const ng = G.level.gems.length; $('#rb-g-sigma').style.display = ng ? '' : 'none';
-    if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 3) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
+    if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 5) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
     const t = Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'); if (RB.time !== t) { RB.time = t; $('#rb-time').textContent = t; }
     const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; }
     const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').textContent = mu; }
