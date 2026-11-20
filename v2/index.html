@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#1f2a44">
-<title>ゲコ＆エナー v2 — せかいをなおしてすすめ</title>
+<title>ゲコ＆エナー v2 — 世界を直して進もう</title>
 <script>document.write('<link rel="stylesheet" href="style.css?t='+Date.now()+'">')</script>
 <noscript><link rel="stylesheet" href="style.css"></noscript>
 </head>
@@ -20,15 +20,15 @@
       <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
       <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
         <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="なおす">✎<span class="lbl"> なおす</span> <kbd>E</kbd></button>
-        <button class="rb-btn" data-proxy="#btn-restart" aria-label="やりなおし">↻</button>
-        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="おと">🔊</button>
-        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージえらび">☰</button>
-      </div><div class="rb-cap">そうさ</div></div>
+        <button class="rb-btn" data-proxy="#btn-restart" aria-label="最初から">↻</button>
+        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊</button>
+        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージ選択">☰</button>
+      </div><div class="rb-cap">操作</div></div>
     </div>
 
     <div id="lpane"><div class="pad" id="lpad">
-        <button data-btn="left" aria-label="ひだり">◀</button>
-        <button data-btn="right" aria-label="みぎ">▶</button>
+        <button data-btn="left" aria-label="左">◀</button>
+        <button data-btn="right" aria-label="右">▶</button>
       </div></div>
     <div id="sheet">
     <canvas id="cv" width="288" height="180"></canvas>
@@ -37,15 +37,15 @@
       <span id="lvname"></span>
       <div class="hudbtns">
         <button id="btn-edit" aria-label="なおす">なおす <kbd>E</kbd></button>
-        <button id="btn-restart" aria-label="やりなおし">↻</button>
-        <button id="btn-mute" aria-label="おと">🔊</button>
-        <button id="btn-menu" aria-label="ステージえらび">☰</button>
+        <button id="btn-restart" aria-label="最初から">↻</button>
+        <button id="btn-mute" aria-label="音">🔊</button>
+        <button id="btn-menu" aria-label="ステージ選択">☰</button>
       </div>
     </div>
     <div id="toast" class="hide"></div>
     </div>
     <div id="pane">
-      <div id="keyhelp"><b>キーそうさ</b><br>← → いどう<br>Z / Space はばたき<br>（くうちゅうでおしつづけると、ふわり）<br>E なおす（じかんストップ）<br>R やりなおし</div>
+      <div id="keyhelp"><b>キー操作</b><br>← → 移動<br>Z / Space はばたき<br>（空中で長押しすると、ふわり）<br>E なおす（時間停止）<br>R 最初から</div>
     <div id="touch" class="hide">
       <div class="acts">
         <button data-btn="jump" class="b-jump">はばたき</button>
@@ -58,10 +58,10 @@
       <div id="tools"></div>
       <div id="opts"></div>
       <div id="editfoot">
-        <button id="e-undo" aria-label="もとにもどす">↶</button>
-        <button id="e-redo" aria-label="やりなおし">↷</button>
-        <button id="e-pan" aria-label="がめんをうごかす">✋</button>
-        <button id="e-done" class="done">おわる</button>
+        <button id="e-undo" aria-label="元に戻す">↶</button>
+        <button id="e-redo" aria-label="やり直す">↷</button>
+        <button id="e-pan" aria-label="画面を動かす">✋</button>
+        <button id="e-done" class="done">終わる</button>
       </div>
     </div>
 
@@ -70,21 +70,21 @@
 
     <section id="screen-title" class="screen">
       <h1>ゲコ<span>＆</span>エナー</h1>
-      <p class="sub">じかんをとめて、せかいをなおしながらすすむ<br>アクション・パズル</p>
-      <button id="btn-play" class="big">あそぶ</button>
-      <button id="btn-guide" class="ghost">ブロックのずかん</button>
-      <p class="keys">PC: ← → いどう　Z/Space はばたき（くうちゅうでおしつづけると、ふわり）　E なおす（じかんストップ）<br>なおしているところ: ドラッグではんいをえらぶ／1〜9 どうぐ　[ ] タブ　Z もどす　Y やりなおし　R やりなおし</p>
-      <p class="themes"><a class="oldlink" href="./">Excelふう（ふつう）</a>　<a class="oldlink" href="?gfx=snes">ソリッドばん</a>　<a class="oldlink" href="?gfx=classic">もとのえ</a></p><a class="oldlink" href="../">むかしバージョン（Pyxelばん）はこちら</a>
+      <p class="sub">時間を止めて、世界を直して進もう<br>アクション・パズル</p>
+      <button id="btn-play" class="big">遊ぶ</button>
+      <button id="btn-guide" class="ghost">ブロック図鑑</button>
+      <p class="keys">PC：← → 移動　Z/Space はばたき（長押しでふわり）　E なおす（時間停止）<br>編集中：ドラッグで範囲選択／1〜9 道具／[ ] タブ／Z 戻す／Y やり直す／R 最初から</p>
+      <p class="themes"><a class="oldlink" href="./">Excel風（標準）</a>　<a class="oldlink" href="?gfx=snes">ソリッド版</a>　<a class="oldlink" href="?gfx=classic">元の絵</a></p><a class="oldlink" href="../">旧バージョン（Pyxel版）はこちら</a>
     </section>
 
     <section id="screen-select" class="screen hide">
-      <header><button id="btn-back" class="ghost">◀ もどる</button><h2>ステージえらび</h2><button id="btn-guide2" class="ghost">ずかん</button><span id="total"></span></header>
+      <header><button id="btn-back" class="ghost">◀ 戻る</button><h2>ステージ選択</h2><button id="btn-guide2" class="ghost">図鑑</button><span id="total"></span></header>
       <div id="levels"></div>
-      <footer><button id="btn-editor" class="ghost tiny">ステージをつくる</button> <button id="btn-reset" class="ghost tiny">セーブをけす</button></footer>
+      <footer><button id="btn-editor" class="ghost tiny">ステージを作る</button> <button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
     </section>
 
     <section id="screen-guide" class="screen hide">
-      <header><button id="btn-guide-back" class="ghost">◀ もどる</button><h2>ブロックのずかん</h2></header>
+      <header><button id="btn-guide-back" class="ghost">◀ 戻る</button><h2>ブロック図鑑</h2></header>
       <div id="guide"></div>
     </section>
 
@@ -93,8 +93,8 @@
       <div id="r-stars"></div>
       <p id="r-info"></p>
       <p id="r-tip"></p>
-      <div class="row"><button id="r-next" class="big">つぎのステージへ</button></div>
-      <div class="row"><button id="r-retry" class="ghost">もういちど</button><button id="r-menu" class="ghost">ステージえらび</button></div>
+      <div class="row"><button id="r-next" class="big">次のステージへ</button></div>
+      <div class="row"><button id="r-retry" class="ghost">もう一度</button><button id="r-menu" class="ghost">ステージ選択</button></div>
     </section>
   </div>
 </div>

@@ -6,23 +6,23 @@
   const CH2TILE = { '.': 0, '#': 1, 'S': 2, 'c': 3, '^': 5, 'M': 7 };
   // ブロックのいろ(＝Excelのセルのいろ)。いろにはちからがある。
   const COLORS = [
-    { n: 'ちゃいろ', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
-    { n: 'あか', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
-    { n: 'あお', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（こおり）' },
-    { n: 'みどり', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
-    { n: 'きいろ', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（のると、0.5びょうほどでくずれる）' },
-    { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: 'いろなしのセル（ちからなし）。いろコピーでいろ（ちから）をつけられる' },
+    { n: '茶色', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: '普通のブロック' },
+    { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: '熱い。触れるとダメージ' },
+    { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: '滑る床（氷）' },
+    { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: '跳ねる床（バネ）' },
+    { n: '黄色', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: '乗ると約0.5秒で崩れる' },
+    { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: '色のないセル。色コピーで性質をつけられる' },
   ];
   const GLASS = 5;
-  const TABS = [{ id: 'home', name: 'ホーム' }, { id: 'cell', name: 'セル' }, { id: 'data', name: 'データ' }, { id: 'view', name: 'ひょうじ' }];
+  const TABS = [{ id: 'home', name: 'ホーム' }, { id: 'cell', name: 'セル' }, { id: 'data', name: 'データ' }, { id: 'view', name: '表示' }];
   // Excelのきのうを、世界のなおすにてんようしたどうぐ。なにもないところにブロックは生まれない(うごかす・ならべる・いろ・隠す・けす、だけ)。
   const TOOLS = [
-    { id: 'painter', tab: 'home', name: 'いろコピー', mode: 'painter', cost: 2, help: '①いろをまねるブロックをタップ → ②ガラスのあるはんいをドラッグ（ガラスにだけいろがつく）' },
-    { id: 'transform', tab: 'cell', name: 'かたち', mode: 'rect', cost: 8, help: 'はんいのブロックをひっくりかえしたり、まわしたりする（まわすときは、しかくにえらぶ）' },
-    { id: 'sort', tab: 'data', name: 'ならべかえ', mode: 'rect', cost: 10, help: 'はんいのブロックを、ひとつのほうこうによせる（まもりブロックとはがねでくぎられる）' },
-    { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: 'いろをえらぶ → そのいろのブロックだけがのこり、ほかはとおりぬけられる' },
-    { id: 'protect', tab: 'view', name: 'シートをまもる', mode: 'rect', cost: 4, help: 'はんいのブロックをまもる。まもったブロックは、どのどうぐもきかない' },
-    { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: 'はんいのまもりをはずす' },
+    { id: 'painter', tab: 'home', name: 'いろコピー', mode: 'painter', cost: 2, help: '①色をコピーするブロックをタップ ②ガラスの範囲をドラッグ。ガラスにだけ色がつく' },
+    { id: 'transform', tab: 'cell', name: 'かたち', mode: 'rect', cost: 8, help: '選んだ範囲を反転・回転する。90°回転は正方形で選ぶ' },
+    { id: 'sort', tab: 'data', name: 'ならべかえ', mode: 'rect', cost: 10, help: '範囲内のブロックを一方向に寄せる。保護ブロックと鋼で区切られる' },
+    { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: '残す色を選ぶ。ほかの色は通り抜けられる' },
+    { id: 'protect', tab: 'view', name: 'シートをまもる', mode: 'rect', cost: 4, help: '範囲内のブロックを保護する。保護したブロックは編集できない' },
+    { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: '選んだ範囲の保護を解除する' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   function newEdit(lv) {
@@ -473,16 +473,16 @@
   function planMove(src, dx, dy) {
     const cells = [], keys = new Set();
     rectEach(src, (x, y) => { if (isMovable(x, y)) { cells.push({ x, y, t: G.front[y][x], c: G.col[y][x] }); keys.add(key(x, y)); } });
-    if (!cells.length) return fail('うごかせるブロックがありません');
+    if (!cells.length) return fail('動かせるブロックがありません');
     const rect = { x0: dx, y0: dy, x1: dx + (src.x1 - src.x0), y1: dy + (src.y1 - src.y0) }, ghost = [];
     for (const c of cells) {
       const tx = c.x - src.x0 + dx, ty = c.y - src.y0 + dy;
-      if (!inb(tx, ty)) return fail('はみだします', { rects: [rect], ghost });
+      if (!inb(tx, ty)) return fail('範囲からはみ出します', { rects: [rect], ghost });
       ghost.push({ x: tx, y: ty, t: c.t, c: c.c });
-      if (!(G.front[ty][tx] === 0 || keys.has(key(tx, ty)))) return fail('ぶつかります', { rects: [rect], ghost });
-      if (cellBlocked(tx, ty)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [rect], ghost });
+      if (!(G.front[ty][tx] === 0 || keys.has(key(tx, ty)))) return fail('ほかのものにぶつかります', { rects: [rect], ghost });
+      if (cellBlocked(tx, ty)) return fail('エナーやリフトの通り道が邪魔です', { rects: [rect], ghost });
     }
-    if (cells.every(c => c.x - src.x0 + dx === c.x && c.y - src.y0 + dy === c.y)) return fail('おなじばしょです');
+    if (cells.every(c => c.x - src.x0 + dx === c.x && c.y - src.y0 + dy === c.y)) return fail('移動先が同じです');
     return { ok: true, cost: costOf('move'), rects: [src, rect], ghost, run() {
       for (const c of cells) { G.front[c.y][c.x] = 0; G.col[c.y][c.x] = 0; }
       for (const c of cells) { const tx = c.x - src.x0 + dx, ty = c.y - src.y0 + dy; G.front[ty][tx] = c.t; G.col[ty][tx] = c.c; }
@@ -490,18 +490,18 @@
   }
   function planSwap(a, dx, dy) {
     const w = a.x1 - a.x0, h = a.y1 - a.y0, b = { x0: dx, y0: dy, x1: dx + w, y1: dy + h };
-    if (!inb(b.x0, b.y0) || !inb(b.x1, b.y1)) return fail('はみだします', { rects: [a, b] });
-    if (!(a.x1 < b.x0 || b.x1 < a.x0 || a.y1 < b.y0 || b.y1 < a.y0)) return fail('かさなっています', { rects: [a, b] });
+    if (!inb(b.x0, b.y0) || !inb(b.x1, b.y1)) return fail('範囲からはみ出します', { rects: [a, b] });
+    if (!(a.x1 < b.x0 || b.x1 < a.x0 || a.y1 < b.y0 || b.y1 < a.y0)) return fail('ブロックが重なります', { rects: [a, b] });
     const pairs = []; let changed = false;
     for (let j = 0; j <= h; j++) for (let i = 0; i <= w; i++) {
       const ax = a.x0 + i, ay = a.y0 + j, bx = b.x0 + i, by = b.y0 + j;
-      if ((G.front[ay][ax] !== 0 && isFixedCell(ax, ay)) || (G.front[by][bx] !== 0 && isFixedCell(bx, by))) return fail('うごかないセルがふくまれます', { rects: [a, b] });
+      if ((G.front[ay][ax] !== 0 && isFixedCell(ax, ay)) || (G.front[by][bx] !== 0 && isFixedCell(bx, by))) return fail('動かせないセルが含まれています', { rects: [a, b] });
       if (G.front[ay][ax] !== G.front[by][bx] || G.col[ay][ax] !== G.col[by][bx]) changed = true;
-      if (G.front[ay][ax] !== 0 && cellBlocked(bx, by)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [a, b] });
-      if (G.front[by][bx] !== 0 && cellBlocked(ax, ay)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [a, b] });
+      if (G.front[ay][ax] !== 0 && cellBlocked(bx, by)) return fail('エナーやリフトの通り道が邪魔です', { rects: [a, b] });
+      if (G.front[by][bx] !== 0 && cellBlocked(ax, ay)) return fail('エナーやリフトの通り道が邪魔です', { rects: [a, b] });
       pairs.push([ax, ay, bx, by]);
     }
-    if (!changed) return fail('いれかえてもおなじです', { rects: [a, b] });
+    if (!changed) return fail('入れ替えても変わりません', { rects: [a, b] });
     return { ok: true, cost: costOf('swap'), rects: [a, b], run() {
       for (const [ax, ay, bx, by] of pairs) {
         const ft = G.front[ay][ax], fc = G.col[ay][ax]; G.front[ay][ax] = G.front[by][bx]; G.col[ay][ax] = G.col[by][bx]; G.front[by][bx] = ft; G.col[by][bx] = fc;
@@ -510,33 +510,33 @@
   }
   function planClear(r) {
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y)) cells.push([x, y]); });
-    if (!cells.length) return fail('けせるブロックがありません', { rects: [r] });
+    if (!cells.length) return fail('消せるブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf('clear'), rects: [r], hl: cells, run() { for (const [x, y] of cells) { G.front[y][x] = 0; G.col[y][x] = 0; } } };
   }
   function liftsInRect(r) { return G.lifts.filter(L => L.col === GLASS && !L.gone && L.x < (r.x1 + 1) * T && L.x + L.w > r.x0 * T && L.y < (r.y1 + 1) * T && L.y + L.h > r.y0 * T); }
   function planColor(r, c, id) {
     const ls = liftsInRect(r);
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === GLASS) cells.push([x, y]); }); // いろをつけられるのは、ガラス(いろなし)だけ
-    if (!cells.length && !ls.length) return fail('ガラスがありません（いろをつけられるのは、ガラスだけ）', { rects: [r] });
+    if (!cells.length && !ls.length) return fail('ガラスがありません。色をつけられるのはガラスだけです', { rects: [r] });
     const hl = cells.slice(); for (const L of ls) for (let x = Math.floor(L.x / T); x * T < L.x + L.w; x++) hl.push([x, Math.floor(L.y / T)]);
     return { ok: true, cost: costOf(id), rects: [r], hl, run() { for (const [x, y] of cells) { G.col[y][x] = c; G.front[y][x] = TL.GLASSED; } for (const L of ls) { L.col = c; L.mark = true; } } };
   }
   function planTransform(r, op) {
     const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
-    if ((op === 'rot' || op === 'trans') && w !== h) return fail('しかくにえらんでね（いま ' + w + '×' + h + '）', { rects: [r] });
+    if ((op === 'rot' || op === 'trans') && w !== h) return fail('正方形で選んでください（現在 ' + w + '×' + h + '）', { rects: [r] });
     const map = (lx, ly) => ({ flipH: [w - 1 - lx, ly], flipV: [lx, h - 1 - ly], rot: [h - 1 - ly, lx], trans: [ly, lx] }[op]);
     const cells = [], vacated = new Set();
     rectEach(r, (x, y) => { if (isMovable(x, y)) { cells.push({ x, y, t: G.front[y][x], c: G.col[y][x] }); vacated.add(key(x, y)); } });
-    if (!cells.length) return fail('うごかせるブロックがありません', { rects: [r] });
+    if (!cells.length) return fail('動かせるブロックがありません', { rects: [r] });
     let changed = false;
     for (const c of cells) {
       const [nx, ny] = map(c.x - r.x0, c.y - r.y0); c.tx = r.x0 + nx; c.ty = r.y0 + ny;
-      if (!inb(c.tx, c.ty)) return fail('はみだします', { rects: [r] });
-      if (!(G.front[c.ty][c.tx] === 0 || vacated.has(key(c.tx, c.ty)))) return fail('うごかないセルにぶつかります', { rects: [r] });
-      if (cellBlocked(c.tx, c.ty)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [r] });
+      if (!inb(c.tx, c.ty)) return fail('範囲からはみ出します', { rects: [r] });
+      if (!(G.front[c.ty][c.tx] === 0 || vacated.has(key(c.tx, c.ty)))) return fail('動かせないセルにぶつかります', { rects: [r] });
+      if (cellBlocked(c.tx, c.ty)) return fail('エナーやリフトの通り道が邪魔です', { rects: [r] });
       if (c.tx !== c.x || c.ty !== c.y) changed = true;
     }
-    if (!changed) return fail('かたちをかえてもおなじです', { rects: [r] });
+    if (!changed) return fail('形を変えても同じです', { rects: [r] });
     return { ok: true, cost: costOf('transform'), rects: [r], ghost: cells.map(c => ({ x: c.tx, y: c.ty, t: c.t, c: c.c })), run() {
       for (const c of cells) { G.front[c.y][c.x] = 0; G.col[c.y][c.x] = 0; }
       for (const c of cells) { G.front[c.ty][c.tx] = c.t; G.col[c.ty][c.tx] = c.c; }
@@ -564,34 +564,34 @@
       flush();
     }
     const diff = assign.filter(a => G.front[a.y][a.x] !== a.t || G.col[a.y][a.x] !== a.c);
-    if (!diff.length) return fail('ならべかえてもおなじです', { rects: [r] });
+    if (!diff.length) return fail('並べ替えても同じです', { rects: [r] });
     return { ok: true, cost: costOf('sort'), rects: [r], hl: diff.map(d => [d.x, d.y]), run() { for (const a of assign) { G.front[a.y][a.x] = a.t; G.col[a.y][a.x] = a.c; } } };
   }
   function planReplace(r, from, to) {
-    if (from === to) return fail('「から」と「へ」がおなじいろです', { rects: [r] });
+    if (from === to) return fail('元の色と変更先の色が同じです', { rects: [r] });
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === from) cells.push([x, y]); });
-    if (!cells.length) return fail(COLORS[from].n + 'いろのブロックがありません', { rects: [r] });
+    if (!cells.length) return fail(COLORS[from].n + '色のブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf('replace'), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.col[y][x] = to; } };
   }
   function planHide(r, axis) {
     const set = axis === 'col' ? G.hideCol : G.hideRow, lo = axis === 'col' ? r.x0 : r.y0, hi = axis === 'col' ? r.x1 : r.y1;
     const rows = []; for (let i = lo; i <= hi; i++) if (!set.has(i)) rows.push(i);
     const rect = axis === 'col' ? { x0: r.x0, x1: r.x1, y0: 0, y1: G.level.h - 1 } : { x0: 0, x1: G.level.w - 1, y0: r.y0, y1: r.y1 };
-    if (!rows.length) return fail('すでにかくれています', { rects: [rect] });
+    if (!rows.length) return fail('すでに隠れています', { rects: [rect] });
     return { ok: true, cost: costOf('hide'), rects: [rect], run() { for (const i of rows) set.add(i); } };
   }
   function planUnhide() {
-    if (!G.hideRow.size && !G.hideCol.size) return fail('かくれたぎょう・れつはありません');
+    if (!G.hideRow.size && !G.hideCol.size) return fail('隠れている行・列はありません');
     return { ok: true, cost: costOf('unhide'), run() { G.hideRow.clear(); G.hideCol.clear(); } };
   }
   function planFilter(c) {
-    if (G.filter === c) return fail(c === null ? 'フィルターはかかっていません' : 'すでにそのいろです');
+    if (G.filter === c) return fail(c === null ? 'フィルターはかかっていません' : 'すでにその色です');
     if (c === null) return { ok: true, cost: 0, run() { G.filter = null; } };
     return { ok: true, cost: costOf('filter'), run() { G.filter = c; } };
   }
   function planProtect(r, on) {
     const cells = []; rectEach(r, (x, y) => { if (on ? (isBlk(x, y) && !G.lock[y][x]) : G.lock[y][x]) cells.push([x, y]); });
-    if (!cells.length) return fail(on ? 'まもれるブロックがありません' : 'まもったブロックがありません', { rects: [r] });
+    if (!cells.length) return fail(on ? '保護できるブロックがありません' : '保護されたブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf(on ? 'protect' : 'unprotect'), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.lock[y][x] = on ? 1 : 0; } };
   }
   const colOfX = (x) => Math.floor(x / T);
@@ -610,9 +610,9 @@
   }
   function planInsCol(x) {
     const w = G.level.w, h = G.level.h;
-    if (x < 1 || x > w - 2) return fail('ここにはいれられません', { cols: [x] });
-    for (let y = 0; y < h; y++) if (isBlk(w - 1, y)) return fail('いちばんみぎのれつにブロックがあり、はみだします', { cols: [x] });
-    if (colOfX(G.flag.x) === w - 1) return fail('ゴールがはみだします', { cols: [x] });
+    if (x < 1 || x > w - 2) return fail('ここには入れられません', { cols: [x] });
+    for (let y = 0; y < h; y++) if (isBlk(w - 1, y)) return fail('右端のブロックがはみ出します', { cols: [x] });
+    if (colOfX(G.flag.x) === w - 1) return fail('ゴールがはみ出します', { cols: [x] });
     return { ok: true, cost: costOf('insCol'), cols: [x], run() {
       for (let y = 0; y < h; y++) {
         const leftSteel = G.front[y][x - 1] === TL.STEEL;
@@ -624,9 +624,9 @@
   }
   function planDelCol(x) {
     const w = G.level.w, h = G.level.h;
-    if (x < 1 || x > w - 2) return fail('ここはけせません', { cols: [x] });
-    if (colOfX(G.p.x + 5) === x) return fail('キャラクターがいるれつはけせません', { cols: [x] });
-    if (colOfX(G.flag.x) === x) return fail('ゴールのれつはけせません', { cols: [x] });
+    if (x < 1 || x > w - 2) return fail('ここは消せません', { cols: [x] });
+    if (colOfX(G.p.x + 5) === x) return fail('エナーがいる列は消せません', { cols: [x] });
+    if (colOfX(G.flag.x) === x) return fail('ゴールがある列は消せません', { cols: [x] });
     return { ok: true, cost: costOf('delCol'), cols: [x], run() {
       for (let y = 0; y < h; y++) {
         const lastSteel = G.front[y][w - 1] === TL.STEEL;
@@ -639,14 +639,14 @@
   function planFor(tool, a) {
     const o = a.opts || G.edit.opts;
     switch (tool) {
-      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('ガラスのいろ（いろなし）はコピーできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
+      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
       case 'sort': return planSort(a.rect, o.sort);
       case 'filter': return planFilter(a.fcolor !== undefined ? a.fcolor : o.fcolor);
       case 'protect': return planProtect(a.rect, true);
       case 'unprotect': return planProtect(a.rect, false);
     }
-    return fail('このどうぐはつかえません');
+    return fail('この道具は使えません');
   }
 
   // ---- 実ぎょう・もとにもどす・やり直す(状態をまるごと保存する) ----
@@ -671,10 +671,10 @@
   function runPlan(plan) {
     const E = G.edit;
     if (!plan.ok) { E.msg = plan.msg; SFX.bad(); return false; }
-    if (plan.cost > G.energy) { E.msg = 'エナジーがたりません（' + plan.cost + '）'; SFX.bad(); return false; }
+    if (plan.cost > G.energy) { E.msg = 'エナジー不足（' + plan.cost + '）'; SFX.bad(); return false; }
     E.undo.push({ state: snapshot(), cost: plan.cost }); E.redo.length = 0;
     plan.run(); G.mgs = []; G.energy -= plan.cost; E.msg = ''; SFX.place();
-    if (!G.regen && G.energy < minCost()) UI.toast('コストをつかいきりました。もうなおせません（Rでやりなおし）', 3500);
+    if (!G.regen && G.energy < minCost()) UI.toast('コストを使い切り、もう編集できません。Rで最初から', 3500);
     return true;
   }
   function undoEdit() {
@@ -683,12 +683,12 @@
   }
   function redoEdit() {
     const E = G.edit, r = E.redo.pop(); if (!r) { SFX.bad(); return; }
-    if (G.energy < r.cost) { E.redo.push(r); E.msg = 'エナジーがたりません'; SFX.bad(); return; }
+    if (G.energy < r.cost) { E.redo.push(r); E.msg = 'エナジーが足りません'; SFX.bad(); return; }
     E.undo.push({ state: snapshot(), cost: r.cost }); restoreSnap(r.state); G.energy -= r.cost; SFX.place();
   }
   function setEdit(on) {
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
-    if (!G.level.tools.length) { UI.toast('このステージではなおせないよ'); return; }
+    if (!G.level.tools.length) { UI.toast('このステージでは「なおす」を使えません'); return; }
     E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
@@ -701,7 +701,7 @@
     const E = G.edit, d = toolDef(); if (!d) return;
     if (d.mode === 'rect') runPlan(planFor(E.tool, { rect: r }));
     else if (d.mode === 'two' && E.step === 0) {
-      if (!hasMovable(r)) { E.msg = 'うごかせるブロックがありません'; SFX.bad(); } else { E.src = r; E.step = 1; E.msg = ''; SFX.place(); }
+      if (!hasMovable(r)) { E.msg = '動かせるブロックがありません'; SFX.bad(); } else { E.src = r; E.step = 1; E.msg = ''; SFX.place(); }
     } else if (d.mode === 'painter' && E.step === 1) { if (runPlan(planFor('painter', { rect: r, srcCell: E.srcCell }))) { /* つづけてぬれる */ } }
     UI.refreshTools();
   }
@@ -709,7 +709,7 @@
     const E = G.edit, d = toolDef(); if (!d) return;
     if (d.mode === 'two' && E.step === 1) { if (runPlan(planFor(E.tool, { rect: E.src, dst: [tx, ty] }))) { E.step = 0; E.src = null; } }
     else if (d.mode === 'painter' && E.step === 0) {
-      if (inb(tx, ty) && isBlk(tx, ty)) { E.srcCell = [tx, ty]; E.step = 1; E.msg = ''; SFX.place(); } else { E.msg = 'ブロックをタップしてね'; SFX.bad(); }
+      if (inb(tx, ty) && isBlk(tx, ty)) { E.srcCell = [tx, ty]; E.step = 1; E.msg = ''; SFX.place(); } else { E.msg = 'ブロックをタップしてください'; SFX.bad(); }
     } else if (d.mode === 'col') runPlan(planFor(E.tool, { col: tx }));
     UI.refreshTools();
   }
@@ -783,7 +783,7 @@
       if (s.on) continue;
       if (inb(s.x, s.y) && G.front[s.y][s.x] === TL.MAGNET) s.on = true; // そのマスに、じしゃくがある
       if (!s.on) for (const m of G.mgs) { const mx = (m.x + m.dx * m.off) * T, my = (m.y + m.dy * m.off) * T; if (Math.abs(mx - s.x * T) < 8 && Math.abs(my - s.y * T) < 8) s.on = true; }
-      if (s.on) { SFX.gem && SFX.gem(); for (const d of G.doors) if (d.id === s.id && !d.open) { d.latched = true; d.open = true; UI.toast('どこかで、とびらがひらいたよ', 1800); } }
+      if (s.on) { SFX.gem && SFX.gem(); for (const d of G.doors) if (d.id === s.id && !d.open) { d.latched = true; d.open = true; UI.toast('どこかの扉が開きました！', 1800); } }
     }
   }
 
@@ -1217,7 +1217,7 @@
       const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
       UI.refreshTools();
     },
-    helpText() { const E = G.edit, d = TOOL_BY[E.tool]; const t = E.pan ? 'ドラッグでがめんをうごかす' : (E.msg || E.hint || (d ? d.help : '')); const el = $('#edithelp'); if (el.textContent !== t) el.textContent = t; },
+    helpText() { const E = G.edit, d = TOOL_BY[E.tool]; const t = E.pan ? 'ドラッグで画面を移動' : (E.msg || E.hint || (d ? d.help : '')); const el = $('#edithelp'); if (el.textContent !== t) el.textContent = t; },
     tabsOf() { const t = new Set(); G.level.tools.forEach(id => t.add(TOOL_BY[id].tab)); return TABS.map(x => x.id).filter(id => t.has(id)); },
     toolsOfTab(tab) { return G.level.tools.map(id => TOOL_BY[id]).filter(t => t.tab === tab); },
     pickTab(tab) { const E = G.edit; E.tab = tab; const l = UI.toolsOfTab(tab); if (!l.find(t => t.id === E.tool)) UI.pickTool(l[0].id); else UI.refreshTools(); },
@@ -1238,10 +1238,10 @@
       };
       const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
       const o = E.opts, id = E.tool;
-      if (id === 'transform') chips('', [{ v: 'flipH', label: 'よこにひっくり' }, { v: 'flipV', label: 'たてにひっくり' }, { v: 'rot', label: '90°まわす' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
+      if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '90°回転' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
-      else if (id === 'filter') chips('のこすいろ', colorItems.concat([{ v: null, label: 'はずす' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
-      const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグでがめんをうごかす' : (E.msg || E.hint || (d ? d.help : ''));
+      else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '外す' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
+      const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
     restart() { if (G.mode !== 'play') return; loadLevel(G.levelIdx); UI.show(null); },
@@ -1263,10 +1263,10 @@
       G.mode = 'result'; UI.show('#screen-result');
       $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true);
       const lv = G.level;
-      $('#r-info').innerHTML = 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + 'びょう　ダメージ ' + G.hits + 'かい';
-      const tips = []; if (!goals[1]) tips.push('Σをぜんぶあつめる'); if (!goals[2]) tips.push('ノーミス（ダメージをうけない）でクリア');
+      $('#r-info').innerHTML = 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回';
+      const tips = []; if (!goals[1]) tips.push('Σをすべて集める'); if (!goals[2]) tips.push('ダメージを受けずにクリア');
       $('#r-tip').textContent = tips.length ? tips.join('　') : 'パーフェクト！';
-      const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージえらびへ' : 'つぎのステージへ';
+      const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージ選択へ' : '次のステージへ';
     },
   };
   $('#e-undo').onclick = () => undoEdit(); $('#e-redo').onclick = () => redoEdit(); $('#e-done').onclick = () => setEdit(false);
@@ -1283,24 +1283,24 @@
   function openGuide(from) {
     guideFrom = from; G.mode = from; UI.show('#screen-guide');
     const blk = (c, alpha) => tileSample(() => drawBlock(TL.STONE, c, 0, 0, true, true, alpha, 0));
-    const items = [['h', 'いろつきブロック（なおすでいろをかえられる）']];
+    const items = [['h', '色つきブロック（色ごとに性質が違う）']];
     COLORS.forEach((k, i) => items.push([blk(i), k.n + 'ブロック', k.fx]));
-    items.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), 'もとガラス（いろをつけたガラス）', 'いろコピーでいろをつけたガラス。いろのちからはふつうのブロックとおなじで、しろい「つやのわく」がのこるので、もとガラスだとわかる。もういちどはいろをつけられない']);
-    items.push(['h', 'そのほかのじめん']);
-    items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), 'はがね', 'なおせないはがねのかべ・ゆか・てんじょう。どのどうぐもきかない']);
-    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひびわれかべ', 'きいろブロックとおなじ（のるとくずれる）。どうぐがきく']);
-    items.push(['h', 'じしゃく・スイッチ・とびら']);
-    items.push([tileSample(() => drawMagnet(0, 0)), 'じしゃくブロック', 'いちばんちかいはがねに、まっすぐひきよせられる（あるくのとおなじはやさ）。まっすぐのせんの上にほかのブロックがあると、はたらかない。フィルターのえいきょうはうけない']);
-    items.push(['h', 'はんていセル（とびらにつながる）']);
-    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'そんざいセル', 'そのマスに、ほんとうにぶつかるブロックが あるか、しゅじんこうが たっていると ON。フィルターでうすくなったブロックは「ない」あつかい。ONのあいだだけ、おなじ番号の とびらが ひらき、おなじ番号の リフトが うごく']);
-    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'あきセル', 'そのマスに、ぶつかるものが なにもなく、しゅじんこうも いないと ON。フィルターでブロックをうすくすると ONになる']);
-    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'color', color: 3, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'いろセル', 'そのマスに、きめたいろの ブロックが あると ON。いろコピーでつくった いろも、かぞえる']);
-    items.push([tileSample(() => drawSwitch({ x: 0, y: 0, id: 0, on: false }, 0, 0)), 'スイッチ', 'じしゃくブロックがかさなると、おされる（いちどおしたら、そのまま）。おなじいろのとびらがひらく']);
-    items.push([tileSample(() => { const save = G.doors; G.doors = [{ x: 0, y: 0, h: 1, id: 0, open: false, anim: 0 }]; try { drawDoors(0, 0); } finally { G.doors = save; } }), 'とびら', 'スイッチをおすまで、とおれない。ブロックもおけない']);
-    items.push(['h', 'しかけ・カギ']);
-    items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', 'きまったみち（うすくみえるみち）を、きまったくりかえしていったりきたりするあしば。のるとはこばれる。どうぐではうごかせず、みちにブロックをおくこともできない。リフトにもいろ（ちから）があり、フィルターでけせる（うすくなってとおりぬけられる）。ガラスのリフトは、いろコピーでいろをつけられる']);
-    items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（まもり）', 'まもったブロック。どのどうぐもきかず、フィルターでもきえない。よせるときのしきりになる。「まもりをはずす」ではずせる']);
-    items.push([blk(0, .28), 'うすいひょうじ', 'フィルターをかけているところ。えらんだいろいがいのブロック（ガラスも）は、うすくなってとおりぬけられる']);
+    items.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), '色つきガラス', 'いろコピーで色をつけたガラス。色の性質を持ち、白い枠が残る。一度色をつけると変更できない']);
+    items.push(['h', 'その他の地形']);
+    items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼', '編集できない鋼の壁・床・天井。どの道具も効かない']);
+    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '黄色ブロックと同じく、乗ると崩れる。編集できる']);
+    items.push(['h', '磁石・スイッチ・扉']);
+    items.push([tileSample(() => drawMagnet(0, 0)), '磁石ブロック', '最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない。フィルターは効かない']);
+    items.push(['h', '判定セル（扉などと連動）']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '存在セル', 'このマスに実体のあるブロックかエナーがいるとON。薄くなったブロックは対象外。ONの間、同じ番号の扉が開き、リフトが動く']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '空きセル', 'このマスに実体のあるものもエナーもいなければON。フィルターで薄くなったブロックは空き扱い']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'color', color: 3, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '色セル', '指定色のブロックがあるとON。いろコピーで色をつけたガラスも対象']);
+    items.push([tileSample(() => drawSwitch({ x: 0, y: 0, id: 0, on: false }, 0, 0)), 'スイッチ', '磁石が重なるとONになり、そのまま維持。同じ色の扉が開く']);
+    items.push([tileSample(() => { const save = G.doors; G.doors = [{ x: 0, y: 0, h: 1, id: 0, open: false, anim: 0 }]; try { drawDoors(0, 0); } finally { G.doors = save; } }), '扉', '対応するスイッチや判定セルで開く。閉じている間は通れず、ブロックも置けない']);
+    items.push(['h', '仕掛け・カギ']);
+    items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', '決まった道を往復する足場。乗ると運ばれる。リフトは編集で動かせず、通り道にブロックも置けない。色の性質やフィルターが効き、ガラス製は「いろコピー」が使える']);
+    items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。編集やフィルターが効かず、寄せるときの仕切りになる。「まもりをはずす」で解除できる']);
+    items.push([blk(0, .28), '薄い表示', 'フィルターで残す色以外のブロック（ガラスを含む）は薄くなり、通り抜けられる']);
     const box = $('#guide'); box.innerHTML = '';
     items.forEach(it => {
       if (it[0] === 'h') { const p = document.createElement('p'); p.className = 'gh'; p.textContent = it[1]; box.appendChild(p); return; }
@@ -1321,7 +1321,7 @@
   $('#r-retry').onclick = () => { UI.start(G.levelIdx); };
   $('#r-next').onclick = () => { if (G.levelIdx >= LEVELS.length - 1) UI.select(); else UI.start(G.levelIdx + 1); };
   $('#r-menu').onclick = () => UI.select();
-  $('#btn-reset').onclick = () => { if (confirm('セーブデータをけしますか？')) { save = { levels: {}, muted }; persist(); UI.buildSelect(); } };
+  $('#btn-reset').onclick = () => { if (confirm('セーブデータを消しますか？')) { save = { levels: {}, muted }; persist(); UI.buildSelect(); } };
 
   // ===== 拡大ひょうじ(整数倍) =====
   // ウィンドウ全からだ(リボン・シート・ペイン)を、がめんにあわせて拡大する。シートは、いつも320×180(マス目の世界)。
