@@ -1,7 +1,7 @@
 /* ゲコ＆エナー v2 — 本体。320x180 のドットを整数倍に拡大して表示する(すべてのドットが同じ大きさ)。 */
 (function () {
   'use strict';
-  const W = 320, H = 180, T = 16, DT = 1 / 60;
+  const W = 288, H = 180, T = 16, DT = 1 / 60; // シートは18マス×11.25マス。横向きの画面で、整数倍(2倍)にぴったり入る大きさ
   const TL = { EMPTY: 0, STONE: 1, STEEL: 2, CRACK: 3, SPIKE: 5, GLASSED: 6 }; // GLASSED = 書式をつけたガラス(色の性質は、ふつうのブロックと同じ。元ガラスの印がつく)
   const CH2TILE = { '.': 0, '#': 1, 'S': 2, 'c': 3, '^': 5 };
   // ブロックの色(＝Excelのセルの色)。色には性質がある。
@@ -1025,7 +1025,8 @@
 
   // ---- ウィンドウの大きさ(論理)と、ボタンの当たり判定 ----
   const VIEW = { w: 416, h: 204, portrait: false, ph: 100, rh: 24, pw: 96, s: 2 };
-  const SX = 0, SY = 24; // シート(マス目の世界)の左上
+  let SX = 48, SY = 15; // シート(マス目の世界)の左上(横向き: 左ペインのつぎ。縦向き: リボンの下)
+  const MY = 24; // メニュー画面の、リボンの高さ
   const UIC = { hits: [], scroll: {}, down: null, touch: false, press: null };
   const COL = { bg: '#F3F3F3', line: '#ABABAB', text: '#262626', sub: '#595959', green: '#217346', gdark: '#185C37', note: '#FFFFE1', sel: '#E2F0D9' };
   function box(x, y, w, h, fill, border) { if (fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); } if (border) { ctx.fillStyle = border; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h); } }
@@ -1186,32 +1187,36 @@
   const badgesW = (n, sc) => { sc = sc || 1; const s = 10 * sc; return s + 3 * sc + (n > 0 ? Math.min(n, 3) * (s + sc) + 2 * sc : 0) + textW('ノーミス', sc > 1 ? 12 : 10) + 6 * sc; };
 
   // ---- リボン(上): ライフ・コスト・Σ・タイム・ボタン ----
-  function drawRibbonBase(title) {
-    const w = VIEW.w; box(0, 0, w, 24, COL.bg); ctx.fillStyle = COL.line; ctx.fillRect(0, 23, w, 1);
-    box(0, 0, 38, 23, '#FFFFFF'); ctx.fillStyle = COL.green; ctx.fillRect(0, 20, 38, 3); drawText('ホーム', 4, 6, COL.green, 10);
-    ctx.fillStyle = '#D4D4D4'; ctx.fillRect(38, 0, 1, 23);
-    if (title) drawText(title, 46, 7, COL.text, 10);
+  function drawRibbonBase(title, h) {
+    h = h || MY; const w = VIEW.w; box(0, 0, w, h, COL.bg); ctx.fillStyle = COL.line; ctx.fillRect(0, h - 1, w, 1);
+    box(0, 0, 38, h - 1, '#FFFFFF'); ctx.fillStyle = COL.green; ctx.fillRect(0, h - 4, 38, 3); drawText('ホーム', 4, (h - 4 - 10) >> 1, COL.green, 10);
+    ctx.fillStyle = '#D4D4D4'; ctx.fillRect(38, 0, 1, h - 1);
+    if (title) drawText(title, 46, (h - 10) >> 1, COL.text, 10);
   }
+  function actionButtons(list) { list.forEach(([x, y, w, h, o]) => btn(x, y, w, h, o)); }
+  function menuActions() { return { menu: { icon: 'menu', label: 'ステージえらび', fn: () => UI.select() }, sound: { icon: muted ? 'mute' : 'sound', label: '音', fn: toggleMute }, restart: { icon: 'restart', label: 'やりなおし', fn: () => UI.restart() } }; }
   function drawRibbonPlay() {
-    drawRibbonBase(); const w = VIEW.w; let x = 44; const sep = (xx) => { ctx.fillStyle = '#D4D4D4'; ctx.fillRect(xx, 3, 1, 18); };
-    for (let i = 0; i < 3; i++) iconScaled(['.1.1.', '11111', '11111', '.111.', '..1..'], x + i * 12, 7, i < G.p.hp ? '#E04444' : '#D0D0D0', 2);
+    const P = VIEW.portrait, rh = P ? MY : 15; drawRibbonBase(null, rh); const w = VIEW.w, ty = (rh - 10) >> 1; let x = 44; const sep = (xx) => { ctx.fillStyle = '#D4D4D4'; ctx.fillRect(xx, 2, 1, rh - 5); };
+    for (let i = 0; i < 3; i++) iconScaled(['.1.1.', '11111', '11111', '.111.', '..1..'], x + i * 12, ty, i < G.p.hp ? '#E04444' : '#D0D0D0', 2);
     x += 3 * 12 + 4; sep(x); x += 6;
     if (hasEditBtn()) {
-      const e = Math.floor(G.energy), bw = VIEW.portrait ? 24 : 34; box(x, 8, bw, 8, '#FFFFFF', '#8C8C8C'); ctx.fillStyle = G.energy < minCost() ? '#E04444' : '#70AD47'; ctx.fillRect(x + 1, 9, Math.round((bw - 2) * G.energy / Math.max(1, G.maxE)), 6);
-      x += bw + 3; x += drawText(String(e), x, 7, COL.text, 10) + 5; sep(x); x += 6;
+      const e = Math.floor(G.energy), bw = P ? 24 : 34, by = (rh - 8) >> 1; box(x, by, bw, 8, '#FFFFFF', '#8C8C8C'); ctx.fillStyle = G.energy < minCost() ? '#E04444' : '#70AD47'; ctx.fillRect(x + 1, by + 1, Math.round((bw - 2) * G.energy / Math.max(1, G.maxE)), 6);
+      x += bw + 3; x += drawText(String(e), x, ty, COL.text, 10) + 5; sep(x); x += 6;
     }
-    const ng = G.level.gems.length; if (ng) { if (ng <= 3) for (let i = 0; i < ng; i++) { sigmaTile(x, 7, 10, i < G.gems); x += 11; } else { sigmaTile(x, 7, 10, true); x += 12; x += drawText(G.gems + '/' + ng, x, 7, COL.text, 10); } x += 3; sep(x); x += 6; }
-    drawText(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), x, 7, COL.sub, 10);
-    let bx = w - 3; const by = 4, bh = 16;
-    bx -= 18; btn(bx, by, 18, bh, { icon: 'menu', label: 'ステージえらび', fn: () => UI.select() }); bx -= 20;
-    bx -= 0; btn(bx, by, 18, bh, { icon: muted ? 'mute' : 'sound', label: '音', fn: toggleMute }); bx -= 20;
-    btn(bx, by, 18, bh, { icon: 'restart', label: 'やりなおし', fn: () => UI.restart() }); bx -= 4;
-    if (hasEditBtn()) { const ew = VIEW.portrait ? 20 : 40; bx -= ew; btn(bx, by, ew, bh, { hl: '編集', sel: G.edit.on, icon: VIEW.portrait ? 'edit' : null, label: VIEW.portrait ? '編集' : '', fn: () => toggleEdit() }); if (!VIEW.portrait) { drawIcon('edit', bx + 5, by + 4, G.edit.on ? COL.green : COL.text, 1); drawText('編集', bx + 17, by + 3, COL.text, 10); } }
+    const ng = G.level.gems.length; if (ng) { if (ng <= 3) for (let i = 0; i < ng; i++) { sigmaTile(x, ty, 10, i < G.gems); x += 11; } else { sigmaTile(x, ty, 10, true); x += 12; x += drawText(G.gems + '/' + ng, x, ty, COL.text, 10); } x += 3; sep(x); x += 6; }
+    drawText(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), x, ty, COL.text, 10);
+    if (!P) { // 横向き: ボタンは、左のペイン。ここには、ステージ名を出す
+      const nm = G.level.id + ' ' + G.level.name; drawText(nm, w - 6 - textW(nm, 10), ty, COL.green, 10); return;
+    }
+    const M = menuActions(); let bx = w - 3; const by = 4, bh = 16;
+    bx -= 18; btn(bx, by, 18, bh, M.menu); bx -= 20; btn(bx, by, 18, bh, M.sound); bx -= 20; btn(bx, by, 18, bh, M.restart); bx -= 4;
+    if (hasEditBtn()) { bx -= 20; btn(bx, by, 20, bh, { hl: '編集', sel: G.edit.on, icon: 'edit', fn: () => toggleEdit() }); }
   }
   // ---- ペイン(横/下): 操作ボタン・キー説明・編集の道具 ----
   function paneRect() { return VIEW.portrait ? { x: 0, y: SY + H, w: VIEW.w, h: VIEW.h - SY - H } : { x: SX + W, y: SY, w: VIEW.w - W, h: H }; }
   function editHelp() { const E = G.edit, d = TOOL_BY[E.tool]; return E.pan ? 'ドラッグで画面を動かす' : (E.msg || E.hint || (d ? d.help : '')); }
-  function drawPane() {
+  function drawPane() { if (VIEW.portrait) drawPanePortrait(); else { drawLeftPane(); drawRightPane(); } }
+  function drawPanePortrait() {
     const P = paneRect(); box(P.x, P.y, P.w, P.h, COL.bg, null); ctx.fillStyle = COL.line; if (VIEW.portrait) ctx.fillRect(P.x, P.y, P.w, 1); else ctx.fillRect(P.x, P.y, 1, P.h);
     const E = G.edit;
     if (!E.on) {
@@ -1241,9 +1246,43 @@
     btn(x0, fy, 18, 16, { icon: 'undo', label: '元に戻す', fn: () => undoEdit() }); btn(x0 + 20, fy, 18, 16, { icon: 'redo', label: 'やり直す', fn: () => redoEdit() }); btn(x0 + 40, fy, 18, 16, { sel: E.pan, icon: 'hand', label: '画面を動かす', fn: () => { E.pan = !E.pan; } });
     btn(x0 + 60, fy, w - 60, 16, { primary: true, label: VIEW.portrait ? '編集を終える' : '終了', fn: () => setEdit(false) });
   }
+  // ---- 横向き: 左ペイン(ボタン・指の左)と右ペイン(はばたき・説明・編集) ----
+  function drawLeftPane() {
+    const P = { x: 0, y: SY, w: SX, h: H }, E = G.edit; box(P.x, P.y, P.w, P.h, COL.bg, null); ctx.fillStyle = COL.line; ctx.fillRect(P.x + P.w - 1, P.y, 1, P.h);
+    if (!E.on) {
+      const M = menuActions(), y0 = P.y + 3;
+      btn(2, y0, 21, 21, M.menu); btn(25, y0, 21, 21, M.sound); btn(2, y0 + 23, 21, 21, M.restart);
+      if (hasEditBtn()) btn(25, y0 + 23, 21, 21, { hl: '編集', icon: 'edit', fn: () => toggleEdit() });
+      if (TOUCH_DEV()) { btn(2, P.y + 86, 21, 90, { hold: true, name: 'left', icon: 'left', iscale: 2, label: '左' }); btn(25, P.y + 86, 21, 90, { hold: true, name: 'right', icon: 'right', iscale: 2, label: '右' }); }
+      return;
+    }
+    UI.tabsOf().forEach((id, i) => btn(2, P.y + 3 + i * 16, 44, 14, { sel: E.tab === id, label: TABS.find(t => t.id === id).name, fn: () => UI.pickTab(id) }));
+    const fy = P.y + P.h - 44;
+    btn(2, fy, 21, 19, { icon: 'undo', label: '元に戻す', fn: () => undoEdit() }); btn(25, fy, 21, 19, { icon: 'redo', label: 'やり直す', fn: () => redoEdit() });
+    btn(2, fy + 22, 21, 19, { sel: E.pan, icon: 'hand', label: '画面を動かす', fn: () => { E.pan = !E.pan; } }); btn(25, fy + 22, 21, 19, { primary: true, label: '終了', fn: () => setEdit(false) });
+  }
+  function drawRightPane() {
+    const P = { x: SX + W, y: SY, w: VIEW.w - SX - W, h: H }, E = G.edit; box(P.x, P.y, P.w, P.h, COL.bg, null); ctx.fillStyle = COL.line; ctx.fillRect(P.x, P.y, 1, P.h);
+    const x0 = P.x + 3, w = P.w - 5; let y = P.y + 3;
+    if (!E.on) {
+      if (TOUCH_DEV()) btn(P.x + 4, P.y + 100, P.w - 8, 76, { hold: true, name: 'jump', primary: true, label: 'はばたき', size: 12 });
+      else { ['キー操作', '← → 移動', 'Z / Space', 'はばたき', '空中で押し', '続けると', 'ふわり', 'E 編集', 'R やりなおし'].forEach((t, i) => drawText(t, x0 + 2, y + 2 + i * 12, i === 0 ? COL.green : COL.text, 10)); }
+      return;
+    }
+    UI.toolsOfTab(E.tab).forEach((t, i) => { btn(x0, y, w, 15, { sel: E.tool === t.id && !E.pan, left: true, label: (w < 90 ? '' : (i + 1) + ' ') + t.name, right: String(t.cost), fn: () => UI.pickTool(t.id) }); y += 16; });
+    y += 2; const o = E.opts, id = E.tool;
+    const chipRow = (items) => { let cx = x0; for (const it of items) { const cw = it.color !== undefined ? 14 : textW(it.label, 10) + 8; if (cx + cw > x0 + w) { cx = x0; y += 15; } if (it.color !== undefined) { btn(cx, y, cw, 13, { sel: it.sel, fn: it.fn, label: COLORS[it.color].n }); box(cx + 2, y + 2, cw - 4, 9, COLORS[it.color].hex, '#404040'); } else btn(cx, y, cw, 13, { sel: it.sel, label: it.label, fn: it.fn }); cx += cw + 2; } y += 15; };
+    if (id === 'transform') chipRow([{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }].map(it => ({ ...it, sel: o.tf === it.v, fn: () => { o.tf = it.v; } })));
+    else if (id === 'sort') chipRow([{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }].map(it => ({ ...it, sel: o.sort === it.v, fn: () => { o.sort = it.v; } })));
+    else if (id === 'filter') { drawText('残す色', x0, y, COL.sub, 10); y += 12; chipRow(COLORS.map((c, i) => ({ color: i, sel: G.filter === i, fn: () => { runPlan(planFor('filter', { fcolor: i })); } })).concat([{ label: '解除', sel: G.filter === null, fn: () => { runPlan(planFor('filter', { fcolor: null })); } }])); }
+    // 説明は、のこりの高さに入るだけ(下から)
+    y += 3; const room = Math.floor((P.y + P.h - 3 - y - 4) / 11); let note = wrapText(editHelp(), w - 6, 10);
+    if (note.length > room) { note = note.slice(0, Math.max(1, room)); note[note.length - 1] = note[note.length - 1].slice(0, -1) + '…'; }
+    const nh = note.length * 11 + 4; box(x0, y, w, nh, COL.note, '#000000'); note.forEach((t, i) => drawText(t, x0 + 3, y + 2 + i * 11, '#000000', 10));
+  }
   function drawToastAndName() {
     if (UI.toastT > 0 && !G.edit.on && UI.toastMsg) {
-      const lines = wrapText(UI.toastMsg, 296, 10), bh = lines.length * 11 + 6, bw = Math.min(306, Math.max(...lines.map(l => textW(l, 10))) + 10), bx = SX + ((W - bw) >> 1), by = SY + 4;
+      const lines = wrapText(UI.toastMsg, W - 18, 10), bh = lines.length * 11 + 6, bw = Math.min(W - 6, Math.max(...lines.map(l => textW(l, 10))) + 10), bx = SX + ((W - bw) >> 1), by = SY + 4;
       box(bx, by, bw, bh, COL.note, '#000000'); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(bx + 2, by + bh, bw, 2); lines.forEach((l, i) => drawText(l, bx + 5, by + 3 + i * 11, '#000000', 10));
     }
     if (window.__noName) return;
@@ -1256,9 +1295,9 @@
     drawPane(); drawToastAndName();
   }
   // ---- メニューの画面 ----
-  function sheetBg() { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, SY, VIEW.w, VIEW.h - SY); ctx.fillStyle = '#E1E1E1'; for (let x = 0; x < VIEW.w; x += 16) ctx.fillRect(x, SY, 1, VIEW.h - SY); for (let y = SY; y < VIEW.h; y += 16) ctx.fillRect(0, y, VIEW.w, 1); }
+  function sheetBg() { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, MY, VIEW.w, VIEW.h - MY); ctx.fillStyle = '#E1E1E1'; for (let x = 0; x < VIEW.w; x += 16) ctx.fillRect(x, MY, 1, VIEW.h - MY); for (let y = MY; y < VIEW.h; y += 16) ctx.fillRect(0, y, VIEW.w, 1); }
   function drawTitle() {
-    drawRibbonBase('ゲコ＆エナー v2'); sheetBg(); const cx = VIEW.w >> 1, P = VIEW.portrait, top = SY + (P ? 40 : 2), gap = P ? 1 : 0;
+    drawRibbonBase('ゲコ＆エナー v2'); sheetBg(); const cx = VIEW.w >> 1, P = VIEW.portrait, top = MY + (P ? 40 : 2), gap = P ? 1 : 0;
     const tw = textW('ゲコ＆エナー', 12, 3); drawText('ゲコ＆エナー', cx - (tw >> 1), top + 2, COL.green, 12, 3);
     const sub = P ? '時間を止めて、世界を直しながら進む' : '時間を止めて、世界を直しながら進む　アクション・パズル', sw = textW(sub, 10); drawText(sub, cx - (sw >> 1), top + 42, COL.sub, 10);
     if (P) { const s2 = 'アクション・パズル'; drawText(s2, cx - (textW(s2, 10) >> 1), top + 54, COL.sub, 10); }
@@ -1271,9 +1310,9 @@
     const old = '旧バージョン(Pyxel版)はこちら', ow = textW(old, 10); drawText(old, cx - (ow >> 1), y, COL.sub, 10); ctx.fillStyle = COL.sub; ctx.fillRect(cx - (ow >> 1), y + 10, ow, 1); UIC.hits.push({ x: cx - (ow >> 1), y: y - 2, w: ow, h: 14, type: 'tap', label: '旧バージョン', fn: () => { location.href = '../'; } });
   }
   function drawSelect() {
-    drawRibbonBase('ステージえらび'); sheetBg(); const w = VIEW.w, port = VIEW.portrait, rowH = port ? 28 : 16, top = SY + 14, bot = VIEW.h - 19;
+    drawRibbonBase('ステージえらび'); sheetBg(); const w = VIEW.w, port = VIEW.portrait, rowH = port ? 28 : 16, top = MY + 14, bot = VIEW.h - 19;
     btn(w - 62, 4, 58, 16, { label: '← もどる', fn: () => UI.title() }); btn(w - 112, 4, 46, 16, { label: 'ずかん', fn: () => openGuide('select') });
-    box(0, SY, w, 14, '#E6E6E6', null); ctx.fillStyle = COL.line; ctx.fillRect(0, SY + 13, w, 1); drawText('ステージ', 6, SY + 2, COL.sub, 10); drawText('名前', 48, SY + 2, COL.sub, 10); if (!port) drawText('目標', 316, SY + 2, COL.sub, 10);
+    box(0, MY, w, 14, '#E6E6E6', null); ctx.fillStyle = COL.line; ctx.fillRect(0, MY + 13, w, 1); drawText('ステージ', 6, MY + 2, COL.sub, 10); drawText('名前', 48, MY + 2, COL.sub, 10); if (!port) drawText('目標', 316, MY + 2, COL.sub, 10);
     const total = LEVELS.length * rowH, s = scrollRegion('sel', 0, top, w, bot - top, total);
     let perfect = 0, sigma = 0, sigmaAll = 0;
     ctx.save(); ctx.beginPath(); ctx.rect(0, top, w, bot - top); ctx.clip();
@@ -1308,7 +1347,7 @@
   }
   function openGuide(from) { guideFrom = from; G.mode = 'guide'; guideItems = buildGuide(); (UIC.scroll.guide || (UIC.scroll.guide = { off: 0 })).off = 0; }
   function drawGuide() {
-    drawRibbonBase('ブロックのずかん'); sheetBg(); const w = VIEW.w, top = SY, bot = VIEW.h;
+    drawRibbonBase('ブロックのずかん'); sheetBg(); const w = VIEW.w, top = MY, bot = VIEW.h;
     btn(w - 62, 4, 58, 16, { label: '← もどる', fn: () => (guideFrom === 'select' ? UI.select() : UI.title()) });
     const tw = w - 52, lay = guideItems.map(it => (it[0] === 'h' ? { h: 16 } : { lines: wrapText(it[2], tw, 10), h: 0 })); lay.forEach(l => { if (l.lines) l.h = Math.max(38, 16 + l.lines.length * 11 + 4); });
     const total = lay.reduce((a, l) => a + l.h, 0) + 6, s = scrollRegion('guide', 0, top, w, bot - top, total); let y = top + 3 - s.off;
@@ -1322,7 +1361,7 @@
     ctx.restore(); scrollbar(s, w - 4, top, bot - top, total);
   }
   function drawResult() {
-    drawRibbonBase('クリア'); sheetBg(); const goals = UI.result || [true, false, false], lv = G.level, cx = VIEW.w >> 1, top = SY + (VIEW.portrait ? 30 : 4);
+    drawRibbonBase('クリア'); sheetBg(); const goals = UI.result || [true, false, false], lv = G.level, cx = VIEW.w >> 1, top = MY + (VIEW.portrait ? 30 : 4);
     const t = 'クリア！', tw = textW(t, 12, 2); drawText(t, cx - (tw >> 1), top + 4, COL.green, 12, 2);
     const n = lv.gems.length, bw = badgesW(n, 2); drawBadges(cx - (bw >> 1), top + 36, goals, G.gems, n, 2);
     const info = 'Σ ' + G.gems + '/' + n + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回'; drawText(info, cx - (textW(info, 10) >> 1), top + 64, COL.text, 10);
@@ -1340,10 +1379,11 @@
   // ===== 拡大表示 =====
   // ウィンドウ全体(リボン・シート・ペイン)を、画面にあわせて拡大する。シートは、いつも320×180(マス目の世界)。
   function fit() {
-    const wrap = $('#stage'), vw = wrap.clientWidth, vh = wrap.clientHeight, portrait = vw < vh, RH = 24, PW = 96;
-    let LW = portrait ? W : W + PW, LH = RH + H, s = Math.min(vw / LW, vh / (portrait ? RH + H + 90 : LH)); if (s >= 2) s = Math.floor(s);
-    let ph = 100; if (portrait) { ph = Math.max(90, Math.min(300, Math.floor(vh / s) - RH - H)); LH = RH + H + ph; if (LH * s > vh) s = vh / LH; }
-    Object.assign(VIEW, { w: LW, h: LH, portrait, ph, s });
+    const wrap = $('#stage'), vw = wrap.clientWidth, vh = wrap.clientHeight, portrait = vw < vh;
+    const LPW = 48, RPW = 80, RH = portrait ? MY : 15; let LW = portrait ? W : LPW + W + RPW, LH = RH + H, ph = 0;
+    let s = Math.min(vw / LW, vh / (portrait ? LH + 90 : LH)); if (s >= 2) s = Math.floor(s); // 整数倍に、ぴったり入れる(ドット文字を読みやすく)
+    if (portrait) { ph = Math.max(90, Math.min(300, Math.floor(vh / s) - RH - H)); LH = RH + H + ph; if (LH * s > vh) s = vh / LH; }
+    Object.assign(VIEW, { w: LW, h: LH, portrait, ph, s }); SX = portrait ? 0 : LPW; SY = RH;
     if (cv.width !== LW || cv.height !== LH) { cv.width = LW; cv.height = LH; ctx.imageSmoothingEnabled = false; }
     cv.style.width = LW * s + 'px'; cv.style.height = LH * s + 'px';
     $('#game').style.width = LW * s + 'px'; $('#game').style.height = LH * s + 'px';
