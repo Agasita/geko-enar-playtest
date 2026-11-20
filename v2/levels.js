@@ -446,6 +446,125 @@
     solution: [{ x: 8, edits: [{ tool: 'sort', rect: { x0: 14, y0: 8, x1: 16, y1: 8 }, opts: { sort: 'L' } }] }],
   }));
 
+  L.push(make({
+    id: '8-2', name: 'ふたつのとびら', world: 8, w: 60, tools: ['sort', 'unprotect'], energy: 26, bg: '#D6C3A5', bg2: '#C9B392', par: 26,
+    hints: [
+      { x: 1, text: 'とびらが ふたつ。まず ひとつめの とびらを ひらこう' },
+      { x: 28, text: 'ふたつめの じしゃくの したのブロックには、カギ（まもり）が かかっている。さきに「まもりをはずす」' },
+    ],
+    build(m) {
+      m.floor();
+      m.door(12, 0, 10, 0); m.blk(16, 8, 2); m.set(16, 7, 'M'); m.sw(16, 9, 0);
+      m.door(34, 0, 10, 1); m.blk(38, 8, 0, true); m.set(38, 7, 'M'); m.sw(38, 9, 1);
+      m.gem(5, 8); m.gem(9, 7); m.gem(26, 8);
+      m.check(28, 9);
+      m.flag = [52, 9];
+    },
+    solution: [
+      { x: 8, edits: [{ tool: 'sort', rect: { x0: 14, y0: 8, x1: 16, y1: 8 }, opts: { sort: 'L' } }] },
+      { x: 30, edits: [{ tool: 'unprotect', rect: { x0: 38, y0: 8, x1: 38, y1: 8 } }, { tool: 'sort', rect: { x0: 36, y0: 8, x1: 38, y1: 8 }, opts: { sort: 'L' } }] },
+    ],
+  }));
+
+  L.push(make({
+    id: '8-3', name: 'よこむきの じしゃく', world: 8, w: 58, tools: ['sort', 'filter'], energy: 18, bg: '#D6C3A5', bg2: '#C9B392', par: 18,
+    hints: [
+      { x: 1, text: 'じしゃくは よこにも ひきよせられる。ゆかより、よこの はがねが ちかければ よこへ' },
+      { x: 14, text: 'うえの じしゃくの よこのブロックを「↑よせ」で どかすと… じしゃくが はがねへ。スイッチを おすよ' },
+      { x: 36, text: 'とびらの さきの かべは「フィルター」で すりぬけよう' },
+    ],
+    build(m) {
+      m.floor();
+      m.set(27, 6, 'S'); m.set(24, 6, 'M'); m.blk(25, 6, 0); m.blk(24, 7, 0); m.sw(26, 6, 0);
+      m.door(36, 0, 10, 0);
+      for (let y = 0; y <= 9; y++) m.blk(44, y, 0);
+      m.gem(5, 8); m.gem(10, 7); m.gem(20, 8);
+      m.check(30, 9);
+      m.flag = [52, 9];
+    },
+    solution: [
+      { x: 16, edits: [{ tool: 'sort', rect: { x0: 25, y0: 3, x1: 25, y1: 6 }, opts: { sort: 'U' } }] },
+      { x: 38, edits: [{ tool: 'filter', fcolor: 2 }] },
+    ],
+  }));
+
+  // ---- ワールド9: くみあわせ(ふたつ いじょうの どうぐを つかう) ----
+  L.push(make({
+    id: '9-1', name: 'たおして おとして はしにする', world: 9, w: 56, tools: ['transform', 'sort'], energy: 18, bg: '#B9D9C0', bg2: '#A8CBB0', par: 18,
+    hints: [
+      { x: 1, text: 'ひろい あな。ブロックの とうを たおして はしに しよう' },
+      { x: 8, text: '「かたち」の「90°まわす」。でも たおすと たかい ところに うく…' },
+      { x: 12, text: 'うかんだブロックを「よせ↓」で あなに おとそう（はんいは しかくに）' },
+    ],
+    build(m) {
+      m.floor(); m.pit(22, 27);
+      for (let y = 3; y <= 9; y++) m.blk(20, y, 0);
+      m.gem(6, 8); m.gem(15, 8); m.gem(34, 8);
+      m.check(30, 9);
+      m.flag = [52, 9];
+    },
+    solution: [{ x: 14, edits: [{ tool: 'transform', rect: { x0: 20, y0: 3, x1: 26, y1: 9 }, opts: { tf: 'rot' } }, { tool: 'sort', rect: { x0: 20, y0: 3, x1: 26, y1: 10 }, opts: { sort: 'D' } }] }],
+  }));
+
+  L.push(make({
+    id: '9-2', name: 'ひっくりかえして すりぬける', world: 9, w: 36, tools: ['transform', 'filter'], energy: 16, bg: '#B9D9C0', bg2: '#A8CBB0', par: 16,
+    hints: [
+      { x: 1, text: 'ひだりが たかい かいだんは のぼれない。さきに「よこにひっくり」' },
+      { x: 17, text: 'たなの かべは「フィルター」で すりぬける。…でも かいだんも きえる。のぼってから だよ' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      [[14, 6], [15, 7], [16, 8], [17, 9]].forEach(([x, y0]) => { for (let y = y0; y <= 9; y++) m.blk(x, y, 0); });
+      m.rect(18, 6, 34, 6, 'S');
+      for (let y = 3; y <= 5; y++) m.blk(26, y, 0);
+      m.gem(11, 8); m.gem(16, 6); m.gem(22, 4);
+      m.flag = [31, 5];
+    },
+    solution: [
+      { x: 8, edits: [{ tool: 'transform', rect: { x0: 14, y0: 6, x1: 17, y1: 9 }, opts: { tf: 'flipH' } }] },
+      { x: 19, edits: [{ tool: 'filter', fcolor: 2 }] },
+    ],
+  }));
+
+  L.push(make({
+    id: '9-3', name: 'つくって まもって とおる', world: 9, w: 48, tools: ['sort', 'protect', 'filter'], energy: 22, bg: '#B9D9C0', bg2: '#A8CBB0', par: 22,
+    hints: [
+      { x: 1, text: 'あなには はしが ない。うかぶブロックを「よせ↓」で はしに' },
+      { x: 8, text: 'かべは「フィルター」で とおれる。でも はしも おなじ いろ…' },
+      { x: 10, text: 'はしを「シートをまもる」で まもれば、フィルターでも きえないよ' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(14, 19);
+      [4, 5, 6, 4, 5, 6].forEach((y, i) => m.blk(14 + i, y, 0));
+      for (let y = 3; y <= 9; y++) m.blk(28, y, 0);
+      m.gem(6, 8); m.gem(24, 8); m.gem(36, 8);
+      m.check(24, 9);
+      m.flag = [44, 9];
+    },
+    solution: [{ x: 8, edits: [{ tool: 'sort', rect: { x0: 14, y0: 3, x1: 19, y1: 10 }, opts: { sort: 'D' } }, { tool: 'protect', rect: { x0: 14, y0: 10, x1: 19, y1: 10 } }, { tool: 'filter', fcolor: 2 }] }],
+  }));
+
+  L.push(make({
+    id: '9-4', name: 'カギを はずして ひっくりかえす', world: 9, w: 34, tools: ['unprotect', 'transform', 'filter'], energy: 22, bg: '#B9D9C0', bg2: '#A8CBB0', par: 22,
+    hints: [
+      { x: 1, text: 'ひだりが たかい かいだん。でも ひとつだけ カギ（まもり）が かかっている' },
+      { x: 6, text: 'カギつきの ブロックは ひっくりかえせない。「まもりをはずす」→「よこにひっくり」' },
+      { x: 15, text: 'たなの かべは「フィルター」。のぼったあとに！' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      [[12, 6], [13, 7], [14, 8], [15, 9]].forEach(([x, y0]) => { for (let y = y0; y <= 9; y++) m.blk(x, y, 0, x === 14 && y === 9); });
+      m.rect(16, 6, 32, 6, 'S');
+      for (let y = 3; y <= 5; y++) m.blk(24, y, 0);
+      m.gem(8, 8); m.gem(14, 6); m.gem(20, 4);
+      m.flag = [29, 5];
+    },
+    solution: [
+      { x: 6, edits: [{ tool: 'unprotect', rect: { x0: 14, y0: 9, x1: 14, y1: 9 } }, { tool: 'transform', rect: { x0: 12, y0: 6, x1: 15, y1: 9 }, opts: { tf: 'flipH' } }] },
+      { x: 17, edits: [{ tool: 'filter', fcolor: 2 }] },
+    ],
+  }));
+
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
   L.push(make({
     id: 'LAB', name: 'じっけんシート（ぜんぶ）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
