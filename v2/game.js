@@ -1027,9 +1027,10 @@
     const k = name + (flip ? 1 : 0); return enerCache[k] || (enerCache[k] = GFX.gridSprite(GFX.enerGrid(name, ENER_PAL), flip));
   }
   function drawEner(cx, cy) { // しゅじんこうエナー
-    const p = G.p, flap = Math.floor(G.t * (p.hovering ? 16 : 9)) % 2;
+    const p = G.p, seq = ['idle', 'up', 'idle', 'down']; // はばたきの 4コマ: よこ→うえ→よこ→した
+    const fr = (hz) => seq[Math.floor(G.t * hz) % 4];
     let name = 'idle';
-    if (p.stun > 0) name = 'hurt'; else if (p.hovering) name = flap ? 'up' : 'down'; else if (!p.ground) name = p.vy < -40 ? 'up' : 'down'; else if (Math.abs(p.vx) > 25) name = flap ? 'idle' : 'down';
+    if (p.stun > 0) name = 'hurt'; else if (p.hovering) name = fr(22); else if (!p.ground) name = p.vy < -40 ? fr(18) : fr(12); else if (Math.abs(p.vx) > 25) name = fr(13);
     const bob = p.ground && Math.abs(p.vx) <= 25 ? Math.round(Math.sin(G.t * 4) * 1) : 0;
     ctx.drawImage(enerImg(name, p.face < 0), Math.round(p.x - 3 - cx), Math.round(p.y - 1 - cy) + bob);
     if (p.hovering) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(Math.round(p.x + 2 - cx), Math.round(p.y + p.h + 2 - cy), 6, 1); ctx.fillRect(Math.round(p.x + 4 - cx), Math.round(p.y + p.h + 4 - cy), 2, 1); }
