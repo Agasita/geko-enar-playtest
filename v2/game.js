@@ -872,15 +872,15 @@
     ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x + 3, y + 13, 11, 1); ctx.fillRect(x + 13, y + 3, 1, 11);
   }
   // ガラスの「ぴかり」: ときどき、よこぎる しろい ひかりの おびが、ひょうめんを とおる。となりの ブロックへ、つづけて ながれる
-  const SHINE_PERIOD = 3.4, SHINE_LEN = .45;
+  const SHINE_PERIOD = 3.0, SHINE_LEN = .22; // はやい ひとなで
   function glassShine(x, y, w, h) {
-    const wx = x + Math.round(G.cam.x + (G.sx || 0)), ph = ((G.t - wx * .012) % SHINE_PERIOD + SHINE_PERIOD) % SHINE_PERIOD;
+    const wx = x + Math.round(G.cam.x + (G.sx || 0)), ph = ((G.t - wx * .006) % SHINE_PERIOD + SHINE_PERIOD) % SHINE_PERIOD;
     if (ph > SHINE_LEN) return;
-    const bx = Math.round(-4 + (ph / SHINE_LEN) * (w + 8)), a = ctx.globalAlpha;
-    const cols = ['#DCEBF8', '#A9D1F0', '#8FC1EA', '#DCEBF8']; // しろい ガラスの うえでも 見えるように、うすい あおの おび
-    for (let i = 0; i < 4; i++) { const px = bx + i; if (px < 1 || px > w - 2) continue; ctx.fillStyle = cols[i]; ctx.fillRect(x + px, y + 2, 1, h - 4); }
-    // ひかりの キラッ(しゅうだんの まんなかで 十字)
-    if (ph > SHINE_LEN * .35 && ph < SHINE_LEN * .75) { const sx = x + (w >> 1), sy = y + 3; ctx.fillStyle = '#6FA8DC'; ctx.fillRect(sx, sy - 1, 1, 3); ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx, sy, 1, 1); }
+    const span = w + h, s = Math.round(-6 + (ph / SHINE_LEN) * (span + 8)), a = ctx.globalAlpha;
+    const cols = ['#DCEBF8', '#A9D1F0', '#8FC1EA', '#DCEBF8']; // しろい ガラスの うえでも 見えるように、うすい あおの おび(ななめ「/」)
+    for (let r = 2; r < h - 2; r++) for (let i = 0; i < 4; i++) { const px = s - r + i; if (px < 1 || px > w - 2) continue; ctx.fillStyle = cols[i]; ctx.fillRect(x + px, y + r, 1, 1); }
+    // ひかりの キラッ(おびが まんなかを とおる とき、十字)
+    if (ph > SHINE_LEN * .3 && ph < SHINE_LEN * .8) { const sx = x + (w >> 1), sy = y + 3; ctx.fillStyle = '#6FA8DC'; ctx.fillRect(sx, sy - 1, 1, 3); ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx, sy, 1, 1); }
     ctx.globalAlpha = a;
   }
   function drawBlock(t, c, x, y, topOpen, botOpen, alpha, seed) {
