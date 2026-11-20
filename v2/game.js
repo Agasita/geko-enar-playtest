@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const W = 320, H = 180, T = 16, DT = 1 / 60;
-  const TL = { EMPTY: 0, STONE: 1, STEEL: 2, CRACK: 3, SPIKE: 5 };
+  const TL = { EMPTY: 0, STONE: 1, STEEL: 2, CRACK: 3, SPIKE: 5, GLASSED: 6 }; // GLASSED = 書式をつけたガラス(色の性質は、ふつうのブロックと同じ。元ガラスの印がつく)
   const CH2TILE = { '.': 0, '#': 1, 'S': 2, 'c': 3, '^': 5 };
   // ブロックの色(＝Excelのセルの色)。色には性質がある。
   const COLORS = [
@@ -186,7 +186,7 @@
   // ===== 衝突 =====
   const inb = (tx, ty) => tx >= 0 && ty >= 0 && tx < G.level.w && ty < G.level.h;
   function tileAt(tx, ty) { if (tx < 0 || tx >= G.level.w || ty < 0) return TL.STEEL; if (ty >= G.level.h) return 0; return G.front[ty][tx]; }
-  const isBlockT = (t) => t === TL.STONE || t === TL.CRACK;
+  const isBlockT = (t) => t === TL.STONE || t === TL.CRACK || t === TL.GLASSED;
   // 行・列の非表示とフィルターの結果、いま実際に「ある」ブロックか
   function blockVisible(tx, ty) { if (G.lock[ty][tx]) return true; if (G.hideRow.has(ty) || G.hideCol.has(tx)) return false; return G.filter === null || G.col[ty][tx] === G.filter; }
   function solidCell(tx, ty) {
@@ -195,7 +195,7 @@
     return isBlockT(t) && blockVisible(tx, ty);
   }
   function colorAt(tx, ty) { return inb(tx, ty) && isBlockT(G.front[ty][tx]) && blockVisible(tx, ty) ? G.col[ty][tx] : -1; }
-  const isFragile = (tx, ty) => { if (!inb(tx, ty) || !blockVisible(tx, ty)) return false; const t = G.front[ty][tx]; return t === TL.CRACK || (t === TL.STONE && G.col[ty][tx] === 4); };
+  const isFragile = (tx, ty) => { if (!inb(tx, ty) || !blockVisible(tx, ty)) return false; const t = G.front[ty][tx]; return t === TL.CRACK || ((t === TL.STONE || t === TL.GLASSED) && G.col[ty][tx] === 4); };
   // ---- リフト: 決まった道(レール)を、一定の周期で往復する足場。編集では動かせない ----
   function makeLift(l) {
     const w = l.w * T, ax = l.x * T, ay = l.y * T, bx = (l.x + l.dx) * T, by = (l.y + l.dy) * T;
@@ -492,7 +492,7 @@
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === GLASS) cells.push([x, y]); }); // 書式をつけられるのは、ガラス(未書式)だけ
     if (!cells.length && !ls.length) return fail('ガラスがありません（書式をつけられるのは、ガラスだけ）', { rects: [r] });
     const hl = cells.slice(); for (const L of ls) for (let x = Math.floor(L.x / T); x * T < L.x + L.w; x++) hl.push([x, Math.floor(L.y / T)]);
-    return { ok: true, cost: costOf(id), rects: [r], hl, run() { for (const [x, y] of cells) G.col[y][x] = c; for (const L of ls) L.col = c; } };
+    return { ok: true, cost: costOf(id), rects: [r], hl, run() { for (const [x, y] of cells) { G.col[y][x] = c; G.front[y][x] = TL.GLASSED; } for (const L of ls) { L.col = c; L.mark = true; } } };
   }
   function planTransform(r, op) {
     const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
@@ -627,14 +627,14 @@
   function snapshot() {
     return {
       front: G.front.map(r => r.slice()), col: G.col.map(r => r.slice()), lock: G.lock.map(r => r.slice()),
-      hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, lc: G.lifts.map(L => L.col),
+      hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, lc: G.lifts.map(L => L.col), lm: G.lifts.map(L => !!L.mark),
       en: G.enemies.map(e => ({ e, x: e.x, y: e.y, bx: e.bx, dead: e.dead })), pick: G.pick.map(k => ({ k, x: k.x, gone: !!k.gone })),
       checks: G.checks.map(c => ({ c, x: c.x, gone: !!c.gone })), flagX: G.flag.x, resp: { x: G.respawn.x, y: G.respawn.y }, px: G.p.x,
     };
   }
   function restoreSnap(s) {
     G.front = s.front.map(r => r.slice()); G.col = s.col.map(r => r.slice()); G.lock = s.lock.map(r => r.slice());
-    G.hideRow = new Set(s.hideRow); G.hideCol = new Set(s.hideCol); G.filter = s.filter; if (s.lc) s.lc.forEach((c, i) => { G.lifts[i].col = c; });
+    G.hideRow = new Set(s.hideRow); G.hideCol = new Set(s.hideCol); G.filter = s.filter; if (s.lc) s.lc.forEach((c, i) => { G.lifts[i].col = c; G.lifts[i].mark = !!(s.lm && s.lm[i]); });
     for (const o of s.en) { o.e.x = o.x; o.e.y = o.y; if (o.bx !== undefined) o.e.bx = o.bx; o.e.dead = o.dead; }
     for (const o of s.pick) { o.k.x = o.x; o.k.gone = o.gone; }
     for (const o of s.checks) { o.c.x = o.x; o.c.gone = o.gone; }
@@ -749,10 +749,15 @@
   }
   const TC = { steel: '#66708C', steelL: '#8D97B3', steelD: '#2F3752' };
   const LOCK = ['.111.', '1...1', '11111', '11011', '11111'];
+  // 元ガラスの印: 白い「つやの枠」(内がわの枠と、かどのきらめき)
+  function glassMark(x, y) {
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x + 2, y + 2, 12, 1); ctx.fillRect(x + 2, y + 2, 1, 12); ctx.fillRect(x + 4, y + 4, 2, 1); ctx.fillRect(x + 4, y + 4, 1, 2);
+    ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x + 3, y + 13, 11, 1); ctx.fillRect(x + 13, y + 3, 1, 11);
+  }
   function drawBlock(t, c, x, y, topOpen, botOpen, alpha, seed) {
     const k = COLORS[c] || COLORS[0];
     if (alpha !== undefined) ctx.globalAlpha = alpha;
-    if (TILES) { ctx.drawImage(TILES.block(t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); ctx.globalAlpha = 1; return; }
+    if (TILES) { ctx.drawImage(TILES.block(t === TL.GLASSED ? TL.STONE : t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); if (t === TL.GLASSED) glassMark(x, y); ctx.globalAlpha = 1; return; }
     ctx.fillStyle = k.hex; ctx.fillRect(x, y, T, T);
     if (topOpen) { ctx.fillStyle = k.hi; ctx.fillRect(x, y, T, 2); }
     if (botOpen) { ctx.fillStyle = k.lo; ctx.fillRect(x, y + T - 3, T, 3); }
@@ -760,6 +765,7 @@
     else if (c === 2) { ctx.fillStyle = k.hi; ctx.fillRect(x + 3, y + 5, 5, 1); ctx.fillRect(x + 6, y + 9, 6, 1); }
     else if (c === 1) { ctx.fillStyle = k.lo; ctx.fillRect(x + 3, y + 4, 2, 3); ctx.fillRect(x + 7, y + 6, 2, 4); ctx.fillRect(x + 11, y + 4, 2, 3); }
     if (c === 5) { ctx.fillStyle = '#fff'; for (let i = 0; i < 6; i++) { ctx.fillRect(x + 3 + i, y + 11 - i, 2, 1); } ctx.fillStyle = k.lo; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T); ctx.fillRect(x, y + T - 1, T, 1); }
+    if (t === TL.GLASSED) glassMark(x, y);
     if (c === 4 || t === TL.CRACK) { ctx.fillStyle = k.lo; ctx.fillRect(x + 7, y + 2, 2, 4); ctx.fillRect(x + 5, y + 6, 2, 4); ctx.fillRect(x + 9, y + 9, 2, 4); }
     ctx.globalAlpha = 1;
   }
@@ -807,6 +813,7 @@
       else { ctx.fillRect(mx - 4, my, 9, 1); ctx.fillRect(mx - 4, my - 1, 1, 3); ctx.fillRect(mx - 3, my - 2, 1, 5); ctx.fillRect(mx + 4, my - 1, 1, 3); ctx.fillRect(mx + 3, my - 2, 1, 5); }
       if (L.col === 1) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + 3, y + 3, 1, 1); ctx.fillRect(x + w - 4, y + 3, 1, 1); }
       ctx.fillStyle = '#FFE27A'; if (L.col !== 5) { ctx.fillRect(x + 2, y + h - 3, 2, 1); ctx.fillRect(x + w - 4, y + h - 3, 2, 1); }
+      if (L.mark) { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(x + 2, y + 2, w - 4, 1); ctx.fillRect(x + 2, y + 2, 1, h - 6); ctx.fillRect(x + 4, y + 4, 2, 1); ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x + 3, y + h - 5, w - 5, 1); }
       ctx.globalAlpha = 1;
     }
   }
@@ -1075,6 +1082,7 @@
     const blk = (c, alpha) => tileSample(() => drawBlock(TL.STONE, c, 0, 0, true, true, alpha, 0));
     const items = [['h', '色つきブロック（編集で色を変えられる）']];
     COLORS.forEach((k, i) => items.push([blk(i), k.n + 'ブロック', k.fx]));
+    items.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), '元ガラス（書式をつけたガラス）', '書式のコピーで色をつけたガラス。色の性質はふつうのブロックと同じで、白い「つやの枠」が残るので、元ガラスだと分かる。もう一度は書式をつけられない']);
     items.push(['h', 'そのほかの地形']);
     items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼（はがね）', '編集できない金属の壁・床・天井。どの道具も効かない']);
     items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）。編集の対象']);
