@@ -159,7 +159,7 @@
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = [];
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
     G.doors = (lv.doors || []).map(d => ({ x: d[0], y: d[1], h: d[2], id: d[3] || 0, open: false, anim: 0, latched: false }));
-    G.judges = (lv.judges || []).map(j => ({ x: j[0], y: j[1], type: j[2], color: j[3] || 0, id: j[4] || 0, on: false }));
+    G.judges = (lv.judges || []).map(j => ({ x: j[0], y: j[1], type: j[2], color: j[3] || 0, id: j[4] || 0, on: false })); G.idOn = {};
     G.pick = [];
     lv.gems.forEach((g, k) => G.pick.push({ type: 'gem', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
     if (lv.regen) lv.sparks.forEach((g, k) => G.pick.push({ type: 'spark', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
@@ -210,7 +210,7 @@
   // ---- リフト: きまったみち(レール)を、きまったくりかえしていったりきたりするあしば。なおすではどうかせない ----
   function makeLift(l) {
     const w = l.w * T, ax = l.x * T, ay = l.y * T, bx = (l.x + l.dx) * T, by = (l.y + l.dy) * T;
-    return { col: l.col || 0, stand: 0, gone: 0, ax, ay, bx, by, w, h: T, period: l.period || 7, t: (l.phase || 0) * (l.period || 7), x: ax, y: ay,
+    return { col: l.col || 0, ctl: l.ctl === undefined ? -1 : l.ctl, stand: 0, gone: 0, ax, ay, bx, by, w, h: T, period: l.period || 7, t: (l.phase || 0) * (l.period || 7), x: ax, y: ay,
       rail: { x0: Math.min(l.x, l.x + l.dx), y0: Math.min(l.y, l.y + l.dy), x1: Math.max(l.x, l.x + l.dx) + l.w - 1, y1: Math.max(l.y, l.y + l.dy) }, vert: l.dy !== 0 };
   }
   function liftAt(L, t) { const s = .5 - .5 * Math.cos(2 * Math.PI * t / L.period); return { x: L.ax + (L.bx - L.ax) * s, y: L.ay + (L.by - L.ay) * s }; }
@@ -219,7 +219,8 @@
   function updateLifts(dt) {
     const p = G.p;
     for (const L of G.lifts) {
-      L.t += dt; const n = liftAt(L, L.t), dx = n.x - L.x, dy = n.y - L.y, ride = !p.dead && onLift(L);
+      if (L.ctl < 0 || (G.idOn && G.idOn[L.ctl])) L.t += dt; // はんていセルで うごかす リフトは、ONの あいだだけ うごく
+      const n = liftAt(L, L.t), dx = n.x - L.x, dy = n.y - L.y, ride = !p.dead && onLift(L);
       // きいろ(もろい)のリフトは、のると0.5びょうでくずれて、しばらくきえる
       if (L.gone > 0) { L.gone -= dt; if (L.gone <= 0) { L.gone = 0; L.stand = 0; } } else if (L.col === 4) { L.stand = ride ? L.stand + dt : Math.max(0, L.stand - dt); if (L.stand > .5) { L.gone = 2.6; spawnParts(L.x + L.w / 2, L.y + 6, 12, '#F5C842', 60); SFX.hit(); } }
       if (ride && dy <= 0) { moveY(p, dy); moveX(p, dx); }
@@ -789,16 +790,18 @@
 
   // ---- はんていセル: マスに、くっついた「しらべるところ」。ブロックのじょうたいが そろうと ON。おなじ番号のとびらが ひらく ----
   // 「ある」は、じっさいにぶつかるブロック(フィルターで うすくなったブロックは「ない」)
+  function heroOn(j) { const p = G.p; return !p.dead && p.ground && Math.floor((p.x + p.w / 2) / T) === j.x && Math.floor((p.y + p.h - 1) / T) === j.y; }
   function judgeOn(j) {
     if (!inb(j.x, j.y)) return false;
     const t = G.front[j.y][j.x], real = isBlockT(t) && blockVisible(j.x, j.y);
-    if (j.type === 'exist') return real;
-    if (j.type === 'empty') return !solidCell(j.x, j.y);
+    if (j.type === 'exist') return real || heroOn(j); // しゅじんこうが たっていても「ある」
+    if (j.type === 'empty') return !solidCell(j.x, j.y) && !heroOn(j);
     if (j.type === 'color') return real && G.col[j.y][j.x] === j.color;
     return false;
   }
   function updateDoors(dt) {
     for (const j of G.judges) j.on = judgeOn(j);
+    G.idOn = {}; for (const j of G.judges) { if (G.idOn[j.id] === undefined) G.idOn[j.id] = true; if (!j.on) G.idOn[j.id] = false; }
     for (const d of G.doors) {
       const mine = G.judges.filter(j => j.id === d.id), cond = mine.length > 0 && mine.every(j => j.on), want = d.latched || cond;
       if (!want && d.open) { // とびらがしまる: ひと・てきが、とびらの中にいたら、しまらない(はさまない)
@@ -816,7 +819,7 @@
     if (G.hitstop > 0) { G.hitstop -= dt; return; }
     G.frame++; G.t += dt;
     if (!G.cleared) G.time += dt;
-    updateLifts(dt); updateMagnets(dt); updateDoors(dt); updatePlayer(dt); updateEnemies(dt); updatePickups();
+    updateDoors(dt); updateLifts(dt); updateMagnets(dt); updatePlayer(dt); updateEnemies(dt); updatePickups();
     if (!G.cleared) G.energy = Math.min(100, G.energy + dt * G.regen);
     for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 200 * dt; q.life -= dt; }
     G.parts = G.parts.filter(q => q.life > 0);
@@ -902,18 +905,35 @@
     ctx.fillStyle = c;
     for (let k = 0; k < T; k += 5) { const l = Math.min(3, T - k); ctx.fillRect(x + k, y, l, th); ctx.fillRect(x + k, y + T - th, l, th); ctx.fillRect(x, y + k, th, l); ctx.fillRect(x + T - th, y + k, th, l); }
   }
-  function drawJudges(cx, cy) {
+  const idNum = (n) => String(n + 1);
+  function outlinedNum(str, x, y, col) { text(str, x + 1, y, '#FFFFFF'); text(str, x - 1, y, '#FFFFFF'); text(str, x, y + 1, '#FFFFFF'); text(str, x, y - 1, '#FFFFFF'); text(str, x, y, col); }
+  function drawLinks(cx, cy) { // どのはんていセルが、どのとびら・リフトに つながっているか(おなじ いろの てんせん)
     for (const j of G.judges) {
-      const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j);
-      if (j.on) { ctx.globalAlpha = .22; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 1, y - 1, T + 2, 1); ctx.fillRect(x - 1, y + T, T + 2, 1); ctx.fillRect(x - 1, y, 1, T); ctx.fillRect(x + T, y, 1, T); // ふちどり(うすい いろでも見える)
+      const col = SW_COL[j.id % 4], x0 = j.x * T + 8 - cx, y0 = j.y * T + 8 - cy, ends = [];
+      for (const d of G.doors) if (d.id === j.id) ends.push([d.x * T + 8 - cx, clamp(j.y * T + 8, d.y * T + 4, d.y * T + d.h * T - 4) - cy]);
+      for (const L of G.lifts) if (L.ctl === j.id) ends.push([L.x + L.w / 2 - cx, L.y + L.h / 2 - cy]);
+      for (const [x1, y1] of ends) {
+        const len = Math.hypot(x1 - x0, y1 - y0), n = Math.floor(len / 5);
+        for (let k = 1; k < n; k++) { const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillRect(x - 1, y - 1, 3, 3); ctx.fillStyle = col; ctx.fillRect(x, y, 2, 2); }
+      }
+    }
+  }
+  function drawJudges(cx, cy) {
+    drawLinks(cx, cy);
+    for (const j of G.judges) {
+      const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j), ic = SW_COL[j.id % 4];
+      const filled = inb(j.x, j.y) && G.front[j.y][j.x] !== 0; // ブロックが あるときは、ブロックが 見えるように、しるしを けす
+      if (j.on) { ctx.globalAlpha = filled ? .12 : .22; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 1, y - 1, T + 2, 1); ctx.fillRect(x - 1, y + T, T + 2, 1); ctx.fillRect(x - 1, y, 1, T); ctx.fillRect(x + T, y, 1, T);
       dashedFrame(x, y, c, 2);
-      // まんなかの しるし: そんざい=ぬりつぶし / あき=わく / いろ=そのいろ
-      if (j.type === 'exist') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); }
+      if (filled) { /* しるしは なし */ } else if (j.type === 'exist') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); }
       else if (j.type === 'empty') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
       else { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
-      ctx.fillStyle = SW_COL[j.id % 4]; ctx.fillRect(x + T - 6, y + 2, 4, 3); // どのとびらに つながるか
-      if (j.on) { ctx.fillStyle = '#217346'; ctx.fillRect(x + 2, y + 9, 2, 2); ctx.fillRect(x + 3, y + 10, 2, 2); ctx.fillRect(x + 4, y + 11, 2, 2); ctx.fillRect(x + 5, y + 10, 2, 2); ctx.fillRect(x + 6, y + 9, 2, 2); ctx.fillRect(x + 7, y + 8, 2, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + 3, y + 10, 1, 1); }
+      // Excelの「コメント」のしるし: かどの さんかく(つながる ばんごうの いろ)
+      for (let i = 0; i < 9; i++) { ctx.fillStyle = '#000000'; ctx.fillRect(x + T - (9 - i), y + i, 9 - i, 1); }
+      for (let i = 0; i < 7; i++) { ctx.fillStyle = ic; ctx.fillRect(x + T - (7 - i), y + i, 7 - i, 1); }
+      outlinedNum(idNum(j.id), x + 1, y + T - 7, '#262626');
+      if (j.on) { ctx.fillStyle = '#217346'; ctx.fillRect(x + 8, y + 10, 2, 2); ctx.fillRect(x + 9, y + 11, 2, 2); ctx.fillRect(x + 10, y + 12, 2, 2); ctx.fillRect(x + 11, y + 11, 2, 2); ctx.fillRect(x + 12, y + 10, 2, 2); ctx.fillRect(x + 13, y + 9, 2, 2); ctx.fillStyle = '#fff'; ctx.fillRect(x + 9, y + 11, 1, 1); }
     }
   }
   function drawDoors(cx, cy) {
@@ -923,7 +943,7 @@
       ctx.globalAlpha = Math.max(.15, a); const hh = Math.round(h * Math.max(.1, a));
       ctx.fillStyle = '#3B3F4D'; ctx.fillRect(x + 2, y, 12, hh); ctx.fillStyle = c; ctx.fillRect(x + 2, y, 12, 3); ctx.fillRect(x + 2, y + hh - 3, 12, 3);
       ctx.fillStyle = '#5A6074'; for (let yy = y + 6; yy < y + hh - 4; yy += 6) ctx.fillRect(x + 4, yy, 8, 2);
-      ctx.fillStyle = c; ctx.fillRect(x + 6, y + (hh >> 1) - 2, 4, 4); ctx.globalAlpha = 1;
+      ctx.fillStyle = c; ctx.fillRect(x + 4, y + (hh >> 1) - 4, 8, 8); text(idNum(d.id), x + 7, y + (hh >> 1) - 2, '#FFFFFF'); ctx.globalAlpha = 1;
     }
   }
   function drawTile(t, x, y, tx, ty) {
@@ -971,6 +991,7 @@
       else { ctx.fillRect(mx - 4, my, 9, 1); ctx.fillRect(mx - 4, my - 1, 1, 3); ctx.fillRect(mx - 3, my - 2, 1, 5); ctx.fillRect(mx + 4, my - 1, 1, 3); ctx.fillRect(mx + 3, my - 2, 1, 5); }
       if (L.col === 1) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + 3, y + 3, 1, 1); ctx.fillRect(x + w - 4, y + 3, 1, 1); }
       ctx.fillStyle = '#FFE27A'; if (L.col !== 5) { ctx.fillRect(x + 2, y + h - 3, 2, 1); ctx.fillRect(x + w - 4, y + h - 3, 2, 1); }
+      if (L.ctl >= 0) { const tc = SW_COL[L.ctl % 4]; ctx.fillStyle = '#000'; ctx.fillRect(x + 1, y - 9, 9, 9); ctx.fillStyle = tc; ctx.fillRect(x + 2, y - 8, 7, 7); text(idNum(L.ctl), x + 4, y - 6, '#FFFFFF'); if (!(G.idOn && G.idOn[L.ctl])) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x + w - 8, y + 4, 2, 6); ctx.fillRect(x + w - 5, y + 4, 2, 6); } }
       if (L.mark) { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(x + 2, y + 2, w - 4, 1); ctx.fillRect(x + 2, y + 2, 1, h - 6); ctx.fillRect(x + 4, y + 4, 2, 1); ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x + 3, y + h - 5, w - 5, 1); }
       ctx.globalAlpha = 1;
     }
@@ -989,7 +1010,7 @@
     drawLiftRails(cx, cy);
     for (const s of G.switches) drawSwitch(s, cx, cy);
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const t = G.front[ty][tx]; if (t) drawTile(t, tx * T - cx, ty * T - cy, tx, ty); }
-    drawLifts(cx, cy); drawDoors(cx, cy); drawJudges(cx, cy);
+    drawLifts(cx, cy); drawDoors(cx, cy);
     // かくしたぎょう・れつは、てんせんで示す
     ctx.fillStyle = 'rgba(255,255,255,.55)';
     for (const ty of G.hideRow) for (let x = 0; x < W; x += 4) ctx.fillRect(x, ty * T - cy + 7, 2, 2);
@@ -1018,6 +1039,7 @@
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
     drawPlayer(cx, cy);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
+    drawJudges(cx, cy); // はんていセルは、ブロックがあっても、しゅじんこうがいても、いちばん手前
     // 相棒エナー
     if (!ENER) { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (EXCEL) ctx.drawImage(GFXX.bird(p.face < 0), bx - 1, by - 1); else if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
   }
@@ -1292,8 +1314,8 @@
     items.push(['h', 'じしゃく・スイッチ・とびら']);
     items.push([tileSample(() => drawMagnet(0, 0)), 'じしゃくブロック', 'いちばんちかいはがねに、まっすぐひきよせられる（あるくのとおなじはやさ）。まっすぐのせんの上にほかのブロックがあると、はたらかない。フィルターのえいきょうはうけない']);
     items.push(['h', 'はんていセル（とびらにつながる）']);
-    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'そんざいセル', 'そのマスに、ほんとうにぶつかるブロックが あると ON。フィルターでうすくなったブロックは「ない」あつかい。ONのあいだだけ、とびらがひらく']);
-    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'あきセル', 'そのマスに、ぶつかるものが なにもないと ON。フィルターでブロックをうすくすると ONになる']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'そんざいセル', 'そのマスに、ほんとうにぶつかるブロックが あるか、しゅじんこうが たっていると ON。フィルターでうすくなったブロックは「ない」あつかい。ONのあいだだけ、おなじ番号の とびらが ひらき、おなじ番号の リフトが うごく']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'あきセル', 'そのマスに、ぶつかるものが なにもなく、しゅじんこうも いないと ON。フィルターでブロックをうすくすると ONになる']);
     items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'color', color: 3, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'いろセル', 'そのマスに、きめたいろの ブロックが あると ON。いろコピーでつくった いろも、かぞえる']);
     items.push([tileSample(() => drawSwitch({ x: 0, y: 0, id: 0, on: false }, 0, 0)), 'スイッチ', 'じしゃくブロックがかさなると、おされる（いちどおしたら、そのまま）。おなじいろのとびらがひらく']);
     items.push([tileSample(() => { const save = G.doors; G.doors = [{ x: 0, y: 0, h: 1, id: 0, open: false, anim: 0 }]; try { drawDoors(0, 0); } finally { G.doors = save; } }), 'とびら', 'スイッチをおすまで、とおれない。ブロックもおけない']);

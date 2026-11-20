@@ -20,7 +20,7 @@
       lockRect(x0, y0, x1, y1) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) lock[y][x] = 1; },
       ent(type, x, y, extra) { m.ents.push(Object.assign({ type, x, y }, extra || {})); },
       gem(x, y) { m.gems.push([x, y]); },
-      lift(x, y, w, dx, dy, period, phase, col) { m.lifts.push({ x, y, w, dx, dy, period: period || 7, phase: phase || 0, col: col || 0 }); },
+      lift(x, y, w, dx, dy, period, phase, col, ctl) { const o = { x, y, w, dx, dy, period: period || 7, phase: phase || 0, col: col || 0 }; if (ctl !== undefined && ctl !== null) o.ctl = ctl; m.lifts.push(o); },
       judge(x, y, type, color, id) { m.judges.push([x, y, type, color || 0, id || 0]); },
       sw(x, y, id) { m.switches.push([x, y, id || 0]); },
       door(x, y, h, id) { m.doors.push([x, y, h, id || 0]); },
@@ -613,6 +613,23 @@
       m.flag = [46, 9];
     },
     solution: [{ x: 2, edits: [{ tool: 'painter', srcCell: [12, 6], rect: { x0: 8, y0: 9, x1: 8, y1: 9 } }, { tool: 'sort', rect: { x0: 8, y0: 9, x1: 17, y1: 9 }, opts: { sort: 'R' } }] }],
+  }));
+
+  L.push(make({
+    id: '10-4', name: 'ブロックで リフトを うごかす', world: 10, w: 60, tools: ['sort'], energy: 10, bg: '#E6D3A3', bg2: '#D9C48F', par: 10,
+    hints: [
+      { x: 1, text: 'この リフトは とまっている。はんていセル「1」が ONの あいだだけ うごく（おなじ いろ・おなじ 番号が つながっている）' },
+      { x: 4, text: '「よせ→」で ブロックを はんていセルに のせよう。じぶんが たっても ONになるけど、のると うごかない…' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(22, 33);
+      m.lift(22, 10, 3, 9, 0, 8, 0, 0, 0);
+      m.judge(13, 9, 'exist', 0, 0); m.blk(7, 9, 2);
+      m.gem(5, 8); m.gem(28, 8); m.gem(40, 8);
+      m.check(16, 9);
+      m.flag = [54, 9];
+    },
+    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 7, y0: 9, x1: 13, y1: 9 }, opts: { sort: 'R' } }] }],
   }));
 
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
