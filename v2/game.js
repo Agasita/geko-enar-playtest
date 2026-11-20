@@ -115,7 +115,8 @@
   };
 
   // ===== 保存 =====
-  const SAVE_KEY = 'geko-enar-v2';
+  const DEMO = window.DEMO || null; // 体験版(demo/index.html): ステージを しぼり、ステージ作成・テストは なし
+  const SAVE_KEY = DEMO ? 'geko-enar-v2-demo' : 'geko-enar-v2';
   let save = { levels: {}, muted: false };
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.levels) save = s; } catch (e) { /* ほぞんできなくても遊べる */ }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
@@ -130,6 +131,7 @@
       l, { w, h, energy: l.energy | 0, tools: (l.tools || []).filter(id => TOOL_BY[id]), lock: l.lock || l.front.map(() => new Array(w).fill(0)), hints: l.hint ? [{ x: 0, text: l.hint }] : (l.hints || []) });
   }
   (function loadCustomLevels() {
+    if (DEMO) { const keep = DEMO.levels, picked = keep.map(id => LEVELS.find(l => l.id === id)).filter(Boolean); LEVELS.splice(0, LEVELS.length, ...picked); return; }
     let arr = []; try { arr = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch (e) { arr = []; }
     arr.forEach(l => { try { LEVELS.push(normalizeCustom(l)); } catch (e) { /* こわれたデータはむし */ } });
   })();
@@ -1373,10 +1375,10 @@
   }
   loadLevel(0); render(); UI.title();
   { // ?test=ID : ステージさくせいページからのテストプレイ
-    const m = /[?&]test=([^&]+)/.exec(location.search);
+    const m = DEMO ? null : /[?&]test=([^&]+)/.exec(location.search);
     if (m) { const i = LEVELS.findIndex(l => l.id === decodeURIComponent(m[1])); if (i >= 0) { audio(); UI.start(i); if (EDITOR_TEST) UI.toast('テストプレイ中：右上の ☰ でステージ作成に戻る', 4000); } }
   }
-  $('#btn-editor').onclick = () => { location.href = 'editor.html'; };
+  if ($('#btn-editor')) $('#btn-editor').onclick = () => { location.href = 'editor.html'; };
   requestAnimationFrame(loop);
 
   // ===== テストようの口(自どうプレイが使う) =====

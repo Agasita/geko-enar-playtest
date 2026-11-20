@@ -10,7 +10,7 @@
 import re, sys, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FILES = ['v2/index.html', 'v2/game.js', 'v2/levels.js']
+FILES = ['v2/index.html', 'v2/game.js', 'v2/levels.js', 'demo/index.html']
 MAP = os.path.join(ROOT, 'docs', 'ingame_text_map.json')
 OUT = os.path.join(ROOT, 'docs', 'ingame_text.txt')
 JP = re.compile(r'[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef]')
@@ -150,7 +150,7 @@ def export():
     cur = None
     body = []
     for it in items:
-        sec = {'v2/index.html': '【画面の 文字（タイトル・ステージえらび・ずかん・けっか など）】', 'v2/game.js': '【ゲームの 文言（どうぐ・メッセージ・ずかん・ボタン など）】', 'v2/levels.js': '【ステージの なまえ・ヒント】'}[it['file']]
+        sec = {'v2/index.html': '【画面の 文字（タイトル・ステージえらび・ずかん・けっか など）】', 'v2/game.js': '【ゲームの 文言（どうぐ・メッセージ・ずかん・ボタン など）】', 'v2/levels.js': '【ステージの なまえ・ヒント】', 'demo/index.html': '【体験版の 画面の 文字（demo/index.html。v2/index.html を もとに つくった もの）】'}[it['file']]
         if sec != cur: body += ['', '=' * 40, sec, '=' * 40, '']; cur = sec
         body.append('▼ %s:%d  %s' % (it['file'].split('/')[-1], it['line'], it['ctx']))
         body.append('[%s] %s' % (it['id'], it['text'].replace('\n', '\\n')))

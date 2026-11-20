@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<base href="../v2/">
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1f2a44">
+<title>エナーとふしぎのシート 体験版</title>
+<script>document.write('<link rel="stylesheet" href="style.css?t='+Date.now()+'">')</script>
+<noscript><link rel="stylesheet" href="style.css"></noscript>
+</head>
+<body>
+<div id="stage">
+  <div id="game">
+    <div id="ribbon">
+      <div class="rb-tab">ホーム</div>
+      <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
+      <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
+      <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
+      <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
+      <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
+        <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="なおす">✎<span class="lbl"> なおす</span> <kbd>E</kbd></button>
+        <button class="rb-btn" data-proxy="#btn-restart" aria-label="最初から">↻</button>
+        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊</button>
+        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージ選択">☰</button>
+      </div><div class="rb-cap">操作</div></div>
+    </div>
+
+    <div id="lpane"><div class="pad" id="lpad">
+        <button data-btn="left" aria-label="左">◀</button>
+        <button data-btn="right" aria-label="右">▶</button>
+      </div></div>
+    <div id="sheet">
+    <canvas id="cv" width="288" height="180"></canvas>
+
+    <div id="hud" class="hide">
+      <span id="lvname"></span>
+      <div class="hudbtns">
+        <button id="btn-edit" aria-label="なおす">なおす <kbd>E</kbd></button>
+        <button id="btn-restart" aria-label="最初から">↻</button>
+        <button id="btn-mute" aria-label="音">🔊</button>
+        <button id="btn-menu" aria-label="ステージ選択">☰</button>
+      </div>
+    </div>
+    <div id="toast" class="hide"></div>
+    </div>
+    <div id="pane">
+      <div id="keyhelp"><b>キー操作</b><br>← → 移動<br>Z / Space はばたき<br>（空中で長押しすると、ふわり）<br>E なおす（時間停止）<br>R 最初から</div>
+    <div id="touch" class="hide">
+      <div class="acts">
+        <button data-btn="jump" class="b-jump">はばたき</button>
+      </div>
+    </div>
+
+    <div id="editbar" class="hide">
+      <div id="edithelp"></div>
+      <div id="tabs"></div>
+      <div id="tools"></div>
+      <div id="opts"></div>
+      <div id="editfoot">
+        <button id="e-undo" aria-label="元に戻す">↶</button>
+        <button id="e-redo" aria-label="やり直す">↷</button>
+        <button id="e-pan" aria-label="画面を動かす">✋</button>
+        <button id="e-done" class="done">終わる</button>
+      </div>
+    </div>
+
+    </div>
+
+
+    <section id="screen-title" class="screen">
+      <h1>エナーと<span>ふしぎ</span>のシート</h1>
+      <div class="demo-badge">体験版</div>
+      <button id="btn-play" class="big">遊ぶ</button>
+      <button id="btn-guide" class="ghost">ブロック図鑑</button>
+      <p class="keys">PC：← → 移動　Z/Space はばたき（長押しでふわり）　E なおす（時間停止）<br>編集中：ドラッグで範囲選択／1〜9 道具／[ ] タブ／Z 戻す／Y やり直す／R 最初から</p>
+      <p class="demo-note">※ 体験版です。遊べるステージは一部で、ステージを作る機能はありません。</p>
+    </section>
+
+    <section id="screen-select" class="screen hide">
+      <header><button id="btn-back" class="ghost">◀ 戻る</button><h2>ステージ選択（体験版）</h2><button id="btn-guide2" class="ghost">図鑑</button><span id="total"></span></header>
+      <div id="levels"></div>
+      <footer><button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
+    </section>
+
+    <section id="screen-guide" class="screen hide">
+      <header><button id="btn-guide-back" class="ghost">◀ 戻る</button><h2>ブロック図鑑</h2></header>
+      <div id="guide"></div>
+    </section>
+
+    <section id="screen-result" class="screen hide">
+      <h2>クリア！</h2>
+      <div id="r-stars"></div>
+      <p id="r-info"></p>
+      <p id="r-tip"></p>
+      <div class="row"><button id="r-next" class="big">次のステージへ</button></div>
+      <div class="row"><button id="r-retry" class="ghost">もう一度</button><button id="r-menu" class="ghost">ステージ選択</button></div>
+    </section>
+  </div>
+</div>
+<script>window.DEMO = { levels: ["1-1", "1-2", "1-3", "2-1", "3-1", "4-1", "5-1", "5-2"] };</script>
+<script>
+// まいかいあたらしいファイルを読み込む（スマホで古いキャッシュがのこらないように）。じゅんばんどおりに実ぎょうされる。
+(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+</script>
+</body>
+</html>
