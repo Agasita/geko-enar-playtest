@@ -686,7 +686,7 @@
   function setEdit(on) {
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
     if (!G.level.tools.length) { UI.toast('このステージではなおせないよ'); return; }
-    E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null; UI.drawer(false);
+    E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
   }
@@ -1141,7 +1141,6 @@
   let dragging = false, panLast = null, tapMode = false;
   const wantsRect = () => { const d = toolDef(), E = G.edit; return d && (d.mode === 'rect' || (d.mode === 'two' && E.step === 0) || (d.mode === 'painter' && E.step === 1)); };
   cv.addEventListener('pointerdown', (e) => {
-    if (!$('#drawer').classList.contains('hide')) { UI.drawer(false); e.preventDefault(); return; } // どうぐの引き出しがあいていたら、まず、とじる
     audio(); if (G.mode !== 'play' || !G.edit.on) return; e.preventDefault(); cv.setPointerCapture(e.pointerId);
     const E = G.edit, w = toWorld(e);
     if (E.pan) { panLast = { x: e.clientX, y: e.clientY }; return; }
@@ -1176,8 +1175,7 @@
     tabsOf() { const t = new Set(); G.level.tools.forEach(id => t.add(TOOL_BY[id].tab)); return TABS.map(x => x.id).filter(id => t.has(id)); },
     toolsOfTab(tab) { return G.level.tools.map(id => TOOL_BY[id]).filter(t => t.tab === tab); },
     pickTab(tab) { const E = G.edit; E.tab = tab; const l = UI.toolsOfTab(tab); if (!l.find(t => t.id === E.tool)) UI.pickTool(l[0].id); else UI.refreshTools(); },
-    drawer(open) { $('#drawer').classList.toggle('hide', !open); document.body.classList.toggle('drawer-open', !!open); },
-    pickTool(id) { UI.drawer(false); const E = G.edit; E.tool = id; E.tab = TOOL_BY[id].tab; E.sel = null; E.kb = null; E.step = 0; E.src = null; E.srcCell = null; E.pan = false; E.msg = ''; UI.refreshTools(); },
+    pickTool(id) { const E = G.edit; E.tool = id; E.tab = TOOL_BY[id].tab; E.sel = null; E.kb = null; E.step = 0; E.src = null; E.srcCell = null; E.pan = false; E.msg = ''; UI.refreshTools(); },
     refreshTools() {
       const E = G.edit; if (!G.level) return;
       const tabs = $('#tabs'), bar = $('#tools'), opts = $('#opts'); tabs.innerHTML = ''; bar.innerHTML = ''; opts.innerHTML = '';
@@ -1197,8 +1195,6 @@
       if (id === 'transform') chips('', [{ v: 'flipH', label: 'よこにひっくり' }, { v: 'flipV', label: 'たてにひっくり' }, { v: 'rot', label: '90°まわす' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('のこすいろ', colorItems.concat([{ v: null, label: 'はずす' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
-      const cur = TOOL_BY[E.tool]; $('#toolbtn').innerHTML = '<span>どうぐ</span><b>' + (cur ? cur.name : '') + '</b><small>' + (cur ? cur.cost : '') + '</small><i>▸</i>'; $('#toolbtn').onclick = () => UI.drawer($('#drawer').classList.contains('hide'));
-      $('#drawer-x').onclick = () => UI.drawer(false);
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグでがめんをうごかす' : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
