@@ -645,7 +645,7 @@
   function planFor(tool, a) {
     const o = a.opts || G.edit.opts;
     switch (tool) {
-      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
+      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.front[sy][sx] === TL.MAGNET) return fail('磁石はコピーできません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
       case 'sort': return planSort(a.rect, o.sort);
       case 'filter': return planFilter(a.fcolor !== undefined ? a.fcolor : o.fcolor);
@@ -715,7 +715,8 @@
     const E = G.edit, d = toolDef(); if (!d) return;
     if (d.mode === 'two' && E.step === 1) { if (runPlan(planFor(E.tool, { rect: E.src, dst: [tx, ty] }))) { E.step = 0; E.src = null; } }
     else if (d.mode === 'painter' && E.step === 0) {
-      if (inb(tx, ty) && isBlk(tx, ty)) { E.srcCell = [tx, ty]; E.step = 1; E.msg = ''; SFX.place(); } else { E.msg = 'ブロックをタップしてください'; SFX.bad(); }
+      if (inb(tx, ty) && G.front[ty][tx] === TL.MAGNET) { E.msg = '磁石はコピーできません'; SFX.bad(); }
+      else if (inb(tx, ty) && isBlk(tx, ty)) { E.srcCell = [tx, ty]; E.step = 1; E.msg = ''; SFX.place(); } else { E.msg = 'ブロックをタップしてください'; SFX.bad(); }
     } else if (d.mode === 'col') runPlan(planFor(E.tool, { col: tx }));
     UI.refreshTools();
   }
