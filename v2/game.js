@@ -203,7 +203,7 @@
   function solidCell(tx, ty) {
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
     if (G.doors) for (const d of G.doors) if (!d.open && tx === d.x && ty >= d.y && ty < d.y + d.h) return true;
-    if (G.mgs) for (const m of G.mgs) if (tx === m.x + m.dx && ty === m.y + m.dy) return true;
+    if (G.mgs) for (const m of G.mgs) for (const c of m.cells) if (tx === c[0] + m.dx && ty === c[1] + m.dy) return true;
     const t = G.front[ty][tx]; if (t === TL.STEEL) return true;
     return isBlockT(t) && blockVisible(tx, ty);
   }
@@ -741,64 +741,91 @@
 
 
   // ---- じしゃく: いちばん近い はがね に、ひきよせられる(ちょくせんの上に ほかのブロックがあると、はたらかない) ----
+  // じしゃくどうしも くっつく: となりあった じしゃくは「ひとかたまり」で、いっしょに うごき、1つでも はがねに くっついたら かたまり ぜんたいが とまる
   const MAG_SPEED = RUN; // しゅじんこうがあるくのと、おなじはやさ
   const MAG_DIRS = [[0, 1], [-1, 0], [1, 0], [0, -1]]; // した・ひだり・みぎ・うえ(おなじ距離なら、この順)
-  function magPull(x, y) { // {dx,dy,d}: ひきよせる向きと、はがねまでのマス数。なければ null
+  const isGhost = (x, y) => { const t = G.front[y][x]; return isBlockT(t) && t !== TL.MAGNET && !blockVisible(x, y); };
+  const mk = (x, y) => x + ',' + y;
+  function magClusters() { // となりあう じしゃく(4ほうこう)を、ひとかたまりに
+    const seen = new Set(), out = [];
+    for (let y = 0; y < G.level.h; y++) for (let x = 0; x < G.level.w; x++) {
+      if (G.front[y][x] !== TL.MAGNET || seen.has(mk(x, y))) continue;
+      const cells = [], q = [[x, y]]; seen.add(mk(x, y));
+      while (q.length) { const [cx, cy] = q.pop(); cells.push([cx, cy]); for (const [dx, dy] of MAG_DIRS) { const nx = cx + dx, ny = cy + dy; if (inb(nx, ny) && G.front[ny][nx] === TL.MAGNET && !seen.has(mk(nx, ny))) { seen.add(mk(nx, ny)); q.push([nx, ny]); } } }
+      out.push(cells);
+    }
+    return out;
+  }
+  // かたまりが ひきよせられる むき {dx,dy}。はがねに くっついているか、ひきよせる はがねが ないと null(=うごかない)
+  function clusterPull(cells) {
+    const set = new Set(cells.map(c => mk(c[0], c[1])));
+    for (const [x, y] of cells) for (const [dx, dy] of MAG_DIRS) { const nx = x + dx, ny = y + dy; if (inb(nx, ny) && G.front[ny][nx] === TL.STEEL) return null; } // はがねに くっついている
     let best = null;
-    for (const [dx, dy] of MAG_DIRS) {
+    for (const [x, y] of cells) for (const [dx, dy] of MAG_DIRS) {
+      let own = 0;
       for (let d = 1; ; d++) {
         const tx = x + dx * d, ty = y + dy * d; if (!inb(tx, ty)) break;
         if (G.doors.some(q => !q.open && tx === q.x && ty >= q.y && ty < q.y + q.h)) break;
+        if (set.has(mk(tx, ty))) { own++; continue; } // かたまりの なかまは とびこえる
         const t = G.front[ty][tx]; if (t === 0) continue;
         if (isGhost(tx, ty)) continue; // フィルターで うすくなった ブロックは、すりぬけられる
-        if (t === TL.STEEL) { if (!best || d < best.d) best = { dx, dy, d }; break; }
-        break; // ほかのブロックがあるので、このむきは はたらかない
+        if (t === TL.STEEL) { const de = d - own; if (!best || de < best.d) best = { dx, dy, d: de }; break; }
+        break; // ほかの ブロック(なかま いがいの じしゃく も)が あるので、このむきは はたらかない
       }
     }
     return best;
   }
-  const isGhost = (x, y) => { const t = G.front[y][x]; return isBlockT(t) && t !== TL.MAGNET && !blockVisible(x, y); };
-  function magStepFree(m) { // つぎのマスに、すすめるか(ひと・てきがいると、まつ)
-    const nx = m.x + m.dx, ny = m.y + m.dy; if (!inb(nx, ny) || (G.front[ny][nx] !== 0 && !isGhost(nx, ny))) return false;
-    if (G.doors.some(q => !q.open && nx === q.x && ny >= q.y && ny < q.y + q.h)) return false;
-    for (const r of actorRects()) if (overlap(nx * T, ny * T, T, T, r.x, r.y, r.w, r.h)) return false;
+  function clusterFree(cells, dx, dy) { // つぎの マスに すすめるか(ひと・てきが いると、まつ)
+    const set = new Set(cells.map(c => mk(c[0], c[1])));
+    for (const [x, y] of cells) {
+      const nx = x + dx, ny = y + dy; if (!inb(nx, ny)) return false;
+      if (!set.has(mk(nx, ny)) && G.front[ny][nx] !== 0 && !isGhost(nx, ny)) return false;
+      if (G.doors.some(q => !q.open && nx === q.x && ny >= q.y && ny < q.y + q.h)) return false;
+      for (const r of actorRects()) if (overlap(nx * T, ny * T, T, T, r.x, r.y, r.w, r.h)) return false;
+    }
     return true;
+  }
+  function moveCluster(m) { // 1マス すすめる(さきの じしゃくから じゅんに)
+    const order = m.cells.slice().sort((a, b) => (b[0] * m.dx + b[1] * m.dy) - (a[0] * m.dx + a[1] * m.dy));
+    for (const c of order) {
+      const x = c[0], y = c[1], nx = x + m.dx, ny = y + m.dy, ok = mk(x, y), nk = mk(nx, ny), prev = G.under[ok];
+      if (G.front[ny][nx] !== 0) G.under[nk] = { t: G.front[ny][nx], c: G.col[ny][nx], l: G.lock[ny][nx] }; // うすくなった ブロックの うえを とおる: したに のこしておく
+      G.front[ny][nx] = G.front[y][x]; G.col[ny][nx] = G.col[y][x]; G.lock[ny][nx] = G.lock[y][x];
+      if (prev) { G.front[y][x] = prev.t; G.col[y][x] = prev.c; G.lock[y][x] = prev.l; delete G.under[ok]; } else { G.front[y][x] = 0; G.col[y][x] = 0; G.lock[y][x] = 0; }
+      c[0] = nx; c[1] = ny;
+    }
   }
   function updateMagnets(dt) {
     for (const k of Object.keys(G.under)) { const [ux, uy] = k.split(',').map(Number); if (G.front[uy][ux] !== TL.MAGNET) { if (G.front[uy][ux] === 0) { const u = G.under[k]; G.front[uy][ux] = u.t; G.col[uy][ux] = u.c; G.lock[uy][ux] = u.l; } delete G.under[k]; } }
-    const moving = new Set(G.mgs.map(m => m.x + ',' + m.y));
-    // うごいていないじしゃくは、ひきよせられるか調べる
-    for (let y = 0; y < G.level.h; y++) for (let x = 0; x < G.level.w; x++) {
-      if (G.front[y][x] !== TL.MAGNET || moving.has(x + ',' + y) || !blockVisible(x, y)) continue;
-      const pl = magPull(x, y); if (!pl || pl.d <= 1) continue;
-      const m = { x, y, dx: pl.dx, dy: pl.dy, off: 0 }; if (magStepFree(m)) { G.mgs.push(m); moving.add(x + ',' + y); }
+    // うごいていない かたまりは、ひきよせられるか しらべる
+    const moving = new Set(); for (const m of G.mgs) for (const c of m.cells) moving.add(mk(c[0], c[1]));
+    for (const cells of magClusters()) {
+      if (cells.some(c => moving.has(mk(c[0], c[1]))) || cells.some(c => !blockVisible(c[0], c[1]))) continue;
+      const pl = clusterPull(cells); if (!pl) continue;
+      if (clusterFree(cells, pl.dx, pl.dy)) { G.mgs.push({ cells, dx: pl.dx, dy: pl.dy, off: 0 }); for (const c of cells) moving.add(mk(c[0], c[1])); }
     }
     for (const m of G.mgs.slice()) {
-      if (G.front[m.y][m.x] !== TL.MAGNET) { G.mgs.splice(G.mgs.indexOf(m), 1); continue; }
-      if (m.off === 0 && !magStepFree(m)) continue; // まつ(のこして、あとでまた)
+      if (!m.cells.every(c => G.front[c[1]][c[0]] === TL.MAGNET)) { G.mgs.splice(G.mgs.indexOf(m), 1); continue; }
+      if (m.off === 0 && !clusterFree(m.cells, m.dx, m.dy)) continue; // まつ
       const step = MAG_SPEED * dt, p = G.p;
-      const ride = !p.dead && p.ground && p.x + p.w > m.x * T + m.off * T * m.dx && p.x < (m.x + 1) * T + m.off * T * m.dx && Math.abs(p.y + p.h - (m.y * T + m.off * T * m.dy)) <= 2.5;
+      const ride = !p.dead && p.ground && m.cells.some(c => p.x + p.w > c[0] * T + m.off * T * m.dx && p.x < (c[0] + 1) * T + m.off * T * m.dx && Math.abs(p.y + p.h - (c[1] * T + m.off * T * m.dy)) <= 2.5);
       m.off += step / T; if (ride) { p.x += m.dx * step; p.y += m.dy * step; }
       while (m.off >= 1) { // 1マスすすんだ
-        const nx = m.x + m.dx, ny = m.y + m.dy;
-        const ok = m.x + ',' + m.y, nk = nx + ',' + ny, prev = G.under[ok];
-        if (G.front[ny][nx] !== 0) G.under[nk] = { t: G.front[ny][nx], c: G.col[ny][nx], l: G.lock[ny][nx] }; // うすくなった ブロックの うえを とおる: したに のこしておく
-        G.front[ny][nx] = G.front[m.y][m.x]; G.col[ny][nx] = G.col[m.y][m.x]; G.lock[ny][nx] = G.lock[m.y][m.x];
-        if (prev) { G.front[m.y][m.x] = prev.t; G.col[m.y][m.x] = prev.c; G.lock[m.y][m.x] = prev.l; delete G.under[ok]; } else { G.front[m.y][m.x] = 0; G.col[m.y][m.x] = 0; G.lock[m.y][m.x] = 0; }
-        m.x = nx; m.y = ny; m.off -= 1;
-        const pl = magPull(m.x, m.y);
-        if (!pl || pl.d <= 1 || pl.dx !== m.dx || pl.dy !== m.dy || !magStepFree(m)) { m.off = 0; G.mgs.splice(G.mgs.indexOf(m), 1); SFX.place(); break; }
+        moveCluster(m); m.off -= 1;
+        const all = magClusters().find(cl => cl.some(c => c[0] === m.cells[0][0] && c[1] === m.cells[0][1]));
+        const pl = all ? clusterPull(all) : null;
+        if (all) m.cells = all; // くっついた じしゃくも なかまに
+        if (!pl || pl.dx !== m.dx || pl.dy !== m.dy || !clusterFree(m.cells, m.dx, m.dy)) { m.off = 0; G.mgs.splice(G.mgs.indexOf(m), 1); SFX.place(); break; }
       }
     }
     // スイッチ: じしゃくがかさなったら、おされる(いちどおしたら、そのまま)
     for (const s of G.switches) {
       if (s.on) continue;
       if (inb(s.x, s.y) && G.front[s.y][s.x] === TL.MAGNET) s.on = true; // そのマスに、じしゃくがある
-      if (!s.on) for (const m of G.mgs) { const mx = (m.x + m.dx * m.off) * T, my = (m.y + m.dy * m.off) * T; if (Math.abs(mx - s.x * T) < 8 && Math.abs(my - s.y * T) < 8) s.on = true; }
+      if (!s.on) for (const m of G.mgs) for (const c of m.cells) { const mx = (c[0] + m.dx * m.off) * T, my = (c[1] + m.dy * m.off) * T; if (Math.abs(mx - s.x * T) < 8 && Math.abs(my - s.y * T) < 8) s.on = true; }
       if (s.on) { SFX.gem && SFX.gem(); for (const d of G.doors) if (d.id === s.id && !d.open) { d.latched = true; d.open = true; UI.toast('どこかの扉が開きました！', 1800); } }
     }
   }
-
 
   // ---- はんていセル: マスに、くっついた「しらべるところ」。ブロックのじょうたいが そろうと ON。おなじ番号のとびらが ひらく ----
   // 「ある」は、じっさいにぶつかるブロック(フィルターで うすくなったブロックは「ない」)
@@ -949,7 +976,7 @@
     }
   }
   function drawTile(t, x, y, tx, ty) {
-    if (t === TL.MAGNET) { if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return; const mv = G.mgs.find(m => m.x === tx && m.y === ty); drawMagnet(Math.round(x + (mv ? mv.dx * mv.off * T : 0)), Math.round(y + (mv ? mv.dy * mv.off * T : 0))); if (G.lock[ty][tx] && SOLID) ctx.drawImage(GFX.lock(), x + 8, y + 1); return; }
+    if (t === TL.MAGNET) { if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return; const mv = G.mgs.find(m => m.cells.some(c => c[0] === tx && c[1] === ty)); drawMagnet(Math.round(x + (mv ? mv.dx * mv.off * T : 0)), Math.round(y + (mv ? mv.dy * mv.off * T : 0))); if (G.lock[ty][tx] && SOLID) ctx.drawImage(GFX.lock(), x + 8, y + 1); return; }
     if (isBlockT(t)) {
       if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return;
       const faded = G.filter !== null && G.col[ty][tx] !== G.filter && !G.lock[ty][tx];
@@ -1316,7 +1343,7 @@
     items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼', '編集できない鋼の壁・床・天井。どの道具も効かない']);
     items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '黄色ブロックと同じく、乗ると崩れる。編集できる']);
     items.push(['h', '磁石・スイッチ・扉']);
-    items.push([tileSample(() => drawMagnet(0, 0)), '磁石ブロック', '最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない（フィルターで薄くなったブロックは通り抜ける）。磁石自体にはフィルターが効かない']);
+    items.push([tileSample(() => drawMagnet(0, 0)), '磁石ブロック', '最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない（フィルターで薄くなったブロックは通り抜ける）。磁石自体にはフィルターが効かない。となりあった磁石はくっついてひとかたまりになり、いっしょに動く。どれか1つでも鋼にくっつくと、かたまり全体が止まる']);
     items.push(['h', '判定セル（扉などと連動）']);
     items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '存在セル', 'このマスに実体のあるブロックかエナーがいるとON。薄くなったブロックは対象外。ONの間、同じ番号の扉が開き、リフトが動く']);
     items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '空きセル', 'このマスに実体のあるものもエナーもいなければON。フィルターで薄くなったブロックは空き扱い']);
