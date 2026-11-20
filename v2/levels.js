@@ -574,13 +574,13 @@
       { x: 5, text: 'ひだりの あおいブロックを「よせ→」で、はんていセルまで おくろう' },
     ],
     build(m) {
-      m.floor(); m.door(30, 0, 10, 0); m.judge(26, 9, 'exist', 0, 0);
-      m.blk(8, 9, 2);
-      m.gem(5, 8); m.gem(15, 7); m.gem(22, 8);
-      m.check(24, 9);
+      m.floor(); m.door(24, 0, 10, 0); m.judge(17, 9, 'exist', 0, 0);
+      m.blk(9, 9, 2);
+      m.gem(4, 8); m.gem(13, 7); m.gem(21, 8);
+      m.check(22, 9);
       m.flag = [46, 9];
     },
-    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 8, y0: 9, x1: 26, y1: 9 }, opts: { sort: 'R' } }] }],
+    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 9, y0: 9, x1: 17, y1: 9 }, opts: { sort: 'R' } }] }],
   }));
 
   L.push(make({
@@ -590,13 +590,13 @@
       { x: 5, text: 'ブロックを みぎへ よせると ちゃいろが「□」の マスに ひっかかる。フィルターで うすくすれば「ない」になる' },
     ],
     build(m) {
-      m.floor(); m.door(30, 0, 10, 0); m.judge(22, 9, 'exist', 0, 0); m.judge(21, 9, 'empty', 0, 0);
-      m.blk(6, 9, 0); m.blk(10, 9, 2);
-      m.gem(4, 8); m.gem(14, 7); m.gem(26, 8);
-      m.check(24, 9);
+      m.floor(); m.door(24, 0, 10, 0); m.judge(17, 9, 'exist', 0, 0); m.judge(16, 9, 'empty', 0, 0);
+      m.blk(5, 9, 0); m.blk(9, 9, 2);
+      m.gem(3, 8); m.gem(12, 7); m.gem(21, 8);
+      m.check(22, 9);
       m.flag = [46, 9];
     },
-    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 6, y0: 9, x1: 22, y1: 9 }, opts: { sort: 'R' } }, { tool: 'filter', fcolor: 2 }] }],
+    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 5, y0: 9, x1: 17, y1: 9 }, opts: { sort: 'R' } }, { tool: 'filter', fcolor: 2 }] }],
   }));
 
   L.push(make({
@@ -606,13 +606,13 @@
       { x: 5, text: 'ガラスに「いろコピー」で みどりを うつして、「よせ→」で はんていセルへ' },
     ],
     build(m) {
-      m.floor(); m.door(30, 0, 10, 0); m.judge(24, 9, 'color', 3, 0);
-      m.blk(10, 9, 5); m.blk(14, 6, 3);
-      m.gem(4, 8); m.gem(16, 8); m.gem(27, 8);
-      m.check(26, 9);
+      m.floor(); m.door(24, 0, 10, 0); m.judge(17, 9, 'color', 3, 0);
+      m.blk(8, 9, 5); m.blk(12, 6, 3);
+      m.gem(3, 8); m.gem(14, 8); m.gem(21, 8);
+      m.check(22, 9);
       m.flag = [46, 9];
     },
-    solution: [{ x: 2, edits: [{ tool: 'painter', srcCell: [14, 6], rect: { x0: 10, y0: 9, x1: 10, y1: 9 } }, { tool: 'sort', rect: { x0: 10, y0: 9, x1: 24, y1: 9 }, opts: { sort: 'R' } }] }],
+    solution: [{ x: 2, edits: [{ tool: 'painter', srcCell: [12, 6], rect: { x0: 8, y0: 9, x1: 8, y1: 9 } }, { tool: 'sort', rect: { x0: 8, y0: 9, x1: 17, y1: 9 }, opts: { sort: 'R' } }] }],
   }));
 
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
