@@ -837,7 +837,7 @@
 
   // ===== 描画 =====
   function dotRect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-  // みた目: ?gfx=excel(ふつう: Excelかぜ) / ?gfx=snes(ソリッドばん) / ?gfx=classic(もとのえ)
+  // みた目: ?gfx=excel(ふつう: Excelふう) / ?gfx=snes(ソリッドばん) / ?gfx=classic(もとのえ)
   const THEME = ((/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
   const EXCEL = THEME === 'excel' && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
   const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
@@ -1057,7 +1057,7 @@
   }
   function drawHUD() {
     return; // HUDは、ウィンドウのリボンにだす(キャンバスにはかかない)
-    const X = EXCEL; // Excelかぜ: しろいいた(コメントのような)のうえに、くらいいろでかく
+    const X = EXCEL; // Excelふう: しろいいた(コメントのような)のうえに、くらいいろでかく
     if (X) { ctx.save(); ctx.translate(GFXX.HW + 2, GFXX.HH + 2); const ph = (G.level.tools.length ? 33 : 24) + (G.filter !== null ? 9 : 0); ctx.fillStyle = '#F3F3F3'; ctx.fillRect(0, 0, 88, ph); ctx.fillStyle = '#ABABAB'; ctx.fillRect(0, 0, 88, 1); ctx.fillRect(0, ph - 1, 88, 1); ctx.fillRect(0, 0, 1, ph); ctx.fillRect(87, 0, 1, ph); }
     const ink = X ? '#262626' : '#fff', sub = X ? '#595959' : '#D5DBE6';
     // ハート
@@ -1263,7 +1263,7 @@
       $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true);
       const lv = G.level;
       $('#r-info').innerHTML = 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + 'びょう　ダメージ ' + G.hits + 'かい';
-      const tips = []; if (!goals[1]) tips.push('Σを3つぜんぶあつめる'); if (!goals[2]) tips.push('ノーミス（ダメージをうけない）でクリア');
+      const tips = []; if (!goals[1]) tips.push('Σをぜんぶあつめる'); if (!goals[2]) tips.push('ノーミス（ダメージをうけない）でクリア');
       $('#r-tip').textContent = tips.length ? tips.join('　') : 'パーフェクト！';
       const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージえらびへ' : 'つぎのステージへ';
     },
@@ -1296,7 +1296,7 @@
     items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'color', color: 3, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'いろセル', 'そのマスに、きめたいろの ブロックが あると ON。いろコピーでつくった いろも、かぞえる']);
     items.push([tileSample(() => drawSwitch({ x: 0, y: 0, id: 0, on: false }, 0, 0)), 'スイッチ', 'じしゃくブロックがかさなると、おされる（いちどおしたら、そのまま）。おなじいろのとびらがひらく']);
     items.push([tileSample(() => { const save = G.doors; G.doors = [{ x: 0, y: 0, h: 1, id: 0, open: false, anim: 0 }]; try { drawDoors(0, 0); } finally { G.doors = save; } }), 'とびら', 'スイッチをおすまで、とおれない。ブロックもおけない']);
-    items.push(['h', 'なおすときのしるし']);
+    items.push(['h', 'しかけ・カギ']);
     items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', 'きまったみち（うすくみえるみち）を、きまったくりかえしていったりきたりするあしば。のるとはこばれる。どうぐではうごかせず、みちにブロックをおくこともできない。リフトにもいろ（ちから）があり、フィルターでけせる（うすくなってとおりぬけられる）。ガラスのリフトは、いろコピーでいろをつけられる']);
     items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（まもり）', 'まもったブロック。どのどうぐもきかず、フィルターでもきえない。よせるときのしきりになる。「まもりをはずす」ではずせる']);
     items.push([blk(0, .28), 'うすいひょうじ', 'フィルターをかけているところ。えらんだいろいがいのブロック（ガラスも）は、うすくなってとおりぬけられる']);
