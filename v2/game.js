@@ -126,7 +126,7 @@
     const w = l.w | 0, h = Array.isArray(l.front) ? l.front.length : 0;
     if (w < 20 || w > 160 || h < 12 || h > 60 || !Array.isArray(l.color) || l.color.length !== h) throw new Error('bad level');
     if (Array.isArray(l.gems) && l.gems.length > 5) l = Object.assign({}, l, { gems: l.gems.slice(0, 5) });
-    return Object.assign({ world: 9, hints: [], solution: [], bg: '#9ADBC0', bg2: '#86CEB0', par: 0, sparks: [], lifts: [], switches: [], doors: [], checks: [], gems: [], ents: [], start: [2, 9], flag: [w - 4, 9], custom: true },
+    return Object.assign({ world: 9, hints: [], solution: [], bg: '#9ADBC0', bg2: '#86CEB0', par: 0, sparks: [], lifts: [], switches: [], doors: [], judges: [], checks: [], gems: [], ents: [], start: [2, 9], flag: [w - 4, 9], custom: true },
       l, { w, h, energy: l.energy | 0, tools: (l.tools || []).filter(id => TOOL_BY[id]), lock: l.lock || l.front.map(() => new Array(w).fill(0)), hints: l.hint ? [{ x: 0, text: l.hint }] : (l.hints || []) });
   }
   (function loadCustomLevels() {
@@ -158,7 +158,8 @@
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = [];
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
-    G.doors = (lv.doors || []).map(d => ({ x: d[0], y: d[1], h: d[2], id: d[3] || 0, open: false, anim: 0 }));
+    G.doors = (lv.doors || []).map(d => ({ x: d[0], y: d[1], h: d[2], id: d[3] || 0, open: false, anim: 0, latched: false }));
+    G.judges = (lv.judges || []).map(j => ({ x: j[0], y: j[1], type: j[2], color: j[3] || 0, id: j[4] || 0, on: false }));
     G.pick = [];
     lv.gems.forEach((g, k) => G.pick.push({ type: 'gem', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
     if (lv.regen) lv.sparks.forEach((g, k) => G.pick.push({ type: 'spark', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
@@ -781,19 +782,41 @@
       if (s.on) continue;
       if (inb(s.x, s.y) && G.front[s.y][s.x] === TL.MAGNET) s.on = true; // そのマスに、じしゃくがある
       if (!s.on) for (const m of G.mgs) { const mx = (m.x + m.dx * m.off) * T, my = (m.y + m.dy * m.off) * T; if (Math.abs(mx - s.x * T) < 8 && Math.abs(my - s.y * T) < 8) s.on = true; }
-      if (s.on) { SFX.gem && SFX.gem(); for (const d of G.doors) if (d.id === s.id) d.open = true; UI.toast('どこかで、とびらがひらいたよ', 1800); }
+      if (s.on) { SFX.gem && SFX.gem(); for (const d of G.doors) if (d.id === s.id && !d.open) { d.latched = true; d.open = true; UI.toast('どこかで、とびらがひらいたよ', 1800); } }
     }
-    for (const d of G.doors) d.anim = Math.max(0, Math.min(1, d.anim + (d.open ? dt * 2 : -dt * 2)));
+  }
+
+
+  // ---- はんていセル: マスに、くっついた「しらべるところ」。ブロックのじょうたいが そろうと ON。おなじ番号のとびらが ひらく ----
+  // 「ある」は、じっさいにぶつかるブロック(フィルターで うすくなったブロックは「ない」)
+  function judgeOn(j) {
+    if (!inb(j.x, j.y)) return false;
+    const t = G.front[j.y][j.x], real = isBlockT(t) && blockVisible(j.x, j.y);
+    if (j.type === 'exist') return real;
+    if (j.type === 'empty') return !solidCell(j.x, j.y);
+    if (j.type === 'color') return real && G.col[j.y][j.x] === j.color;
+    return false;
+  }
+  function updateDoors(dt) {
+    for (const j of G.judges) j.on = judgeOn(j);
+    for (const d of G.doors) {
+      const mine = G.judges.filter(j => j.id === d.id), cond = mine.length > 0 && mine.every(j => j.on), want = d.latched || cond;
+      if (!want && d.open) { // とびらがしまる: ひと・てきが、とびらの中にいたら、しまらない(はさまない)
+        const inside = actorRects().some(r => overlap(d.x * T, d.y * T, T, d.h * T, r.x, r.y, r.w, r.h));
+        if (!inside) d.open = false;
+      } else if (want && !d.open) d.open = true;
+      d.anim = Math.max(0, Math.min(1, d.anim + (d.open ? dt * 2 : -dt * 2)));
+    }
   }
 
   // ===== 更新 =====
   function update(dt) {
     if (G.mode !== 'play') return;
-    if (G.edit.on) { G.frame++; G.shake = 0; return; }
+    if (G.edit.on) { G.frame++; G.shake = 0; updateDoors(dt); return; }
     if (G.hitstop > 0) { G.hitstop -= dt; return; }
     G.frame++; G.t += dt;
     if (!G.cleared) G.time += dt;
-    updateLifts(dt); updateMagnets(dt); updatePlayer(dt); updateEnemies(dt); updatePickups();
+    updateLifts(dt); updateMagnets(dt); updateDoors(dt); updatePlayer(dt); updateEnemies(dt); updatePickups();
     if (!G.cleared) G.energy = Math.min(100, G.energy + dt * G.regen);
     for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 200 * dt; q.life -= dt; }
     G.parts = G.parts.filter(q => q.life > 0);
@@ -871,6 +894,22 @@
     ctx.fillStyle = c; ctx.fillRect(x + 3, y + (s.on ? 13 : 10), 10, s.on ? 2 : 3);
     ctx.fillStyle = 'rgba(255,255,255,.6)'; if (!s.on) ctx.fillRect(x + 4, y + 10, 8, 1);
   }
+
+  // はんていセルのわく(ブロックのうえに かさねる): きいろ=まだ / みどり=ON
+  function drawJudges(cx, cy) {
+    for (const j of G.judges) {
+      const x = j.x * T - cx, y = j.y * T - cy, on = j.on, c = on ? '#217346' : '#D9A400';
+      ctx.fillStyle = on ? 'rgba(33,115,70,.22)' : 'rgba(255,214,0,.20)'; ctx.fillRect(x, y, T, T);
+      ctx.fillStyle = c; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y + T - 1, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T);
+      ctx.fillRect(x + 1, y + 1, 3, 1); ctx.fillRect(x + 1, y + 1, 1, 3); ctx.fillRect(x + T - 4, y + T - 2, 3, 1); ctx.fillRect(x + T - 2, y + T - 4, 1, 3);
+      // しるし: そんざい=ブロック / あき=わく / いろ=そのいろ
+      if (j.type === 'exist') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); }
+      else if (j.type === 'empty') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
+      else { ctx.fillStyle = (COLORS[j.color] || COLORS[0]).hex; ctx.fillRect(x + 5, y + 5, 6, 6); ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
+      ctx.fillStyle = SW_COL[j.id % 4]; ctx.fillRect(x + T - 5, y + 1, 4, 3); // どのとびらに つながるか
+      if (on) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 6, y + 8, 2, 1); ctx.fillRect(x + 7, y + 9, 2, 1); ctx.fillRect(x + 8, y + 8, 1, 1); ctx.fillRect(x + 9, y + 7, 1, 1); ctx.fillRect(x + 10, y + 6, 1, 1); }
+    }
+  }
   function drawDoors(cx, cy) {
     for (const d of G.doors) {
       const c = SW_COL[d.id % 4], x = d.x * T - cx, y = d.y * T - cy, h = d.h * T, a = 1 - d.anim;
@@ -944,7 +983,7 @@
     drawLiftRails(cx, cy);
     for (const s of G.switches) drawSwitch(s, cx, cy);
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const t = G.front[ty][tx]; if (t) drawTile(t, tx * T - cx, ty * T - cy, tx, ty); }
-    drawLifts(cx, cy); drawDoors(cx, cy);
+    drawLifts(cx, cy); drawDoors(cx, cy); drawJudges(cx, cy);
     // かくしたぎょう・れつは、てんせんで示す
     ctx.fillStyle = 'rgba(255,255,255,.55)';
     for (const ty of G.hideRow) for (let x = 0; x < W; x += 4) ctx.fillRect(x, ty * T - cy + 7, 2, 2);
@@ -1246,6 +1285,10 @@
     items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひびわれかべ', 'きいろブロックとおなじ（のるとくずれる）。どうぐがきく']);
     items.push(['h', 'じしゃく・スイッチ・とびら']);
     items.push([tileSample(() => drawMagnet(0, 0)), 'じしゃくブロック', 'いちばんちかいはがねに、まっすぐひきよせられる（あるくのとおなじはやさ）。まっすぐのせんの上にほかのブロックがあると、はたらかない。フィルターのえいきょうはうけない']);
+    items.push(['h', 'はんていセル（とびらにつながる）']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'そんざいセル', 'そのマスに、ほんとうにぶつかるブロックが あると ON。フィルターでうすくなったブロックは「ない」あつかい。ONのあいだだけ、とびらがひらく']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'あきセル', 'そのマスに、ぶつかるものが なにもないと ON。フィルターでブロックをうすくすると ONになる']);
+    items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'color', color: 3, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), 'いろセル', 'そのマスに、きめたいろの ブロックが あると ON。いろコピーでつくった いろも、かぞえる']);
     items.push([tileSample(() => drawSwitch({ x: 0, y: 0, id: 0, on: false }, 0, 0)), 'スイッチ', 'じしゃくブロックがかさなると、おされる（いちどおしたら、そのまま）。おなじいろのとびらがひらく']);
     items.push([tileSample(() => { const save = G.doors; G.doors = [{ x: 0, y: 0, h: 1, id: 0, open: false, anim: 0 }]; try { drawDoors(0, 0); } finally { G.doors = save; } }), 'とびら', 'スイッチをおすまで、とおれない。ブロックもおけない']);
     items.push(['h', 'なおすときのしるし']);
