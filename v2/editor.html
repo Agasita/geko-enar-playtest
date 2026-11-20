@@ -186,11 +186,6 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     L.judges.forEach(j => { const x = j[0] * T, y = j[1] * T, c = j[2] === 'color' ? COLORS[j[3]][1] : (j[2] === 'exist' ? '#8A4FD0' : '#4D4D4D');
       ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x + T, y); ctx.lineTo(x + T - 11, y); ctx.lineTo(x + T, y + 11); ctx.fill();
       ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(j[4] + 1, x + 2, y + T - 3); });
-    // つながり: はんていセルから、おなじ ばんごうの とびら・リフトへ てんせん
-    ctx.setLineDash([2, 4]); ctx.lineWidth = 2;
-    L.judges.forEach(j => { ctx.strokeStyle = IDCOL[j[4] % 4]; L.doors.filter(d => d[3] === j[4]).forEach(d => { ctx.beginPath(); ctx.moveTo(j[0] * T + T / 2, j[1] * T + T / 2); ctx.lineTo(d[0] * T + T / 2, Math.max(d[1] * T + 4, Math.min((d[1] + d[2]) * T - 4, j[1] * T + T / 2))); ctx.stroke(); });
-      L.lifts.filter(l => l.ctl === j[4]).forEach(l => { ctx.beginPath(); ctx.moveTo(j[0] * T + T / 2, j[1] * T + T / 2); ctx.lineTo(l.x * T + l.w * T / 2, l.y * T + T / 2); ctx.stroke(); }); });
-    ctx.setLineDash([]); ctx.lineWidth = 1;
     for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
     const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
     for (const e of L.ents) { const d = ENTS.find(q => q[0] === e.type); glyph(e.x, e.y, d[1][0], d[2]); }
