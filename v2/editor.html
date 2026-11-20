@@ -65,7 +65,8 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
   <div class="row"><button id="b-mode" style="font-weight:700;min-width:190px"></button><span class="lbl">「うごかす」のあいだは、さわってもブロックはおかれません</span></div>
   <div class="row pal" id="pal"></div>
   <div class="row pal" id="pal2"></div>
-  <div class="row"><label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label>
+  <div class="row"><span class="lbl">スイッチ・とびらの いろ</span><select id="f-id"><option value="0">0 あか</option><option value="1">1 あお</option><option value="2">2 みどり</option><option value="3">3 きいろ</option></select>
+    <label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label>
     <button id="b-floor">ゆか（した2ぎょう）をはる</button><span class="lbl" id="cursor"></span></div>
 
   <div id="lp"><fieldset><legend>えらんだリフト</legend>
@@ -115,12 +116,13 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     const front = [], color = [], lock = [];
     for (let y = 0; y < h; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
     for (let y = h - 2; y < h; y++) front[y].fill('S');
-    return { w, h, front, color, lock, ents: [], gems: [], checks: [], sparks: [], lifts: [], start: [2, h - 3], flag: [w - 4, h - 3] };
+    return { w, h, front, color, lock, ents: [], gems: [], checks: [], sparks: [], lifts: [], switches: [], doors: [], start: [2, h - 3], flag: [w - 4, h - 3] };
   }
   function fromLevel(lv) {
     const h = lv.front.length;
     return { w: lv.w, h, front: lv.front.map(r => Array.from(r)), color: lv.color.map(r => r.slice()), lock: (lv.lock || lv.front.map(() => new Array(lv.w).fill(0))).map(r => r.slice()),
       ents: (lv.ents || []).map(e => ({ type: e.type, x: e.x, y: e.y })), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
+      switches: (lv.switches || []).map(s => s.slice()), doors: (lv.doors || []).map(d => d.slice()),
       lifts: (lv.lifts || []).map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period || 7, phase: l.phase || 0, col: l.col || 0 })), start: lv.start.slice(), flag: lv.flag.slice() };
   }
   const snap = () => JSON.stringify({ L, meta: collectMeta() });
@@ -140,6 +142,7 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     const ok = (x, y) => x >= 0 && x < w && y + dy >= 0;
     n.ents = L.ents.filter(e => ok(e.x, e.y)).map(e => ({ type: e.type, x: e.x, y: e.y + dy })); n.gems = L.gems.filter(g => ok(g[0], g[1])).map(g => [g[0], g[1] + dy]);
     n.checks = L.checks.filter(c => ok(c[0], c[1])).map(c => [c[0], c[1] + dy]); n.sparks = L.sparks.filter(c => ok(c[0], c[1])).map(c => [c[0], c[1] + dy]);
+    n.switches = L.switches.filter(s => ok(s[0], s[1])).map(s => [s[0], s[1] + dy, s[2]]); n.doors = L.doors.filter(d => ok(d[0], d[1])).map(d => [d[0], d[1] + dy, d[2], d[3]]);
     n.lifts = L.lifts.filter(l => ok(l.x, l.y) && l.x + l.w <= w).map(l => Object.assign({}, l, { y: l.y + dy }));
     n.start = ok(L.start[0], L.start[1]) ? [L.start[0], L.start[1] + dy] : [2, h - 3]; n.flag = ok(L.flag[0], L.flag[1]) && L.flag[1] + dy >= 1 ? [L.flag[0], L.flag[1] + dy] : [w - 4, h - 3];
     L = n; H = h; sel = -1; fit(); showLift();
@@ -155,9 +158,12 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
       const c = L.front[y][x], px = x * T, py = y * T; if (c === '.') continue;
       if (c === '#') { cell(px, py, COLORS[L.color[y][x]], L.color[y][x] === 5); if (L.lock[y][x]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(px + T - 9, py + 3, 7, 7); ctx.fillRect(px + T - 8, py, 5, 4); ctx.fillStyle = '#fff'; ctx.fillRect(px + T - 6, py + 5, 2, 3); } }
       else if (c === 'S') { ctx.fillStyle = '#5F6F8C'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#2B3550'; ctx.fillRect(px, py, T, 1); ctx.fillRect(px, py + T - 1, T, 1); ctx.fillRect(px, py, 1, T); ctx.fillRect(px + T - 1, py, 1, T); ctx.fillStyle = '#9FB0C8'; ctx.fillRect(px + 3, py + 3, 2, 2); ctx.fillRect(px + T - 5, py + 3, 2, 2); ctx.fillRect(px + 3, py + T - 5, 2, 2); ctx.fillRect(px + T - 5, py + T - 5, 2, 2); }
+      else if (c === 'M') { magnetCell(px, py); if (L.lock[y][x]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(px + T - 9, py + 3, 7, 7); } }
       else if (c === 'c') { cell(px, py, COLORS[0]); ctx.fillStyle = '#735630'; ctx.fillRect(px + 9, py + 3, 2, 6); ctx.fillRect(px + 6, py + 8, 2, 6); ctx.fillRect(px + 12, py + 11, 2, 5); }
     }
     ctx.fillStyle = '#595959'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left'; for (let x = 0; x < L.w; x += 5) ctx.fillText(x, x * T + 2, 9);
+    L.doors.forEach(d => { const c = IDCOL[d[3] % 4]; ctx.fillStyle = '#3B3F4D'; ctx.fillRect(d[0] * T + 3, d[1] * T, T - 6, d[2] * T); ctx.fillStyle = c; ctx.fillRect(d[0] * T + 3, d[1] * T, T - 6, 3); ctx.fillRect(d[0] * T + 3, (d[1] + d[2]) * T - 3, T - 6, 3); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('と' + d[3], d[0] * T + T / 2, d[1] * T + T / 2 + 4); });
+    L.switches.forEach(s => { ctx.fillStyle = '#595959'; ctx.fillRect(s[0] * T + 2, s[1] * T + T - 5, T - 4, 5); ctx.fillStyle = IDCOL[s[2] % 4]; ctx.fillRect(s[0] * T + 3, s[1] * T + T - 9, T - 6, 4); ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(s[2], s[0] * T + T / 2, s[1] * T + T - 11); });
     for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
     const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
     for (const e of L.ents) { const d = ENTS.find(q => q[0] === e.type); glyph(e.x, e.y, d[1][0], d[2]); }
@@ -167,6 +173,12 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     glyph(L.start[0], L.start[1], 'ス', '#58B368'); glyph(L.flag[0], L.flag[1], 'ゴ', '#E8563F'); glyph(L.flag[0], L.flag[1] - 1, 'ー', '#E8563F');
     for (const h of meta.hints) { ctx.fillStyle = '#FFFFE1'; ctx.strokeStyle = '#000'; ctx.fillRect(h.x * T, 10, 8, 8); ctx.strokeRect(h.x * T + .5, 10.5, 7, 7); }
     ctx.fillStyle = th[1]; ctx.fillRect(0, cv.height - 3, cv.width, 3);
+  }
+  const IDCOL = ['#C00000', '#2E75B6', '#217346', '#C99A1E'];
+  function magnetCell(px, py) {
+    ctx.fillStyle = '#4A5470'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#8D97B3'; ctx.fillRect(px, py, T, 1); ctx.fillRect(px, py, 1, T); ctx.fillStyle = '#2B3350'; ctx.fillRect(px, py + T - 1, T, 1); ctx.fillRect(px + T - 1, py, 1, T);
+    ctx.fillStyle = '#D9D9D9'; ctx.fillRect(px + 4, py + 4, T - 8, T - 8); ctx.fillStyle = '#4A5470'; ctx.fillRect(px + 7, py + 4, T - 14, 7);
+    ctx.fillStyle = '#E04444'; ctx.fillRect(px + 4, py + 4, 3, 5); ctx.fillStyle = '#3F7FE0'; ctx.fillRect(px + T - 7, py + 4, 3, 5);
   }
   function cell(px, py, c, glass) {
     ctx.fillStyle = c[1]; ctx.fillRect(px, py, T, T); ctx.fillStyle = c[2]; ctx.fillRect(px, py, T, 2); ctx.fillRect(px, py, 2, T); ctx.fillStyle = c[3]; ctx.fillRect(px, py + T - 2, T, 2); ctx.fillRect(px + T - 2, py, 2, T);
@@ -189,12 +201,15 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
   function eraseAt(x, y) {
     L.front[y][x] = '.'; L.color[y][x] = 0; L.lock[y][x] = 0;
     L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.gems = L.gems.filter(g => !(g[0] === x && g[1] === y)); L.checks = L.checks.filter(c => !(c[0] === x && c[1] === y)); L.sparks = L.sparks.filter(c => !(c[0] === x && c[1] === y));
+    L.switches = L.switches.filter(s => !(s[0] === x && s[1] === y)); L.doors = L.doors.filter(d => !(d[0] === x && y >= d[1] && y < d[1] + d[2]));
     const n = L.lifts.length; L.lifts = L.lifts.filter(l => !(y === l.y && x >= l.x && x < l.x + l.w)); if (L.lifts.length !== n) { sel = -1; showLift(); }
   }
   function apply(x, y) {
     if (!inb(x, y)) return; const k = cur.kind;
     if (k === 'erase') return eraseAt(x, y);
     if (k === 'block') { L.front[y][x] = '#'; L.color[y][x] = cur.color; L.lock[y][x] = $('#f-lock').checked ? 1 : 0; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); return; }
+    if (k === 'magnet') { L.front[y][x] = 'M'; L.color[y][x] = 0; L.lock[y][x] = $('#f-lock').checked ? 1 : 0; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); return; }
+    if (k === 'switch') { L.switches = L.switches.filter(s => !(s[0] === x && s[1] === y)); L.switches.push([x, y, +$('#f-id').value || 0]); return; }
     if (k === 'steel') { eraseAt(x, y); L.front[y][x] = 'S'; return; }
     if (k === 'crack') { eraseAt(x, y); L.front[y][x] = 'c'; return; }
     const free = L.front[y][x] === '.';
@@ -240,11 +255,13 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
       else { if (inb(c[0], c[1])) newLift(c[0], c[1]); down = { what: 'none' }; }
       draw(); return;
     }
+    if (cur.kind === 'door') { if (!inb(c[0], c[1])) return; const id = +$('#f-id').value || 0; L.doors.push([c[0], c[1], 3, id]); down = { what: 'door', x: c[0], y0: c[1], d: L.doors[L.doors.length - 1] }; draw(); return; }
     down = { what: 'paint' }; last = c; apply(c[0], c[1]); draw();
   });
   cv.addEventListener('pointermove', (e) => {
     const c = cellOf(e); $('#cursor').textContent = inb(c[0], c[1]) ? '(' + c[0] + ', ' + c[1] + ')' : '';
     if (!down) return;
+    if (down.what === 'door') { const y0 = Math.min(down.y0, c[1]), y1 = Math.max(down.y0, c[1]); down.d[1] = Math.max(0, y0); down.d[2] = Math.max(1, Math.min(L.h, y1) - down.d[1] + 1); draw(); return; }
     if (down.what === 'paint') { if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } }
     else if (down.what !== 'none') { liftDrag(c); draw(); }
   });
@@ -282,6 +299,7 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     addBtn(p, 'はがね（うごかない）', { kind: 'steel' }); addBtn(p, 'ひびわれかべ', { kind: 'crack' }); addBtn(p, 'けしゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => addBtn(p2, '<span class="sw" style="background:' + e[2] + ';border-radius:50%"></span>' + e[1], { kind: 'ent', type: e[0] }));
+    addBtn(p2, '<span class="sw" style="background:#4A5470"></span>じしゃく', { kind: 'magnet' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, 'とびら（ドラッグでたかさ）', { kind: 'door' });
     addBtn(p2, 'Σ(ほうせき)', { kind: 'gem' }); addBtn(p2, 'エナジーのたま', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
     TOOLS.forEach(t => { const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" data-t="' + t[0] + '"> ' + t[1]; $('#tools').appendChild(l); });
     COLORS.forEach((c, i) => { const o = document.createElement('option'); o.value = i; o.textContent = c[0]; $('#l-col').appendChild(o); });
@@ -298,6 +316,7 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     return { id: editingId || nextId(), name: m.name, w: L.w, tools: m.tools, energy: m.energy, regen: m.regen || undefined, par: m.par, theme: m.theme, bg: th[1], bg2: th[2],
       hints: m.hints.filter(h => h.text.trim()), front: L.front.map(r => r.join('')), color: L.color.map(r => r.slice()), lock: L.lock.map(r => r.slice()),
       ents: L.ents.map(e => ({ type: e.type, x: e.x, y: e.y })), gems: L.gems.map(g => g.slice()), checks: L.checks.map(c => c.slice()), sparks: L.sparks.map(c => c.slice()),
+      switches: L.switches.map(s => s.slice()), doors: L.doors.map(d => d.slice()),
       lifts: L.lifts.map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period, phase: l.phase, col: l.col })), start: L.start.slice(), flag: L.flag.slice() };
   }
   function check(d) {
@@ -306,6 +325,8 @@ table{border-collapse:collapse;width:100%}td{padding:2px 4px;border-bottom:1px s
     if (d.flag[1] + 1 < L.h && !solid(d.flag[0], d.flag[1] + 1)) out.push('ゴールのあしもとに、じめんがありません');
     d.lifts.forEach((l, i) => { const x0 = Math.min(l.x, l.x + l.dx), x1 = Math.max(l.x, l.x + l.dx) + l.w - 1, y0 = Math.min(l.y, l.y + l.dy), y1 = Math.max(l.y, l.y + l.dy); let hit = false;
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (solid(x, y)) hit = true; if (hit) out.push('リフト' + (i + 1) + 'のみちに、ブロックがあります（ぶつかります）'); });
+    d.switches.forEach(s => { if (!d.doors.some(q => q[3] === s[2])) out.push('スイッチ' + s[2] + 'に、おなじいろのとびらがありません'); });
+    d.doors.forEach(q => { if (!d.switches.some(s => s[2] === q[3])) out.push('とびら' + q[3] + 'を、あけるスイッチがありません'); });
     if (d.regen && !d.sparks.length) out.push('かいふくがありますが、エナジーのたまがありません'); return out.join(' / ');
   }
   function save() {

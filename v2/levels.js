@@ -9,7 +9,7 @@
     const front = [], color = [], lock = [];
     for (let y = 0; y < h; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
     const m = {
-      ents: [], gems: [], sparks: [], checks: [], lifts: [], start: [2, h - 3], flag: [w - 4, h - 3],
+      ents: [], gems: [], sparks: [], checks: [], lifts: [], switches: [], doors: [], start: [2, h - 3], flag: [w - 4, h - 3],
       set(x, y, ch) { front[y][x] = ch; },
       rect(x0, y0, x1, y1, ch) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) front[y][x] = ch; },
       floor() { m.rect(0, h - 2, w - 1, h - 1, 'S'); },
@@ -21,6 +21,8 @@
       ent(type, x, y, extra) { m.ents.push(Object.assign({ type, x, y }, extra || {})); },
       gem(x, y) { m.gems.push([x, y]); },
       lift(x, y, w, dx, dy, period, phase, col) { m.lifts.push({ x, y, w, dx, dy, period: period || 7, phase: phase || 0, col: col || 0 }); },
+      sw(x, y, id) { m.switches.push([x, y, id || 0]); },
+      door(x, y, h, id) { m.doors.push([x, y, h, id || 0]); },
       spark(x, y) { m.sparks.push([x, y]); },
       check(x, y) { m.checks.push([x, y]); },
     };
@@ -28,7 +30,7 @@
     return {
       id: def.id, name: def.name, world: def.world, w, h, tools: def.tools || [], energy: def.energy !== undefined ? def.energy : 60, regen: def.regen,
       front: front.map(r => r.join('')), color, lock,
-      ents: m.ents, lifts: m.lifts, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
+      ents: m.ents, lifts: m.lifts, switches: m.switches, doors: m.doors, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
       hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0,
     };
   }
@@ -423,6 +425,24 @@
       m.flag = [52, 4];
     },
     solution: [],
+  }));
+
+  // ---- ワールド8: じしゃく ----
+  L.push(make({
+    id: '8-1', name: 'じしゃくとスイッチ', world: 8, w: 60, tools: ['sort'], energy: 10, bg: '#D6C3A5', bg2: '#C9B392', par: 8,
+    hints: [
+      { x: 1, text: 'あかとあおの「じしゃく」ブロックは、いちばんちかい はがね に ひきよせられる' },
+      { x: 12, text: 'まっすぐのせんの うえに ほかのブロックがあると、じしゃくは はたらかないよ' },
+      { x: 18, text: 'じゃまなブロックを「←よせ」でよこにどかすと… じしゃくがうごきだす。スイッチをおすと、とびらがひらく' },
+    ],
+    build(m) {
+      m.floor();
+      m.blk(24, 8, 2); m.set(24, 7, 'M'); m.sw(24, 9, 0); m.door(38, 0, 10, 0);
+      m.gem(14, 8); m.gem(20, 7); m.gem(31, 8);
+      m.check(30, 9);
+      m.flag = [52, 9];
+    },
+    solution: [{ x: 18, edits: [{ tool: 'sort', rect: { x0: 20, y0: 8, x1: 24, y1: 8 }, opts: { sort: 'L' } }] }],
   }));
 
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----

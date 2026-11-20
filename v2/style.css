@@ -247,3 +247,23 @@ body.menu #lpad,body.editing #lpad{display:none}
   #pane #touch .acts{margin-left:auto;justify-content:flex-end;padding:0 calc(var(--s)*8px)}
   #pane #touch .b-jump{width:calc(var(--s)*64px);height:calc(var(--s)*34px)}
 }
+
+/* ===== どうぐの引き出し: 横向き=右から、縦向き=上から。えらぶと、とじる ===== */
+#toolbtn{display:flex;align-items:center;gap:calc(var(--s)*2px);width:100%;min-height:calc(var(--s)*13px);padding:0 calc(var(--s)*3px);border:1px solid #217346;background:#E2F0D9;color:#262626;font-size:max(11px,calc(var(--s)*5px));text-align:left;border-radius:0}
+#toolbtn b{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#toolbtn small{color:#217346;font-weight:700}
+#toolbtn span{color:#595959;font-size:.85em}
+#drawer{position:absolute;z-index:9;top:calc(var(--s)*var(--rh)*1px);bottom:0;right:calc(var(--s)*var(--pw)*1px);width:calc(var(--s)*104px);background:#F3F3F3;border-left:1px solid #ABABAB;box-shadow:-3px 0 0 #0002;display:flex;flex-direction:column;gap:calc(var(--s)*2px);padding:calc(var(--s)*3px);overflow-y:auto;animation:dr-in .14s ease-out}
+#drawer.hide{display:none!important}
+#drawer-head{display:flex;align-items:center;justify-content:space-between;color:#217346;font-size:max(11px,calc(var(--s)*5px))}
+#drawer-x{min-height:calc(var(--s)*11px);padding:0 calc(var(--s)*3px)}
+#drawer #tabs{display:flex;gap:2px;margin:0}
+#drawer #tabs button{flex:1;min-height:calc(var(--s)*10px);font-size:max(10px,calc(var(--s)*4.2px));padding:0}
+#drawer #tools{display:flex;flex-direction:column;gap:calc(var(--s)*1.5px)}
+#drawer #tools button{min-height:calc(var(--s)*13px);font-size:max(11px,calc(var(--s)*5px))}
+@keyframes dr-in{from{transform:translateX(30%);opacity:0}to{transform:none;opacity:1}}
+@media (orientation:portrait){
+  #drawer{top:calc(var(--s)*var(--rh)*1px);left:0;right:0;bottom:auto;width:auto;max-height:calc(var(--s)*180px);border-left:0;border-bottom:1px solid #ABABAB;box-shadow:0 3px 0 #0002;animation:dr-down .14s ease-out}
+  #drawer #tools{flex-direction:row;flex-wrap:wrap}#drawer #tools button{flex:1 1 44%}
+  @keyframes dr-down{from{transform:translateY(-30%);opacity:0}to{transform:none;opacity:1}}
+}
