@@ -203,7 +203,8 @@
       rail: { x0: Math.min(l.x, l.x + l.dx), y0: Math.min(l.y, l.y + l.dy), x1: Math.max(l.x, l.x + l.dx) + l.w - 1, y1: Math.max(l.y, l.y + l.dy) }, vert: l.dy !== 0 };
   }
   function liftAt(L, t) { const s = .5 - .5 * Math.cos(2 * Math.PI * t / L.period); return { x: L.ax + (L.bx - L.ax) * s, y: L.ay + (L.by - L.ay) * s }; }
-  function onLift(L) { const p = G.p; return !L.gone && p.ground && p.x + p.w > L.x && p.x < L.x + L.w && Math.abs(p.y + p.h - L.y) <= 2.5; }
+  const liftOn = (L) => !L.gone && (G.filter === null || L.col === G.filter); // フィルターで色がちがうリフトは、通りぬけられる(うすくなる)
+  function onLift(L) { const p = G.p; return liftOn(L) && p.ground && p.x + p.w > L.x && p.x < L.x + L.w && Math.abs(p.y + p.h - L.y) <= 2.5; }
   function updateLifts(dt) {
     const p = G.p;
     for (const L of G.lifts) {
@@ -213,14 +214,14 @@
       if (ride && dy <= 0) { moveY(p, dy); moveX(p, dx); }
       L.x = n.x; L.y = n.y;
       if (ride && dy > 0) { moveY(p, dy); moveX(p, dx); }
-      if (!ride && !p.dead && !L.gone && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // 横や下から当たったら、おし出す
+      if (!ride && !p.dead && liftOn(L) && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // 横や下から当たったら、おし出す
         if (Math.abs(dy) >= Math.abs(dx)) p.y = dy < 0 ? L.y - p.h : L.y + L.h; else p.x = dx > 0 ? L.x + L.w : L.x - p.w;
       }
     }
   }
   const liftRailHit = (tx, ty) => G.lifts && G.lifts.some(L => tx >= L.rail.x0 && tx <= L.rail.x1 && ty >= L.rail.y0 && ty <= L.rail.y1);
   function boxHitsSolid(x, y, w, h) {
-    if (G.lifts) for (const L of G.lifts) if (!L.gone && x < L.x + L.w && x + w > L.x && y < L.y + L.h && y + h > L.y) return true;
+    if (G.lifts) for (const L of G.lifts) if (liftOn(L) && x < L.x + L.w && x + w > L.x && y < L.y + L.h && y + h > L.y) return true;
     const x0 = Math.floor(x / T), x1 = Math.floor((x + w - .001) / T), y0 = Math.floor(y / T), y1 = Math.floor((y + h - .001) / T);
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (solidCell(tx, ty)) return true;
     return false;
@@ -294,7 +295,7 @@
       for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -BOUNCE; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
     }
     // 赤いブロック=あつい(さわるとダメージ)
-    for (const L of G.lifts) if (L.col === 1 && !L.gone && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, true);
+    for (const L of G.lifts) if (L.col === 1 && liftOn(L) && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, true);
     for (let ty = Math.floor((p.y - 1) / T); ty <= Math.floor((p.y + p.h + 1) / T); ty++) for (let tx = Math.floor((p.x - 1) / T); tx <= Math.floor((p.x + p.w) / T); tx++)
       if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, true);
     // 落下
@@ -784,16 +785,17 @@
     }
   }
   // リフトの板の色: 0=ふつう(緑の板) 1〜4=性質の色(ブロックと同じ) 5=ガラス(未書式)
-  const LIFT_EXCEL = [['#14532D', '#217346', '#4FAE78', '#0F3D22', '#FFFFFF'], ['#9C0006', '#FF8F9A', '#FFC7CE', '#7A0000', '#9C0006'], ['#1F4E79', '#9DC3E6', '#DDEBF7', '#2E75B6', '#1F4E79'], ['#00673A', '#70D68F', '#C6EFCE', '#00873C', '#00673A'], ['#7F5200', '#FFD966', '#FFF2CC', '#BF9000', '#7F5200'], ['#6B8FB8', '#F4F9FD', '#FFFFFF', '#B7D0EA', '#5A7FA6']];
+  const LIFT_EXCEL = [['#7F7F7F', '#FFCC99', '#FFE5CC', '#C99A66', '#3F3F76'], ['#9C0006', '#FF8F9A', '#FFC7CE', '#7A0000', '#9C0006'], ['#1F4E79', '#9DC3E6', '#DDEBF7', '#2E75B6', '#1F4E79'], ['#00673A', '#70D68F', '#C6EFCE', '#00873C', '#00673A'], ['#7F5200', '#FFD966', '#FFF2CC', '#BF9000', '#7F5200'], ['#6B8FB8', '#F4F9FD', '#FFFFFF', '#B7D0EA', '#5A7FA6']];
   function liftPalette(c) {
-    if (EXCEL || c === 0 || c === 5) { const p = LIFT_EXCEL[c] || LIFT_EXCEL[0]; if (EXCEL || c === 5) return p; return ['#2A5C8A', '#4C9BE8', '#8FC8FF', '#1B3F63', '#FFFFFF']; }
-    const k = COLORS[c]; return [k.lo, k.hex, k.hi, k.lo, '#FFFFFF'];
+    if (EXCEL || c === 5) return LIFT_EXCEL[c] || LIFT_EXCEL[0];
+    const k = COLORS[c] || COLORS[0]; return [k.lo, k.hex, k.hi, k.lo, '#FFFFFF'];
   }
   function drawLifts(cx, cy) {
     for (const L of G.lifts) {
       if (L.gone) continue;
       const x = Math.round(L.x - cx), y = Math.round(L.y - cy), w = L.w, h = L.h, P = liftPalette(L.col || 0);
       if (L.col === 4 && L.stand > 0) ctx.globalAlpha = Math.max(.35, 1 - L.stand);
+      if (!liftOn(L)) ctx.globalAlpha = .28; // フィルターで消えているリフト: うすく見える(通りぬけられる)
       ctx.fillStyle = P[0]; ctx.fillRect(x, y, w, h);
       ctx.fillStyle = P[1]; ctx.fillRect(x + 1, y + 1, w - 2, h - 5);
       ctx.fillStyle = P[2]; ctx.fillRect(x + 1, y + 1, w - 2, 2);
@@ -1077,7 +1079,7 @@
     items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼（はがね）', '編集できない金属の壁・床・天井。どの道具も効かない']);
     items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）。編集の対象']);
     items.push(['h', '編集のしるし']);
-    items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', '決まった道（うすく見える道）を、一定の周期で往復する足場。乗ると運ばれる。編集では動かせず、道にブロックを置くこともできない。ガラスのリフトは、書式のコピーで色（性質）をつけられる']);
+    items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', '決まった道（うすく見える道）を、一定の周期で往復する足場。乗ると運ばれる。編集では動かせず、道にブロックを置くこともできない。リフトにも色（性質）があり、フィルターで消せる（うすくなって通りぬけられる）。ガラスのリフトは、書式のコピーで色をつけられる']);
     items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。どの編集も受けず、フィルターでも消えない。寄せるときの仕切りになる。「保護の解除」で外せる']);
     items.push([blk(0, .28), 'うすい表示', 'フィルター中。選んだ色以外のブロック（ガラスも）は、うすくなって通りぬけられる']);
     const box = $('#guide'); box.innerHTML = '';
