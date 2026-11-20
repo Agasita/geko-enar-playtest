@@ -871,10 +871,22 @@
     ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x + 2, y + 2, 12, 1); ctx.fillRect(x + 2, y + 2, 1, 12); ctx.fillRect(x + 4, y + 4, 2, 1); ctx.fillRect(x + 4, y + 4, 1, 2);
     ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x + 3, y + 13, 11, 1); ctx.fillRect(x + 13, y + 3, 1, 11);
   }
+  // ガラスの「ぴかり」: ときどき、よこぎる しろい ひかりの おびが、ひょうめんを とおる。となりの ブロックへ、つづけて ながれる
+  const SHINE_PERIOD = 3.4, SHINE_LEN = .45;
+  function glassShine(x, y, w, h) {
+    const wx = x + Math.round(G.cam.x + (G.sx || 0)), ph = ((G.t - wx * .012) % SHINE_PERIOD + SHINE_PERIOD) % SHINE_PERIOD;
+    if (ph > SHINE_LEN) return;
+    const bx = Math.round(-4 + (ph / SHINE_LEN) * (w + 8)), a = ctx.globalAlpha;
+    const cols = ['#DCEBF8', '#A9D1F0', '#8FC1EA', '#DCEBF8']; // しろい ガラスの うえでも 見えるように、うすい あおの おび
+    for (let i = 0; i < 4; i++) { const px = bx + i; if (px < 1 || px > w - 2) continue; ctx.fillStyle = cols[i]; ctx.fillRect(x + px, y + 2, 1, h - 4); }
+    // ひかりの キラッ(しゅうだんの まんなかで 十字)
+    if (ph > SHINE_LEN * .35 && ph < SHINE_LEN * .75) { const sx = x + (w >> 1), sy = y + 3; ctx.fillStyle = '#6FA8DC'; ctx.fillRect(sx, sy - 1, 1, 3); ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx, sy, 1, 1); }
+    ctx.globalAlpha = a;
+  }
   function drawBlock(t, c, x, y, topOpen, botOpen, alpha, seed) {
     const k = COLORS[c] || COLORS[0];
     if (alpha !== undefined) ctx.globalAlpha = alpha;
-    if (TILES) { ctx.drawImage(TILES.block(t === TL.GLASSED ? TL.STONE : t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); if (t === TL.GLASSED) glassMark(x, y); ctx.globalAlpha = 1; return; }
+    if (TILES) { ctx.drawImage(TILES.block(t === TL.GLASSED ? TL.STONE : t, c, topOpen, botOpen, seed === undefined ? 0 : seed), x, y); if (t === TL.GLASSED) glassMark(x, y); else if (c === 5 && G.level) glassShine(x, y, T, T); ctx.globalAlpha = 1; return; }
     ctx.fillStyle = k.hex; ctx.fillRect(x, y, T, T);
     if (topOpen) { ctx.fillStyle = k.hi; ctx.fillRect(x, y, T, 2); }
     if (botOpen) { ctx.fillStyle = k.lo; ctx.fillRect(x, y + T - 3, T, 3); }
@@ -971,6 +983,7 @@
       ctx.fillStyle = P[1]; ctx.fillRect(x + 1, y + 1, w - 2, h - 5);
       ctx.fillStyle = P[2]; ctx.fillRect(x + 1, y + 1, w - 2, 2);
       ctx.fillStyle = P[3]; ctx.fillRect(x + 1, y + h - 4, w - 2, 3);
+      if (L.col === 5) glassShine(x, y, w, h);
       if (L.col === 5) { ctx.fillStyle = '#DDEBF7'; for (let i = 0; i < 4; i++) ctx.fillRect(x + 3 + i * 8, y + 3, 4, 1); }
       const mx = x + (w >> 1), my = y + 6;
       ctx.fillStyle = P[4];
