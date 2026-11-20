@@ -7,7 +7,7 @@
   // ブロックの色(＝Excelのセルの色)。色には性質がある。
   const COLORS = [
     { n: '茶', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
-    { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわると即ミス）' },
+    { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
     { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（氷）' },
     { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
     { n: '黄', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（攻撃・ダッシュで壊れる）' },
@@ -295,9 +295,9 @@
       for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -BOUNCE; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
     }
     // 赤いブロック=あつい(さわるとダメージ)
-    for (const L of G.lifts) if (L.col === 1 && liftOn(L) && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, true);
+    for (const L of G.lifts) if (L.col === 1 && liftOn(L) && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, false);
     for (let ty = Math.floor((p.y - 1) / T); ty <= Math.floor((p.y + p.h + 1) / T); ty++) for (let tx = Math.floor((p.x - 1) / T); tx <= Math.floor((p.x + p.w) / T); tx++)
-      if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, true);
+      if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, false);
     // 落下
     if (p.y > G.level.h * T + 40) { G.deaths++; G.p.dead = 0.01; SFX.die(); G.p.dead = .5; p.vy = 0; }
     p.anim += dt * (Math.abs(p.vx) > 20 ? 1 : 0.4); if (p.squash) p.squash *= .85; if (Math.abs(p.squash) < .01) p.squash = 0;
@@ -398,7 +398,7 @@
       if (hiddenAt(Math.floor((k.x + 4) / T), Math.floor((k.y + 4) / T))) continue;
       if (overlap(p.x, p.y, p.w, p.h, k.x, k.y, k.w, k.h)) {
         k.got = true;
-        if (k.type === 'gem') { G.gems++; SFX.gem(); spawnParts(k.x + 4, k.y + 4, 10, '#7FA2F0', 70); }
+        if (k.type === 'gem') { G.gems++; SFX.gem(); spawnParts(k.x + 4, k.y + 4, 10, EXCEL ? '#70AD47' : '#7FA2F0', 70); }
         else { G.energy = Math.min(G.maxE, G.energy + 15); SFX.spark(); spawnParts(k.x + 4, k.y + 4, 5, '#F5C842', 40); }
       }
     }
@@ -411,16 +411,21 @@
   }
   function winLevel() {
     G.cleared = true; G.clearT = 0; SFX.win();
-    // ★は3つの目標。それぞれ別に記録する: ①クリア ②宝石を全部 ③ノーダメージ
+    // 3つの目標(バッジ)。それぞれ別に記録する: ①クリア ②Σ(宝石)を全部 ③ノーミス(ダメージを受けない)
     const goals = [true, G.gems >= G.level.gems.length, G.deaths === 0 && G.hits === 0];
     const prev = save.levels[G.level.id] || { goals: [false, false, false] };
     const merged = goals.map((v, i) => v || !!(prev.goals && prev.goals[i]));
-    save.levels[G.level.id] = { goals: merged, time: Math.min(prev.time || 1e9, Math.round(G.time * 10) / 10) };
+    save.levels[G.level.id] = { goals: merged, gemsBest: Math.max(prev.gemsBest || (prev.goals && prev.goals[1] ? G.level.gems.length : 0), G.gems), time: Math.min(prev.time || 1e9, Math.round(G.time * 10) / 10) };
     persist(); G.lastGoals = goals;
     setTimeout(() => { if (G.cleared) UI.showResult(goals); }, 800);
   }
-  const starCount = (s) => (s && s.goals ? s.goals.filter(Boolean).length : 0);
-  const pips = (goals) => goals.map(v => (v ? '★' : '☆')).join('');
+  // 3つの目標のバッジ: ✓クリア / Σが3つそろう / ノーミス（ダメージを受けない）
+  function badgesHTML(goals, gemsGot, total, big) {
+    const n = (total === undefined ? 3 : total); let sg = '';
+    for (let i = 0; i < Math.min(n, 3); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '">Σ</i>';
+    return '<span class="bds' + (big ? ' big' : '') + '"><span class="bd ck' + (goals[0] ? ' on' : '') + '">✓</span>' + (n ? '<span class="bd sgs' + (goals[1] ? ' all' : '') + '">' + sg + '</span>' : '') + '<span class="bd pf' + (goals[2] ? ' on' : '') + '">ノーミス</span></span>';
+  }
+  const gemsOf = (lv, s) => (s ? (s.gemsBest !== undefined ? s.gemsBest : (s.goals && s.goals[1] ? lv.gems.length : 0)) : 0);
 
   // ===== 編集(Excelのしくみ) =====
   const key = (x, y) => x + ',' + y;
@@ -817,6 +822,14 @@
       ctx.globalAlpha = 1;
     }
   }
+  // Excelの「Σ（合計）」: 宝石のかわり。ステージに3つ。あつめると、HUDの3つのわくが、うまっていく
+  const SIGMA = ['11111', '10000', '01000', '00100', '01000', '10000', '11111'];
+  function sigmaTile(x, y, s, on) {
+    ctx.fillStyle = on ? '#185C37' : '#A6A6A6'; ctx.fillRect(x, y, s, s); ctx.fillStyle = on ? '#217346' : '#D9D9D9'; ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
+    if (on) { ctx.fillStyle = '#4FAE78'; ctx.fillRect(x + 1, y + 1, s - 2, 1); }
+    const ox = x + ((s - 5) >> 1), oy = y + ((s - 7) >> 1); ctx.fillStyle = on ? '#FFFFFF' : '#A6A6A6';
+    for (let j = 0; j < 7; j++) for (let i = 0; i < 5; i++) if (SIGMA[j][i] === '1') ctx.fillRect(ox + i, oy + j, 1, 1);
+  }
   function drawWorld() {
     const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
     const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
@@ -834,7 +847,7 @@
     for (const k of G.pick) {
       if (k.gone || hiddenAt(Math.floor((k.x + 4) / T), Math.floor((k.y + 4) / T))) continue;
       const x = k.x - cx, y = k.y - cy + Math.round(Math.sin(G.t * 4 + k.x) * 1.5);
-      if (k.type === 'gem') icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); else icon(BOLT, x + 1, y + 1, '#F5C842');
+      if (k.type === 'gem') { if (EXCEL) sigmaTile(x - 1, y - 1, 10, true); else icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); } else icon(BOLT, x + 1, y + 1, '#F5C842');
     }
     // 敵
     for (const e of G.enemies) {
@@ -888,9 +901,11 @@
     }
     // 宝石
     const gy = G.level.tools.length ? 25 : 16;
-    icon(GEM, 6, gy, '#4C9BE8', X ? '#DDEBF7' : '#BFD8FF'); text(G.gems + '/' + G.level.gems.length, 13, gy + 1, ink);
+    const ng = G.level.gems.length;
+    if (X && ng === 3) for (let i = 0; i < 3; i++) sigmaTile(6 + i * 11, gy - 1, 9, i < G.gems);
+    else if (ng) { if (X) sigmaTile(6, gy - 1, 9, true); else icon(GEM, 6, gy, '#4C9BE8', '#BFD8FF'); text(G.gems + '/' + ng, X ? 17 : 13, gy + 1, ink); }
     if (G.filter !== null) { icon(FUNNEL, 6, gy + 9, ink); ctx.fillStyle = COLORS[G.filter].hex; ctx.fillRect(15, gy + 9, 6, 5); if (X) { ctx.fillStyle = '#7F7F7F'; ctx.fillRect(15, gy + 9, 6, 1); ctx.fillRect(15, gy + 13, 6, 1); } }
-    text(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), 36, gy + 1, sub);
+    text(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), 42, gy + 1, sub);
     if (X) ctx.restore();
   }
   const FUNNEL = ['1111111', '.11111.', '..111..', '..111..', '...1...'];
@@ -1047,21 +1062,21 @@
     select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
     unlocked(i) { return true; }, // 試遊用: ステージは自由に選べる
     buildSelect() {
-      const box = $('#levels'); box.innerHTML = ''; let total = 0;
+      const box = $('#levels'); box.innerHTML = ''; let perfect = 0, sigma = 0, sigmaAll = 0;
       LEVELS.forEach((lv, i) => {
-        const s = save.levels[lv.id], b = document.createElement('button'); const ok = UI.unlocked(i); total += starCount(s);
+        const s = save.levels[lv.id], b = document.createElement('button'); const ok = UI.unlocked(i); if (s && s.goals && s.goals[2]) perfect++; sigma += gemsOf(lv, s); sigmaAll += lv.gems.length;
         b.className = 'lv' + (ok ? '' : ' lock'); b.disabled = !ok;
-        b.innerHTML = '<b>' + lv.id + '</b><span>' + lv.name + '</span><i>' + (s ? pips(s.goals) : (ok ? '☆☆☆' : '🔒')) + '</i>';
+        b.innerHTML = '<b>' + lv.id + '</b><span>' + lv.name + '</span>' + badgesHTML(s ? s.goals : [false, false, false], gemsOf(lv, s), lv.gems.length, false);
         b.onclick = () => UI.start(i); box.appendChild(b);
       });
-      $('#total').textContent = '★ ' + total + ' / ' + LEVELS.length * 3;
+      $('#total').textContent = 'ノーミス ' + perfect + '/' + LEVELS.length + '　Σ ' + sigma + '/' + sigmaAll;
     },
     showResult(goals) {
       G.mode = 'result'; UI.show('#screen-result');
-      $('#r-stars').textContent = pips(goals);
+      $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true);
       const lv = G.level;
-      $('#r-info').innerHTML = '宝石 ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回';
-      const tips = []; if (!goals[1]) tips.push('★2: 宝石を全部あつめる'); if (!goals[2]) tips.push('★3: ノーダメージでクリア');
+      $('#r-info').innerHTML = 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回';
+      const tips = []; if (!goals[1]) tips.push('Σを3つぜんぶ集める'); if (!goals[2]) tips.push('ノーミス（ダメージを受けない）でクリア');
       $('#r-tip').textContent = tips.length ? tips.join('　') : 'パーフェクト！';
       const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージえらびへ' : '次のステージへ';
     },
