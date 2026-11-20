@@ -247,3 +247,7 @@ body.menu #lpad,body.editing #lpad{display:none}
   #pane #touch .acts{margin-left:auto;justify-content:flex-end;padding:0 calc(var(--s)*8px)}
   #pane #touch .b-jump{width:calc(var(--s)*64px);height:calc(var(--s)*34px)}
 }
+
+/* 体験版 */
+.demo-badge{display:inline-block;background:#C99A1E;color:#fff;font-weight:800;letter-spacing:.2em;padding:2px 14px;border-radius:3px;font-size:18px;margin:-2px 0 4px}
+.demo-note{font-size:11px;color:#595959;margin:2px 0 0}
