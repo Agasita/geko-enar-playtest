@@ -5,15 +5,102 @@
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#1f2a44">
-<title>ゲコ＆エナー v2 — 世界を直して進め</title>
+<title>ゲコ＆エナー v2 — せかいをなおしてすすめ</title>
 <script>document.write('<link rel="stylesheet" href="style.css?t='+Date.now()+'">')</script>
 <noscript><link rel="stylesheet" href="style.css"></noscript>
 </head>
 <body>
-<div id="stage"><div id="game"><canvas id="cv" width="416" height="195"></canvas></div></div>
+<div id="stage">
+  <div id="game">
+    <div id="ribbon">
+      <div class="rb-tab">ホーム</div>
+      <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
+      <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
+      <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
+      <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
+      <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
+        <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="なおす">✎<span class="lbl"> なおす</span> <kbd>E</kbd></button>
+        <button class="rb-btn" data-proxy="#btn-restart" aria-label="やりなおし">↻</button>
+        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="おと">🔊</button>
+        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージえらび">☰</button>
+      </div><div class="rb-cap">そうさ</div></div>
+    </div>
+
+    <div id="lpane"><div class="pad" id="lpad">
+        <button data-btn="left" aria-label="ひだり">◀</button>
+        <button data-btn="right" aria-label="みぎ">▶</button>
+      </div></div>
+    <div id="sheet">
+    <canvas id="cv" width="288" height="180"></canvas>
+
+    <div id="hud" class="hide">
+      <span id="lvname"></span>
+      <div class="hudbtns">
+        <button id="btn-edit" aria-label="なおす">なおす <kbd>E</kbd></button>
+        <button id="btn-restart" aria-label="やりなおし">↻</button>
+        <button id="btn-mute" aria-label="おと">🔊</button>
+        <button id="btn-menu" aria-label="ステージえらび">☰</button>
+      </div>
+    </div>
+    <div id="toast" class="hide"></div>
+    </div>
+    <div id="pane">
+      <div id="keyhelp"><b>キーそうさ</b><br>← → いどう<br>Z / Space はばたき<br>（くうちゅうでおしつづけると、ふわり）<br>E なおす（じかんストップ）<br>R やりなおし</div>
+    <div id="touch" class="hide">
+      <div class="acts">
+        <button data-btn="jump" class="b-jump">はばたき</button>
+      </div>
+    </div>
+
+    <div id="editbar" class="hide">
+      <div id="edithelp"></div>
+      <div id="tabs"></div>
+      <div id="tools"></div>
+      <div id="opts"></div>
+      <div id="editfoot">
+        <button id="e-undo" aria-label="もとにもどす">↶</button>
+        <button id="e-redo" aria-label="やりなおし">↷</button>
+        <button id="e-pan" aria-label="がめんをうごかす">✋</button>
+        <button id="e-done" class="done">おわる</button>
+      </div>
+    </div>
+
+    </div>
+
+
+    <section id="screen-title" class="screen">
+      <h1>ゲコ<span>＆</span>エナー</h1>
+      <p class="sub">じかんをとめて、せかいをなおしながらすすむ<br>アクション・パズル</p>
+      <button id="btn-play" class="big">あそぶ</button>
+      <button id="btn-guide" class="ghost">ブロックのずかん</button>
+      <p class="keys">PC: ← → いどう　Z/Space ジャンプ（くうちゅうでおしつづけると、ふわり）　E なおす（じかんストップ）<br>なおしているところ: ドラッグではんいをえらぶ／1〜9 どうぐ　[ ] タブ　Z もどす　Y やりなおし　R やりなおし</p>
+      <p class="themes"><a class="oldlink" href="./">Excelかぜ（ふつう）</a>　<a class="oldlink" href="?gfx=snes">ソリッドばん</a>　<a class="oldlink" href="?gfx=classic">もとのえ</a></p><a class="oldlink" href="../">むかしバージョン（Pyxelばん）はこちら</a>
+    </section>
+
+    <section id="screen-select" class="screen hide">
+      <header><button id="btn-back" class="ghost">◀ もどる</button><h2>ステージえらび</h2><button id="btn-guide2" class="ghost">ずかん</button><span id="total"></span></header>
+      <div id="levels"></div>
+      <footer><button id="btn-editor" class="ghost tiny">ステージさくせい（テストよう）</button> <button id="btn-reset" class="ghost tiny">セーブをけす</button></footer>
+    </section>
+
+    <section id="screen-guide" class="screen hide">
+      <header><button id="btn-guide-back" class="ghost">◀ もどる</button><h2>ブロックのずかん</h2></header>
+      <div id="guide"></div>
+    </section>
+
+    <section id="screen-result" class="screen hide">
+      <h2>クリア！</h2>
+      <div id="r-stars"></div>
+      <p id="r-info"></p>
+      <p id="r-tip"></p>
+      <div class="row"><button id="r-next" class="big">つぎのステージへ</button></div>
+      <div class="row"><button id="r-retry" class="ghost">もういちど</button><button id="r-menu" class="ghost">ステージえらび</button></div>
+    </section>
+  </div>
+</div>
 <script>
-// 毎回あたらしいファイルを読み込む（スマホで古いキャッシュが残らないように）。順番どおりに実行される。
-(function () { var t = Date.now(); ['font_ja.js', 'sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+// まいかいあたらしいファイルを読み込む（スマホで古いキャッシュがのこらないように）。じゅんばんどおりに実ぎょうされる。
+(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
 </script>
 </body>
 </html>

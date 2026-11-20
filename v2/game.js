@@ -1,28 +1,28 @@
-/* ゲコ＆エナー v2 — 本体。320x180 のドットを整数倍に拡大して表示する(すべてのドットが同じ大きさ)。 */
+/* ゲコ＆エナー v2 — ほんたい。320x180 のドットをせいすうばいに拡大してひょうじする(すべてのドットがおなじ大きさ)。 */
 (function () {
   'use strict';
-  const W = 288, H = 180, T = 16, DT = 1 / 60; // シートは18マス×11.25マス。横向きの画面で、整数倍(2倍)にぴったり入る大きさ
-  const TL = { EMPTY: 0, STONE: 1, STEEL: 2, CRACK: 3, SPIKE: 5, GLASSED: 6 }; // GLASSED = 書式をつけたガラス(色の性質は、ふつうのブロックと同じ。元ガラスの印がつく)
+  const W = 288, H = 180, T = 16, DT = 1 / 60;
+  const TL = { EMPTY: 0, STONE: 1, STEEL: 2, CRACK: 3, SPIKE: 5, GLASSED: 6 }; // GLASSED = いろをつけたガラス(いろのちからは、ふつうのブロックとおなじ。もとガラスのしるしがつく)
   const CH2TILE = { '.': 0, '#': 1, 'S': 2, 'c': 3, '^': 5 };
-  // ブロックの色(＝Excelのセルの色)。色には性質がある。
+  // ブロックのいろ(＝Excelのセルのいろ)。いろにはちからがある。
   const COLORS = [
-    { n: '茶', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
-    { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
-    { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（氷）' },
-    { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
-    { n: '黄', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（乗ると、0.5秒ほどでくずれる）' },
-    { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: '未書式のセル（性質なし）。書式のコピーで色（性質）をつけられる' },
+    { n: 'ちゃいろ', hex: '#C9A15E', hi: '#E8CFA0', lo: '#735630', fx: 'ふつう' },
+    { n: 'あか', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
+    { n: 'あお', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（こおり）' },
+    { n: 'みどり', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
+    { n: 'きいろ', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（のると、0.5びょうほどでくずれる）' },
+    { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: 'いろなしのセル（ちからなし）。いろコピーでいろ（ちから）をつけられる' },
   ];
   const GLASS = 5;
-  const TABS = [{ id: 'home', name: 'ホーム' }, { id: 'cell', name: 'セル' }, { id: 'data', name: 'データ' }, { id: 'view', name: '表示' }];
-  // Excelの機能を、世界の編集に転用した道具。何もないところにブロックは生まれない(動かす・並べる・色・隠す・消す、だけ)。
+  const TABS = [{ id: 'home', name: 'ホーム' }, { id: 'cell', name: 'セル' }, { id: 'data', name: 'データ' }, { id: 'view', name: 'ひょうじ' }];
+  // Excelのきのうを、世界のなおすにてんようしたどうぐ。なにもないところにブロックは生まれない(うごかす・ならべる・いろ・隠す・けす、だけ)。
   const TOOLS = [
-    { id: 'painter', tab: 'home', name: '書式のコピー', mode: 'painter', cost: 2, help: '①色をまねるブロックをタップ → ②ガラスのある範囲をドラッグ（ガラスにだけ色がつく）' },
-    { id: 'transform', tab: 'cell', name: '変形', mode: 'rect', cost: 8, help: '範囲のブロックを反転・回転（回転は正方形の範囲）' },
-    { id: 'sort', tab: 'data', name: '並べ替え', mode: 'rect', cost: 10, help: '範囲のブロックを、上下左右に寄せる（保護ブロックと鋼で区切られる）' },
-    { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: '色を選ぶ → その色のブロックだけが残り、他は通りぬけられる' },
-    { id: 'protect', tab: 'view', name: 'シートの保護', mode: 'rect', cost: 4, help: '範囲のブロックを保護する。保護されたブロックは、どの編集も受けない' },
-    { id: 'unprotect', tab: 'view', name: '保護の解除', mode: 'rect', cost: 6, help: '範囲の保護を解除する' },
+    { id: 'painter', tab: 'home', name: 'いろコピー', mode: 'painter', cost: 2, help: '①いろをまねるブロックをタップ → ②ガラスのあるはんいをドラッグ（ガラスにだけいろがつく）' },
+    { id: 'transform', tab: 'cell', name: 'かたち', mode: 'rect', cost: 8, help: 'はんいのブロックをひっくりかえしたり、まわしたりする（まわすときは、しかくにえらぶ）' },
+    { id: 'sort', tab: 'data', name: 'ならべかえ', mode: 'rect', cost: 10, help: 'はんいのブロックを、ひとつのほうこうによせる（まもりブロックとはがねでくぎられる）' },
+    { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: 'いろをえらぶ → そのいろのブロックだけがのこり、ほかはとおりぬけられる' },
+    { id: 'protect', tab: 'view', name: 'シートをまもる', mode: 'rect', cost: 4, help: 'はんいのブロックをまもる。まもったブロックは、どのどうぐもきかない' },
+    { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: 'はんいのまもりをはずす' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   function newEdit(lv) {
@@ -34,7 +34,7 @@
   const cv = $('#cv'); let ctx = cv.getContext('2d'); const mainCtx = ctx;
   ctx.imageSmoothingEnabled = false;
 
-  // ===== ドット絵 =====
+  // ===== ドットえ =====
   const sprCache = {};
   function sprite(name, idx, flip) {
     const key = name + ':' + idx + ':' + (flip ? 1 : 0);
@@ -85,7 +85,7 @@
     }
   }
 
-  // ===== 音(WebAudio) =====
+  // ===== おと(WebAudio) =====
   let ac = null, muted = false;
   function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } } return ac; }
   function tone(f0, f1, dur, type, vol) {
@@ -117,10 +117,10 @@
   // ===== 保存 =====
   const SAVE_KEY = 'geko-enar-v2';
   let save = { levels: {}, muted: false };
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.levels) save = s; } catch (e) { /* 保存できなくても遊べる */ }
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.levels) save = s; } catch (e) { /* ほぞんできなくても遊べる */ }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
   muted = !!save.muted;
-  // 自作ステージ(ステージ作成ページで保存したもの)を、ステージ一覧のおわりに足す
+  // 自作ステージ(ステージさくせいページで保存したもの)を、ステージ一覧のおわりに足す
   const CUSTOM_KEY = 'geko-enar-v2-custom';
   function normalizeCustom(l) {
     const w = l.w | 0, h = Array.isArray(l.front) ? l.front.length : 0;
@@ -130,7 +130,7 @@
   }
   (function loadCustomLevels() {
     let arr = []; try { arr = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch (e) { arr = []; }
-    arr.forEach(l => { try { LEVELS.push(normalizeCustom(l)); } catch (e) { /* こわれたデータは無視 */ } });
+    arr.forEach(l => { try { LEVELS.push(normalizeCustom(l)); } catch (e) { /* こわれたデータはむし */ } });
   })();
 
   // ===== 状態 =====
@@ -141,8 +141,8 @@
     edit: null,
     hintShown: {}, respawn: null, flash: 0,
   };
-  // 主人公はエナー（ドローンのような鳥）。操作は ◀ ▶ と「はばたき」だけ。ジャンプで跳び、空中で押し続けると、少しのあいだ「ふわり」と落ちるのがゆっくりになる。
-  // 攻撃とダッシュはない（敵は、上からふんで たおす）。もとのゲコは ?hero=gekko で遊べる。
+  // しゅじんこうはエナー（ドローンのような鳥）。そうさは ◀ ▶ と「はばたき」だけ。ジャンプでとび、くうちゅうで押し続けると、すこしのあいだ「ふわり」とおちるのがゆっくりになる。
+  // 攻撃とダッシュはない（てきは、うえからふんで たおす）。もとのゲコは ?hero=gekko で遊べる。
   const ENER = ((/[?&]hero=(\w+)/.exec(location.search) || [])[1]) !== 'gekko';
   const HOVER_T = .35, HOVER_VY = 36;
   if (ENER) document.body.classList.add('ener');
@@ -153,7 +153,7 @@
     const lv = LEVELS[i]; G.levelIdx = i; G.level = lv;
     G.front = lv.front.map(r => Array.from(r).map(c => CH2TILE[c] || 0));
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
-    G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // 実験シート以外は、ステージごとの「コスト上限」だけ。回復しない
+    G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {};
     G.pick = [];
@@ -168,6 +168,7 @@
     G.p = newPlayer(G.respawn.x, G.respawn.y);
     G.cam.x = 0; G.cam.y = 0; snapCam();
     G.cleared = false; G.clearT = 0;
+    $('#editbar').classList.add('hide'); document.body.classList.remove('editing'); $('#touch').classList.remove('hide');
     UI.refresh();
   }
   function newPlayer(x, y) {
@@ -191,7 +192,7 @@
   const inb = (tx, ty) => tx >= 0 && ty >= 0 && tx < G.level.w && ty < G.level.h;
   function tileAt(tx, ty) { if (tx < 0 || tx >= G.level.w || ty < 0) return TL.STEEL; if (ty >= G.level.h) return 0; return G.front[ty][tx]; }
   const isBlockT = (t) => t === TL.STONE || t === TL.CRACK || t === TL.GLASSED;
-  // 行・列の非表示とフィルターの結果、いま実際に「ある」ブロックか
+  // ぎょう・れつの非ひょうじとフィルターの結果、いま実際に「ある」ブロックか
   function blockVisible(tx, ty) { if (G.lock[ty][tx]) return true; if (G.hideRow.has(ty) || G.hideCol.has(tx)) return false; return G.filter === null || G.col[ty][tx] === G.filter; }
   function solidCell(tx, ty) {
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
@@ -200,25 +201,25 @@
   }
   function colorAt(tx, ty) { return inb(tx, ty) && isBlockT(G.front[ty][tx]) && blockVisible(tx, ty) ? G.col[ty][tx] : -1; }
   const isFragile = (tx, ty) => { if (!inb(tx, ty) || !blockVisible(tx, ty)) return false; const t = G.front[ty][tx]; return t === TL.CRACK || ((t === TL.STONE || t === TL.GLASSED) && G.col[ty][tx] === 4); };
-  // ---- リフト: 決まった道(レール)を、一定の周期で往復する足場。編集では動かせない ----
+  // ---- リフト: きまったみち(レール)を、きまったくりかえしていったりきたりするあしば。なおすではどうかせない ----
   function makeLift(l) {
     const w = l.w * T, ax = l.x * T, ay = l.y * T, bx = (l.x + l.dx) * T, by = (l.y + l.dy) * T;
     return { col: l.col || 0, stand: 0, gone: 0, ax, ay, bx, by, w, h: T, period: l.period || 7, t: (l.phase || 0) * (l.period || 7), x: ax, y: ay,
       rail: { x0: Math.min(l.x, l.x + l.dx), y0: Math.min(l.y, l.y + l.dy), x1: Math.max(l.x, l.x + l.dx) + l.w - 1, y1: Math.max(l.y, l.y + l.dy) }, vert: l.dy !== 0 };
   }
   function liftAt(L, t) { const s = .5 - .5 * Math.cos(2 * Math.PI * t / L.period); return { x: L.ax + (L.bx - L.ax) * s, y: L.ay + (L.by - L.ay) * s }; }
-  const liftOn = (L) => !L.gone && (G.filter === null || L.col === G.filter); // フィルターで色がちがうリフトは、通りぬけられる(うすくなる)
+  const liftOn = (L) => !L.gone && (G.filter === null || L.col === G.filter); // フィルターでいろがちがうリフトは、とおりぬけられる(うすくなる)
   function onLift(L) { const p = G.p; return liftOn(L) && p.ground && p.x + p.w > L.x && p.x < L.x + L.w && Math.abs(p.y + p.h - L.y) <= 2.5; }
   function updateLifts(dt) {
     const p = G.p;
     for (const L of G.lifts) {
       L.t += dt; const n = liftAt(L, L.t), dx = n.x - L.x, dy = n.y - L.y, ride = !p.dead && onLift(L);
-      // 黄(もろい)のリフトは、乗ると0.5秒でくずれて、しばらく消える
+      // きいろ(もろい)のリフトは、のると0.5びょうでくずれて、しばらくきえる
       if (L.gone > 0) { L.gone -= dt; if (L.gone <= 0) { L.gone = 0; L.stand = 0; } } else if (L.col === 4) { L.stand = ride ? L.stand + dt : Math.max(0, L.stand - dt); if (L.stand > .5) { L.gone = 2.6; spawnParts(L.x + L.w / 2, L.y + 6, 12, '#F5C842', 60); SFX.hit(); } }
       if (ride && dy <= 0) { moveY(p, dy); moveX(p, dx); }
       L.x = n.x; L.y = n.y;
       if (ride && dy > 0) { moveY(p, dy); moveX(p, dx); }
-      if (!ride && !p.dead && liftOn(L) && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // 横や下から当たったら、おし出す
+      if (!ride && !p.dead && liftOn(L) && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // よこやしたからあたったら、おしだす
         if (Math.abs(dy) >= Math.abs(dx)) p.y = dy < 0 ? L.y - p.h : L.y + L.h; else p.x = dx > 0 ? L.x + L.w : L.x - p.w;
       }
     }
@@ -265,7 +266,7 @@
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
     if (p.ground) { p.coyote = .1; p.dashAvail = true; p.hover = HOVER_T; } else p.coyote -= dt;
     if (input.jumpP) p.jbuf = .11; else p.jbuf -= dt;
-    // 足もとの色(青=氷)
+    // 足もとのいろ(あお=こおり)
     let onIce = false;
     for (const L of G.lifts) if (L.col === 2 && onLift(L)) onIce = true;
     if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (colorAt(tx, fy) === 2) onIce = true; }
@@ -273,45 +274,45 @@
     if (input.dashP && p.dashAvail && p.dashT <= 0 && p.stun <= 0) { p.dashT = .17; p.dashAvail = false; p.vx = p.face * DASH_V; p.vy = 0; SFX.dash(); spawnParts(p.x + 5, p.y + 12, 5, '#fff', 30); }
     if (p.dashT > 0) {
       p.dashT -= dt; p.vx = p.face * DASH_V; p.vy = 0;
-      const px = Math.floor((p.x + (p.face > 0 ? p.w + 2 : -2)) / T), py = Math.floor((p.y + 7) / T); if (isFragile(px, py)) breakCrack(px, py); // もろいブロックはダッシュで壊れる
+      const px = Math.floor((p.x + (p.face > 0 ? p.w + 2 : -2)) / T), py = Math.floor((p.y + 7) / T); if (isFragile(px, py)) breakCrack(px, py); // もろいブロックはダッシュでこわれる
     } else if (p.stun <= 0) {
       const target = dir * RUN; const a = dir ? (p.ground ? (onIce ? 260 : ACC) : AIR) : (p.ground ? (onIce ? 70 : FRIC) : 200);
       const dv = target - p.vx; p.vx += clamp(dv, -a * dt, a * dt);
     }
     // ジャンプ
     if (p.jbuf > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -JUMP; p.jbuf = 0; p.coyote = 0; p.ground = false; p.squash = -.25; SFX.jump(); spawnParts(p.x + 5, p.y + 14, 4, '#fff', 25); }
-    // 重力(上昇中にボタンを離すと低くなる)
+    // おもさ(うえ昇なかにボタンを離すと低くなる)
     if (p.dashT <= 0) {
       let g = GRAV; if (p.vy > 0) { g *= FALLM; p.free = false; } else if (!input.jumpHeld && p.vy < -80 && !p.free) g *= 2.6;
       p.vy = Math.min(MAXFALL, p.vy + g * dt);
     }
-    // ふわり(エナー): 空中でジャンプを押し続けると、少しのあいだ、落ちる速さがおさえられる
+    // ふわり(エナー): くうちゅうでジャンプを押し続けると、すこしのあいだ、おちる速さがおさえられる
     p.hovering = false;
     if (ENER && !window.__noHover && !p.ground && p.vy > 0 && input.jumpHeld && p.hover > 0 && p.stun <= 0) { p.hover -= dt; p.hovering = true; if (p.vy > HOVER_VY) p.vy = HOVER_VY; }
     // 攻撃
     if (input.atkP && p.atkCd <= 0 && p.stun <= 0) { p.atkT = .22; p.atkCd = .3; p.atkHit = new Set(); p.pogo = input.down && !p.ground; SFX.swing(); }
     if (p.atkT > 0) { p.atkT -= dt; if (p.atkT < .17 && p.atkT > .05) doAttack(); }
-    // 移動と衝突(x→y)
+    // いどうと衝突(x→y)
     moveX(p, p.vx * dt); moveY(p, p.vy * dt);
-    // 着地
+    // ちゃくち
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
-    if (ENER) { // もろいブロックは、乗ってから0.45秒で、くずれる
+    if (ENER) { // もろいブロックは、のってから0.45びょうで、くずれる
       const stand = new Set();
       if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (isFragile(tx, fy) && !G.lock[fy][tx]) { const k = tx + ',' + fy; stand.add(k); G.crumb[k] = (G.crumb[k] || 0) + dt; if (G.crumb[k] > .45) { breakCrack(tx, fy); delete G.crumb[k]; } } }
       for (const k of Object.keys(G.crumb)) if (!stand.has(k)) { G.crumb[k] -= dt; if (G.crumb[k] <= 0) delete G.crumb[k]; }
     }
     if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); spawnParts(p.x + 5, p.y + 14, 3, '#fff', 20); }
-    // 緑のブロック=ばね
+    // みどりのブロック=ばね
     if (p.ground && p.vy >= 0 && G.lifts.some(L => L.col === 3 && onLift(L))) { p.vy = -BOUNCE; p.hover = HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); }
     if (p.ground && p.vy >= 0) {
       const ty = Math.floor((p.y + p.h + 1) / T), tx0 = Math.floor(p.x / T), tx1 = Math.floor((p.x + p.w - 1) / T);
       for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -BOUNCE; p.hover = HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
     }
-    // 赤いブロック=あつい(さわるとダメージ)
+    // あかいブロック=あつい(さわるとダメージ)
     for (const L of G.lifts) if (L.col === 1 && liftOn(L) && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, false);
     for (let ty = Math.floor((p.y - 1) / T); ty <= Math.floor((p.y + p.h + 1) / T); ty++) for (let tx = Math.floor((p.x - 1) / T); tx <= Math.floor((p.x + p.w) / T); tx++)
       if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, false);
-    // 落下
+    // 落した
     if (p.y > G.level.h * T + 40) { G.deaths++; G.p.dead = 0.01; SFX.die(); G.p.dead = .5; p.vy = 0; }
     p.anim += dt * (Math.abs(p.vx) > 20 ? 1 : 0.4); if (p.squash) p.squash *= .85; if (Math.abs(p.squash) < .01) p.squash = 0;
   }
@@ -342,14 +343,14 @@
   }
   function doAttack() {
     const p = G.p, b = attackBox();
-    // ひび割れ・黄色(もろい)ブロックは壊れる
+    // ひびわれ・きいろ(もろい)ブロックはこわれる
     const x0 = Math.floor(b.x / T), x1 = Math.floor((b.x + b.w - 1) / T), y0 = Math.floor(b.y / T), y1 = Math.floor((b.y + b.h - 1) / T);
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (isFragile(tx, ty) && !G.lock[ty][tx]) breakCrack(tx, ty);
     for (const e of G.enemies) {
       if (e.dead || e.hidden || p.atkHit.has(e)) continue;
       if (!overlap(b.x, b.y, b.w, b.h, e.x, e.y, e.w, e.h)) continue;
       p.atkHit.add(e);
-      if (e.type === 'guard' && !p.pogo && ((p.face > 0 && e.dir < 0) || (p.face < 0 && e.dir > 0))) { // 盾で防がれる
+      if (e.type === 'guard' && !p.pogo && ((p.face > 0 && e.dir < 0) || (p.face < 0 && e.dir > 0))) { // たてでふせがれる
         SFX.bad(); spawnParts(e.x + 6, e.y + 6, 4, '#93A0B8'); p.vx = -p.face * 60; continue;
       }
       damageEnemy(e, 1);
@@ -362,18 +363,18 @@
     if (e.hp <= 0) { e.dead = true; spawnParts(e.x + e.w / 2, e.y + e.h / 2, 14, '#F5C842', 90); if (G.regen) G.pick.push({ type: 'spark', x: e.x + 2, y: e.y + 2, w: 8, h: 8, got: false, drop: true }); }
   }
 
-  // ===== 敵 =====
+  // ===== てき =====
   const hiddenAt = (cx, cy) => G.hideRow.has(cy) || G.hideCol.has(cx);
   function updateEnemies(dt) {
     const p = G.p;
     for (const e of G.enemies) {
       if (e.dead) continue;
-      e.hidden = hiddenAt(Math.floor((e.x + e.w / 2) / T), Math.floor((e.y + e.h / 2) / T)); // 隠した行・列の敵は、そこにいない扱い
+      e.hidden = hiddenAt(Math.floor((e.x + e.w / 2) / T), Math.floor((e.y + e.h / 2) / T)); // かくしたぎょう・れつのてきは、そこにいない扱い
       e.t += dt; if (e.flash > 0) e.flash -= dt;
       if (e.hidden) continue;
       if (e.stun > 0) { e.stun -= dt; continue; }
       if (e.type === 'walker' || e.type === 'guard') {
-        // 重力と歩行(縁や壁で折り返す)
+        // おもさとあるぎょう(縁やかべで折り返す)
         e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0;
         const spd = e.type === 'guard' ? 22 : 28;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
@@ -424,7 +425,7 @@
   }
   function winLevel() {
     G.cleared = true; G.clearT = 0; SFX.win();
-    // 3つの目標(バッジ)。それぞれ別に記録する: ①クリア ②Σ(宝石)を全部 ③ノーミス(ダメージを受けない)
+    // 3つのもくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない)
     const goals = [true, G.gems >= G.level.gems.length, G.deaths === 0 && G.hits === 0];
     const prev = save.levels[G.level.id] || { goals: [false, false, false] };
     const merged = goals.map((v, i) => v || !!(prev.goals && prev.goals[i]));
@@ -432,7 +433,7 @@
     persist(); G.lastGoals = goals;
     setTimeout(() => { if (G.cleared) UI.showResult(goals); }, 800);
   }
-  // 3つの目標のバッジ: ✓クリア / Σが3つそろう / ノーミス（ダメージを受けない）
+  // 3つのもくひょうのバッジ: ✓クリア / Σが3つそろう / ノーミス（ダメージをうけない）
   function badgesHTML(goals, gemsGot, total, big) {
     const n = (total === undefined ? 3 : total); let sg = '';
     for (let i = 0; i < Math.min(n, 3); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '">Σ</i>';
@@ -440,17 +441,17 @@
   }
   const gemsOf = (lv, s) => (s ? (s.gemsBest !== undefined ? s.gemsBest : (s.goals && s.goals[1] ? lv.gems.length : 0)) : 0);
 
-  // ===== 編集(Excelのしくみ) =====
+  // ===== なおす(Excelのしくみ) =====
   const key = (x, y) => x + ',' + y;
   const isBlk = (x, y) => isBlockT(G.front[y][x]);
-  const isFixedCell = (x, y) => { const t = G.front[y][x]; return t === TL.STEEL || !!G.lock[y][x]; }; // 鋼・トゲ・保護されたブロック
+  const isFixedCell = (x, y) => { const t = G.front[y][x]; return t === TL.STEEL || !!G.lock[y][x]; }; // はがね・トゲ・まもったブロック
   const isMovable = (x, y) => isBlk(x, y) && !G.lock[y][x];
   function actorRects() {
     const r = [{ x: G.p.x, y: G.p.y, w: G.p.w, h: G.p.h }];
     for (const e of G.enemies) if (!e.dead) r.push({ x: e.x, y: e.y, w: e.w, h: e.h });
     return r;
   }
-  function cellBlocked(tx, ty) { // 人・敵・リフトの道と重なるマスには、ブロックを置けない
+  function cellBlocked(tx, ty) { // ひと・てき・リフトのみちとかさなるマスには、ブロックをおけない
     if (liftRailHit(tx, ty)) return true;
     for (const r of actorRects()) if (overlap(tx * T, ty * T, T, T, r.x, r.y, r.w, r.h)) return true;
     return false;
@@ -460,20 +461,20 @@
   function rectEach(r, fn) { for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) if (inb(x, y)) fn(x, y); }
   const costOf = (id) => TOOL_BY[id].cost;
 
-  // ---- 計画: 実際に変える前に「できるか・費用・どこが変わるか」を求める ----
+  // ---- 計画: 実際に変えるまえに「できるか・費よう・どこが変わるか」を求める ----
   function planMove(src, dx, dy) {
     const cells = [], keys = new Set();
     rectEach(src, (x, y) => { if (isMovable(x, y)) { cells.push({ x, y, t: G.front[y][x], c: G.col[y][x] }); keys.add(key(x, y)); } });
-    if (!cells.length) return fail('動かせるブロックがありません');
+    if (!cells.length) return fail('うごかせるブロックがありません');
     const rect = { x0: dx, y0: dy, x1: dx + (src.x1 - src.x0), y1: dy + (src.y1 - src.y0) }, ghost = [];
     for (const c of cells) {
       const tx = c.x - src.x0 + dx, ty = c.y - src.y0 + dy;
-      if (!inb(tx, ty)) return fail('はみ出します', { rects: [rect], ghost });
+      if (!inb(tx, ty)) return fail('はみだします', { rects: [rect], ghost });
       ghost.push({ x: tx, y: ty, t: c.t, c: c.c });
       if (!(G.front[ty][tx] === 0 || keys.has(key(tx, ty)))) return fail('ぶつかります', { rects: [rect], ghost });
-      if (cellBlocked(tx, ty)) return fail('じゃまがあります（キャラクター・リフトの道）', { rects: [rect], ghost });
+      if (cellBlocked(tx, ty)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [rect], ghost });
     }
-    if (cells.every(c => c.x - src.x0 + dx === c.x && c.y - src.y0 + dy === c.y)) return fail('同じ場所です');
+    if (cells.every(c => c.x - src.x0 + dx === c.x && c.y - src.y0 + dy === c.y)) return fail('おなじばしょです');
     return { ok: true, cost: costOf('move'), rects: [src, rect], ghost, run() {
       for (const c of cells) { G.front[c.y][c.x] = 0; G.col[c.y][c.x] = 0; }
       for (const c of cells) { const tx = c.x - src.x0 + dx, ty = c.y - src.y0 + dy; G.front[ty][tx] = c.t; G.col[ty][tx] = c.c; }
@@ -481,18 +482,18 @@
   }
   function planSwap(a, dx, dy) {
     const w = a.x1 - a.x0, h = a.y1 - a.y0, b = { x0: dx, y0: dy, x1: dx + w, y1: dy + h };
-    if (!inb(b.x0, b.y0) || !inb(b.x1, b.y1)) return fail('はみ出します', { rects: [a, b] });
-    if (!(a.x1 < b.x0 || b.x1 < a.x0 || a.y1 < b.y0 || b.y1 < a.y0)) return fail('重なっています', { rects: [a, b] });
+    if (!inb(b.x0, b.y0) || !inb(b.x1, b.y1)) return fail('はみだします', { rects: [a, b] });
+    if (!(a.x1 < b.x0 || b.x1 < a.x0 || a.y1 < b.y0 || b.y1 < a.y0)) return fail('かさなっています', { rects: [a, b] });
     const pairs = []; let changed = false;
     for (let j = 0; j <= h; j++) for (let i = 0; i <= w; i++) {
       const ax = a.x0 + i, ay = a.y0 + j, bx = b.x0 + i, by = b.y0 + j;
-      if ((G.front[ay][ax] !== 0 && isFixedCell(ax, ay)) || (G.front[by][bx] !== 0 && isFixedCell(bx, by))) return fail('固定されたセルが含まれます', { rects: [a, b] });
+      if ((G.front[ay][ax] !== 0 && isFixedCell(ax, ay)) || (G.front[by][bx] !== 0 && isFixedCell(bx, by))) return fail('うごかないセルがふくまれます', { rects: [a, b] });
       if (G.front[ay][ax] !== G.front[by][bx] || G.col[ay][ax] !== G.col[by][bx]) changed = true;
-      if (G.front[ay][ax] !== 0 && cellBlocked(bx, by)) return fail('じゃまがあります（キャラクター・リフトの道）', { rects: [a, b] });
-      if (G.front[by][bx] !== 0 && cellBlocked(ax, ay)) return fail('じゃまがあります（キャラクター・リフトの道）', { rects: [a, b] });
+      if (G.front[ay][ax] !== 0 && cellBlocked(bx, by)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [a, b] });
+      if (G.front[by][bx] !== 0 && cellBlocked(ax, ay)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [a, b] });
       pairs.push([ax, ay, bx, by]);
     }
-    if (!changed) return fail('入れ替えても同じです', { rects: [a, b] });
+    if (!changed) return fail('いれかえてもおなじです', { rects: [a, b] });
     return { ok: true, cost: costOf('swap'), rects: [a, b], run() {
       for (const [ax, ay, bx, by] of pairs) {
         const ft = G.front[ay][ax], fc = G.col[ay][ax]; G.front[ay][ax] = G.front[by][bx]; G.col[ay][ax] = G.col[by][bx]; G.front[by][bx] = ft; G.col[by][bx] = fc;
@@ -501,33 +502,33 @@
   }
   function planClear(r) {
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y)) cells.push([x, y]); });
-    if (!cells.length) return fail('消せるブロックがありません', { rects: [r] });
+    if (!cells.length) return fail('けせるブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf('clear'), rects: [r], hl: cells, run() { for (const [x, y] of cells) { G.front[y][x] = 0; G.col[y][x] = 0; } } };
   }
   function liftsInRect(r) { return G.lifts.filter(L => L.col === GLASS && !L.gone && L.x < (r.x1 + 1) * T && L.x + L.w > r.x0 * T && L.y < (r.y1 + 1) * T && L.y + L.h > r.y0 * T); }
   function planColor(r, c, id) {
     const ls = liftsInRect(r);
-    const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === GLASS) cells.push([x, y]); }); // 書式をつけられるのは、ガラス(未書式)だけ
-    if (!cells.length && !ls.length) return fail('ガラスがありません（書式をつけられるのは、ガラスだけ）', { rects: [r] });
+    const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === GLASS) cells.push([x, y]); }); // いろをつけられるのは、ガラス(いろなし)だけ
+    if (!cells.length && !ls.length) return fail('ガラスがありません（いろをつけられるのは、ガラスだけ）', { rects: [r] });
     const hl = cells.slice(); for (const L of ls) for (let x = Math.floor(L.x / T); x * T < L.x + L.w; x++) hl.push([x, Math.floor(L.y / T)]);
     return { ok: true, cost: costOf(id), rects: [r], hl, run() { for (const [x, y] of cells) { G.col[y][x] = c; G.front[y][x] = TL.GLASSED; } for (const L of ls) { L.col = c; L.mark = true; } } };
   }
   function planTransform(r, op) {
     const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
-    if ((op === 'rot' || op === 'trans') && w !== h) return fail('正方形に選んでね（いま ' + w + '×' + h + '）', { rects: [r] });
+    if ((op === 'rot' || op === 'trans') && w !== h) return fail('しかくにえらんでね（いま ' + w + '×' + h + '）', { rects: [r] });
     const map = (lx, ly) => ({ flipH: [w - 1 - lx, ly], flipV: [lx, h - 1 - ly], rot: [h - 1 - ly, lx], trans: [ly, lx] }[op]);
     const cells = [], vacated = new Set();
     rectEach(r, (x, y) => { if (isMovable(x, y)) { cells.push({ x, y, t: G.front[y][x], c: G.col[y][x] }); vacated.add(key(x, y)); } });
-    if (!cells.length) return fail('動かせるブロックがありません', { rects: [r] });
+    if (!cells.length) return fail('うごかせるブロックがありません', { rects: [r] });
     let changed = false;
     for (const c of cells) {
       const [nx, ny] = map(c.x - r.x0, c.y - r.y0); c.tx = r.x0 + nx; c.ty = r.y0 + ny;
-      if (!inb(c.tx, c.ty)) return fail('はみ出します', { rects: [r] });
-      if (!(G.front[c.ty][c.tx] === 0 || vacated.has(key(c.tx, c.ty)))) return fail('固定されたセルにぶつかります', { rects: [r] });
-      if (cellBlocked(c.tx, c.ty)) return fail('じゃまがあります（キャラクター・リフトの道）', { rects: [r] });
+      if (!inb(c.tx, c.ty)) return fail('はみだします', { rects: [r] });
+      if (!(G.front[c.ty][c.tx] === 0 || vacated.has(key(c.tx, c.ty)))) return fail('うごかないセルにぶつかります', { rects: [r] });
+      if (cellBlocked(c.tx, c.ty)) return fail('じゃまがあります（キャラクター・リフトのみち）', { rects: [r] });
       if (c.tx !== c.x || c.ty !== c.y) changed = true;
     }
-    if (!changed) return fail('変形しても同じです', { rects: [r] });
+    if (!changed) return fail('かたちをかえてもおなじです', { rects: [r] });
     return { ok: true, cost: costOf('transform'), rects: [r], ghost: cells.map(c => ({ x: c.tx, y: c.ty, t: c.t, c: c.c })), run() {
       for (const c of cells) { G.front[c.y][c.x] = 0; G.col[c.y][c.x] = 0; }
       for (const c of cells) { G.front[c.ty][c.tx] = c.t; G.col[c.ty][c.tx] = c.c; }
@@ -555,38 +556,38 @@
       flush();
     }
     const diff = assign.filter(a => G.front[a.y][a.x] !== a.t || G.col[a.y][a.x] !== a.c);
-    if (!diff.length) return fail('並べ替えても同じです', { rects: [r] });
+    if (!diff.length) return fail('ならべかえてもおなじです', { rects: [r] });
     return { ok: true, cost: costOf('sort'), rects: [r], hl: diff.map(d => [d.x, d.y]), run() { for (const a of assign) { G.front[a.y][a.x] = a.t; G.col[a.y][a.x] = a.c; } } };
   }
   function planReplace(r, from, to) {
-    if (from === to) return fail('「から」と「へ」が同じ色です', { rects: [r] });
+    if (from === to) return fail('「から」と「へ」がおなじいろです', { rects: [r] });
     const cells = []; rectEach(r, (x, y) => { if (isMovable(x, y) && G.col[y][x] === from) cells.push([x, y]); });
-    if (!cells.length) return fail(COLORS[from].n + '色のブロックがありません', { rects: [r] });
+    if (!cells.length) return fail(COLORS[from].n + 'いろのブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf('replace'), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.col[y][x] = to; } };
   }
   function planHide(r, axis) {
     const set = axis === 'col' ? G.hideCol : G.hideRow, lo = axis === 'col' ? r.x0 : r.y0, hi = axis === 'col' ? r.x1 : r.y1;
     const rows = []; for (let i = lo; i <= hi; i++) if (!set.has(i)) rows.push(i);
     const rect = axis === 'col' ? { x0: r.x0, x1: r.x1, y0: 0, y1: G.level.h - 1 } : { x0: 0, x1: G.level.w - 1, y0: r.y0, y1: r.y1 };
-    if (!rows.length) return fail('すでに隠れています', { rects: [rect] });
+    if (!rows.length) return fail('すでにかくれています', { rects: [rect] });
     return { ok: true, cost: costOf('hide'), rects: [rect], run() { for (const i of rows) set.add(i); } };
   }
   function planUnhide() {
-    if (!G.hideRow.size && !G.hideCol.size) return fail('隠れた行・列はありません');
+    if (!G.hideRow.size && !G.hideCol.size) return fail('かくれたぎょう・れつはありません');
     return { ok: true, cost: costOf('unhide'), run() { G.hideRow.clear(); G.hideCol.clear(); } };
   }
   function planFilter(c) {
-    if (G.filter === c) return fail(c === null ? 'フィルターはかかっていません' : 'すでにその色です');
+    if (G.filter === c) return fail(c === null ? 'フィルターはかかっていません' : 'すでにそのいろです');
     if (c === null) return { ok: true, cost: 0, run() { G.filter = null; } };
     return { ok: true, cost: costOf('filter'), run() { G.filter = c; } };
   }
   function planProtect(r, on) {
     const cells = []; rectEach(r, (x, y) => { if (on ? (isBlk(x, y) && !G.lock[y][x]) : G.lock[y][x]) cells.push([x, y]); });
-    if (!cells.length) return fail(on ? '保護できるブロックがありません' : '保護されたブロックがありません', { rects: [r] });
+    if (!cells.length) return fail(on ? 'まもれるブロックがありません' : 'まもったブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf(on ? 'protect' : 'unprotect'), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.lock[y][x] = on ? 1 : 0; } };
   }
   const colOfX = (x) => Math.floor(x / T);
-  function shiftEntities(x, dir, removeCol) { // 列 x より右(以上)の持ちものを左右にずらす
+  function shiftEntities(x, dir, removeCol) { // れつ x よりみぎ(いじょう)のもちものをひだりみぎにずらす
     const sh = (v) => v;
     void sh;
     for (const e of G.enemies) { const c = Math.floor((e.x + e.w / 2) / T); if (removeCol && c === x) { e.dead = true; continue; } if (c >= x + (removeCol ? 1 : 0)) { e.x += dir * T; if (e.bx !== undefined) e.bx += dir * T; } }
@@ -601,9 +602,9 @@
   }
   function planInsCol(x) {
     const w = G.level.w, h = G.level.h;
-    if (x < 1 || x > w - 2) return fail('ここには入れられません', { cols: [x] });
-    for (let y = 0; y < h; y++) if (isBlk(w - 1, y)) return fail('いちばん右の列にブロックがあり、はみ出します', { cols: [x] });
-    if (colOfX(G.flag.x) === w - 1) return fail('ゴールがはみ出します', { cols: [x] });
+    if (x < 1 || x > w - 2) return fail('ここにはいれられません', { cols: [x] });
+    for (let y = 0; y < h; y++) if (isBlk(w - 1, y)) return fail('いちばんみぎのれつにブロックがあり、はみだします', { cols: [x] });
+    if (colOfX(G.flag.x) === w - 1) return fail('ゴールがはみだします', { cols: [x] });
     return { ok: true, cost: costOf('insCol'), cols: [x], run() {
       for (let y = 0; y < h; y++) {
         const leftSteel = G.front[y][x - 1] === TL.STEEL;
@@ -615,9 +616,9 @@
   }
   function planDelCol(x) {
     const w = G.level.w, h = G.level.h;
-    if (x < 1 || x > w - 2) return fail('ここは消せません', { cols: [x] });
-    if (colOfX(G.p.x + 5) === x) return fail('キャラクターがいる列は消せません', { cols: [x] });
-    if (colOfX(G.flag.x) === x) return fail('ゴールの列は消せません', { cols: [x] });
+    if (x < 1 || x > w - 2) return fail('ここはけせません', { cols: [x] });
+    if (colOfX(G.p.x + 5) === x) return fail('キャラクターがいるれつはけせません', { cols: [x] });
+    if (colOfX(G.flag.x) === x) return fail('ゴールのれつはけせません', { cols: [x] });
     return { ok: true, cost: costOf('delCol'), cols: [x], run() {
       for (let y = 0; y < h; y++) {
         const lastSteel = G.front[y][w - 1] === TL.STEEL;
@@ -630,17 +631,17 @@
   function planFor(tool, a) {
     const o = a.opts || G.edit.opts;
     switch (tool) {
-      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('ガラスの色（未書式）はコピーできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
+      case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('まねするブロックがありません'); if (G.col[sy][sx] === GLASS) return fail('ガラスのいろ（いろなし）はコピーできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
       case 'sort': return planSort(a.rect, o.sort);
       case 'filter': return planFilter(a.fcolor !== undefined ? a.fcolor : o.fcolor);
       case 'protect': return planProtect(a.rect, true);
       case 'unprotect': return planProtect(a.rect, false);
     }
-    return fail('この道具は使えません');
+    return fail('このどうぐはつかえません');
   }
 
-  // ---- 実行・元に戻す・やり直す(状態をまるごと保存する) ----
+  // ---- 実ぎょう・もとにもどす・やり直す(状態をまるごと保存する) ----
   function minCost() { let m = 999; for (const id of G.level.tools) m = Math.min(m, TOOL_BY[id].cost); return m; }
   function snapshot() {
     return {
@@ -661,10 +662,10 @@
   function runPlan(plan) {
     const E = G.edit;
     if (!plan.ok) { E.msg = plan.msg; SFX.bad(); return false; }
-    if (plan.cost > G.energy) { E.msg = 'エナジーが足りません（' + plan.cost + '）'; SFX.bad(); return false; }
+    if (plan.cost > G.energy) { E.msg = 'エナジーがたりません（' + plan.cost + '）'; SFX.bad(); return false; }
     E.undo.push({ state: snapshot(), cost: plan.cost }); E.redo.length = 0;
     plan.run(); G.energy -= plan.cost; E.msg = ''; SFX.place();
-    if (!G.regen && G.energy < minCost()) UI.toast('コストを使い切りました。もう編集できません（Rでやり直し）', 3500);
+    if (!G.regen && G.energy < minCost()) UI.toast('コストをつかいきりました。もうなおせません（Rでやりなおし）', 3500);
     return true;
   }
   function undoEdit() {
@@ -673,26 +674,26 @@
   }
   function redoEdit() {
     const E = G.edit, r = E.redo.pop(); if (!r) { SFX.bad(); return; }
-    if (G.energy < r.cost) { E.redo.push(r); E.msg = 'エナジーが足りません'; SFX.bad(); return; }
+    if (G.energy < r.cost) { E.redo.push(r); E.msg = 'エナジーがたりません'; SFX.bad(); return; }
     E.undo.push({ state: snapshot(), cost: r.cost }); restoreSnap(r.state); G.energy -= r.cost; SFX.place();
   }
   function setEdit(on) {
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
-    if (!G.level.tools.length) { UI.toast('このステージでは編集できないよ'); return; }
+    if (!G.level.tools.length) { UI.toast('このステージではなおせないよ'); return; }
     E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
-    UI.refreshTools();
+    $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
   }
 
-  // ---- 範囲の選びかた(ドラッグ・タップ・キーボード) ----
+  // ---- はんいの選びかた(ドラッグ・タップ・キーボード) ----
   const toolDef = () => TOOL_BY[G.edit.tool];
   const hasMovable = (r) => { let n = 0; rectEach(r, (x, y) => { if (isMovable(x, y)) n++; }); return n > 0; };
   function onRectDone(r) {
     const E = G.edit, d = toolDef(); if (!d) return;
     if (d.mode === 'rect') runPlan(planFor(E.tool, { rect: r }));
     else if (d.mode === 'two' && E.step === 0) {
-      if (!hasMovable(r)) { E.msg = '動かせるブロックがありません'; SFX.bad(); } else { E.src = r; E.step = 1; E.msg = ''; SFX.place(); }
-    } else if (d.mode === 'painter' && E.step === 1) { if (runPlan(planFor('painter', { rect: r, srcCell: E.srcCell }))) { /* 続けて塗れる */ } }
+      if (!hasMovable(r)) { E.msg = 'うごかせるブロックがありません'; SFX.bad(); } else { E.src = r; E.step = 1; E.msg = ''; SFX.place(); }
+    } else if (d.mode === 'painter' && E.step === 1) { if (runPlan(planFor('painter', { rect: r, srcCell: E.srcCell }))) { /* つづけてぬれる */ } }
     UI.refreshTools();
   }
   function onTap(tx, ty) {
@@ -748,7 +749,7 @@
 
   // ===== 描画 =====
   function dotRect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-  // 見た目: ?gfx=excel(標準: Excel風) / ?gfx=snes(ソリッド版) / ?gfx=classic(元の絵)
+  // みた目: ?gfx=excel(ふつう: Excelかぜ) / ?gfx=snes(ソリッドばん) / ?gfx=classic(もとのえ)
   const THEME = ((/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
   const EXCEL = THEME === 'excel' && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
   const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
@@ -758,7 +759,7 @@
     const lv = G.level; ctx.fillStyle = lv.bg; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = lv.bg2;
     const sc = Math.round(G.cam.x * .3);
-    for (let i = -1; i < 5; i++) { // 遠景の丸い丘(1ドット単位の階段)
+    for (let i = -1; i < 5; i++) { // えんけいのまるいおか(1ドットたんいのかいだん)
       const cx = i * 110 - (sc % 110) + 50, r = 52, base = 150;
       for (let x = cx - r; x < cx + r; x++) { const dx = x + .5 - cx; const h = Math.round(Math.sqrt(r * r - dx * dx) * .55); ctx.fillRect(x, base - h, 1, h + 40); }
     }
@@ -767,7 +768,7 @@
   }
   const TC = { steel: '#66708C', steelL: '#8D97B3', steelD: '#2F3752' };
   const LOCK = ['.111.', '1...1', '11111', '11011', '11111'];
-  // 元ガラスの印: 白い「つやの枠」(内がわの枠と、かどのきらめき)
+  // もとガラスの印: しろい「つやのわく」(内がわのわくと、かどのきらめき)
   function glassMark(x, y) {
     ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x + 2, y + 2, 12, 1); ctx.fillRect(x + 2, y + 2, 1, 12); ctx.fillRect(x + 4, y + 4, 2, 1); ctx.fillRect(x + 4, y + 4, 1, 2);
     ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x + 3, y + 13, 11, 1); ctx.fillRect(x + 13, y + 3, 1, 11);
@@ -798,7 +799,7 @@
       ctx.drawImage(GFX.metal(), x, y);
     }
   }
-  // レール(往復する道)は、うすく見せる。リフトは、矢印つきの緑の板
+  // レール(いったりきたりするみち)は、うすくみせる。リフトは、矢印つきのみどりのいた
   function drawLiftRails(cx, cy) {
     for (const L of G.lifts) {
       const r = L.rail, x = r.x0 * T - cx, y = r.y0 * T - cy, w = (r.x1 - r.x0 + 1) * T, h = (r.y1 - r.y0 + 1) * T, c = EXCEL ? '33,115,70' : '255,255,255';
@@ -808,7 +809,7 @@
       else { for (let xx = x; xx < x + w; xx += 4) ctx.fillRect(xx, y + 7, 2, 2); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h); }
     }
   }
-  // リフトの板の色: 0=ふつう(緑の板) 1〜4=性質の色(ブロックと同じ) 5=ガラス(未書式)
+  // リフトのいたのいろ: 0=ふつう(みどりのいた) 1〜4=ちからのいろ(ブロックとおなじ) 5=ガラス(いろなし)
   const LIFT_EXCEL = [['#7F7F7F', '#FFCC99', '#FFE5CC', '#C99A66', '#3F3F76'], ['#9C0006', '#FF8F9A', '#FFC7CE', '#7A0000', '#9C0006'], ['#1F4E79', '#9DC3E6', '#DDEBF7', '#2E75B6', '#1F4E79'], ['#00673A', '#70D68F', '#C6EFCE', '#00873C', '#00673A'], ['#7F5200', '#FFD966', '#FFF2CC', '#BF9000', '#7F5200'], ['#6B8FB8', '#F4F9FD', '#FFFFFF', '#B7D0EA', '#5A7FA6']];
   function liftPalette(c) {
     if (EXCEL || c === 5) return LIFT_EXCEL[c] || LIFT_EXCEL[0];
@@ -819,7 +820,7 @@
       if (L.gone) continue;
       const x = Math.round(L.x - cx), y = Math.round(L.y - cy), w = L.w, h = L.h, P = liftPalette(L.col || 0);
       if (L.col === 4 && L.stand > 0) ctx.globalAlpha = Math.max(.35, 1 - L.stand);
-      if (!liftOn(L)) ctx.globalAlpha = .28; // フィルターで消えているリフト: うすく見える(通りぬけられる)
+      if (!liftOn(L)) ctx.globalAlpha = .28; // フィルターできえているリフト: うすくみえる(とおりぬけられる)
       ctx.fillStyle = P[0]; ctx.fillRect(x, y, w, h);
       ctx.fillStyle = P[1]; ctx.fillRect(x + 1, y + 1, w - 2, h - 5);
       ctx.fillStyle = P[2]; ctx.fillRect(x + 1, y + 1, w - 2, 2);
@@ -835,7 +836,7 @@
       ctx.globalAlpha = 1;
     }
   }
-  // Excelの「Σ（合計）」: 宝石のかわり。ステージに3つ。あつめると、HUDの3つのわくが、うまっていく
+  // Excelの「Σ（ごうけい）」: ほうせきのかわり。ステージに3つ。あつめると、HUDの3つのわくが、うまっていく
   const SIGMA = ['11111', '10000', '01000', '00100', '01000', '10000', '11111'];
   function sigmaTile(x, y, s, on) {
     ctx.fillStyle = on ? '#185C37' : '#A6A6A6'; ctx.fillRect(x, y, s, s); ctx.fillStyle = on ? '#217346' : '#D9D9D9'; ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
@@ -849,7 +850,7 @@
     drawLiftRails(cx, cy);
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const t = G.front[ty][tx]; if (t) drawTile(t, tx * T - cx, ty * T - cy, tx, ty); }
     drawLifts(cx, cy);
-    // 隠した行・列は、点線で示す
+    // かくしたぎょう・れつは、てんせんで示す
     ctx.fillStyle = 'rgba(255,255,255,.55)';
     for (const ty of G.hideRow) for (let x = 0; x < W; x += 4) ctx.fillRect(x, ty * T - cy + 7, 2, 2);
     for (const tx of G.hideCol) for (let y = 0; y < H; y += 4) ctx.fillRect(tx * T - cx + 7, y, 2, 2);
@@ -862,7 +863,7 @@
       const x = k.x - cx, y = k.y - cy + Math.round(Math.sin(G.t * 4 + k.x) * 1.5);
       if (k.type === 'gem') { if (EXCEL) sigmaTile(x - 1, y - 1, 10, true); else icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); } else icon(BOLT, x + 1, y + 1, '#F5C842');
     }
-    // 敵
+    // てき
     for (const e of G.enemies) {
       if (e.dead || e.hidden) continue;
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
@@ -886,7 +887,7 @@
     if (EXCEL) return GFXX.ener(name, flip);
     const k = name + (flip ? 1 : 0); return enerCache[k] || (enerCache[k] = GFX.gridSprite(GFX.enerGrid(name, ENER_PAL), flip));
   }
-  function drawEner(cx, cy) { // 主人公エナー
+  function drawEner(cx, cy) { // しゅじんこうエナー
     const p = G.p, flap = Math.floor(G.t * (p.hovering ? 16 : 9)) % 2;
     let name = 'idle';
     if (p.stun > 0) name = 'hurt'; else if (p.hovering) name = flap ? 'up' : 'down'; else if (!p.ground) name = p.vy < -40 ? 'up' : 'down'; else if (Math.abs(p.vx) > 25) name = flap ? 'idle' : 'down';
@@ -909,26 +910,26 @@
     const x = Math.round(p.x - 3 - cx), y = Math.round(p.y - 2 - cy);
     if (EXCEL) ctx.drawImage(GFXX.hero(name, p.face < 0), x - 1, y - 1); else if (SOLID) ctx.drawImage(GFX.hero(name, p.face < 0), x - 1, y - 1); else ctx.drawImage(heroSprite(name, p.face < 0), x, y);
     if (p.dashT > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + 3 - p.face * i * 6, y + 5, 6, 8); }
-    if (p.atkT > 0) { // レンチの弧
+    if (p.atkT > 0) { // レンチのこ
       const b = attackBox(), prog = 1 - p.atkT / .22; ctx.fillStyle = '#D5DBE6';
       if (p.pogo) { ctx.fillRect(Math.round(b.x - cx) + 2, Math.round(b.y - cy), 8, 3 + Math.round(prog * 8)); }
       else { const len = Math.round(6 + prog * 14); ctx.fillRect(Math.round(p.face > 0 ? b.x - cx : b.x + b.w - cx - len), Math.round(b.y - cy) + 2, len, 3); ctx.fillStyle = '#93A0B8'; ctx.fillRect(Math.round(p.face > 0 ? b.x - cx + len - 3 : b.x + b.w - cx - len), Math.round(b.y - cy) + 2, 3, 10); }
     }
   }
   function drawHUD() {
-    return; // HUDは、ウィンドウのリボンに出す(キャンバスには描かない)
-    const X = EXCEL; // Excel風: 白い板(コメントのような)の上に、暗い色で描く
+    return; // HUDは、ウィンドウのリボンにだす(キャンバスにはかかない)
+    const X = EXCEL; // Excelかぜ: しろいいた(コメントのような)のうえに、くらいいろでかく
     if (X) { ctx.save(); ctx.translate(GFXX.HW + 2, GFXX.HH + 2); const ph = (G.level.tools.length ? 33 : 24) + (G.filter !== null ? 9 : 0); ctx.fillStyle = '#F3F3F3'; ctx.fillRect(0, 0, 88, ph); ctx.fillStyle = '#ABABAB'; ctx.fillRect(0, 0, 88, 1); ctx.fillRect(0, ph - 1, 88, 1); ctx.fillRect(0, 0, 1, ph); ctx.fillRect(87, 0, 1, ph); }
     const ink = X ? '#262626' : '#fff', sub = X ? '#595959' : '#D5DBE6';
     // ハート
     for (let i = 0; i < 3; i++) icon(HEART, 6 + i * 7, 6, i < G.p.hp ? '#E8563F' : (X ? '#D0D0D0' : '#2F3752'));
-    // エナジー(編集できないステージでは出さない)
+    // エナジー(なおせないステージではでさない)
     if (G.level.tools.length) {
       ctx.fillStyle = X ? '#7F7F7F' : '#1F2A44'; ctx.fillRect(5, 15, 62, 7); ctx.fillStyle = X ? '#FFFFFF' : '#5B6785'; ctx.fillRect(6, 16, 60, 5);
       ctx.fillStyle = G.energy < minCost() ? '#E8563F' : (X ? '#70AD47' : '#F5C842'); ctx.fillRect(6, 16, Math.round(60 * G.energy / Math.max(1, G.maxE)), 5);
       icon(BOLT, 70, 14, X ? '#C99A1E' : '#F5C842'); text(Math.floor(G.energy), 77, 16, ink);
     }
-    // 宝石
+    // ほうせき
     const gy = G.level.tools.length ? 25 : 16;
     const ng = G.level.gems.length;
     if (X && ng === 3) for (let i = 0; i < 3; i++) sigmaTile(6 + i * 11, gy - 1, 9, i < G.gems);
@@ -945,8 +946,8 @@
     for (let x = -(cx % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(cy % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
     const box = (r, col) => { ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(r.x0 * T - cx + .5, r.y0 * T - cy + .5, (r.x1 - r.x0 + 1) * T - 1, (r.y1 - r.y0 + 1) * T - 1); };
-    if (E.step === 1 && E.src) box(E.src, '#4C9BE8');                       // 切り取り元・入れ替え元
-    if (E.srcCell) box({ x0: E.srcCell[0], y0: E.srcCell[1], x1: E.srcCell[0], y1: E.srcCell[1] }, '#F5C842'); // 書式のコピー元
+    if (E.step === 1 && E.src) box(E.src, '#4C9BE8');                       // きりとりもと・いれかえもと
+    if (E.srcCell) box({ x0: E.srcCell[0], y0: E.srcCell[1], x1: E.srcCell[0], y1: E.srcCell[1] }, '#F5C842'); // いろコピーもと
     const d = toolDef();
     const plan = previewPlan();
     if (plan) {
@@ -961,104 +962,36 @@
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(E.cursor[0] * T - cx + .5, E.cursor[1] * T - cy + .5, T - 1, T - 1); E.hint = '';
     }
   }
-  function renderSheet() { // シート(マス目の世界)だけをえがく。リボン・ペインは、ウィンドウ側で
+  // Excelのリボン(がめんのうえ): ライフ・コスト・Σ・タイム・ボタンを、リボンのグループのみた目で
+  const RB = { hp: -1, cost: -1, max: -1, gems: -1, ng: -1, time: '', play: null, mute: null, edit: null };
+  function updateRibbon() {
+    const rib = $('#ribbon'); if (!rib) return;
+    const play = G.mode === 'play' && !!G.level;
+    if (RB.play !== play) { RB.play = play; rib.classList.toggle('idle', !play); }
+    if (!play) return;
+    if (RB.hp !== G.p.hp) { RB.hp = G.p.hp; let h = ''; for (let i = 0; i < 3; i++) h += '<i class="hp' + (i < G.p.hp ? ' on' : '') + '">♥</i>'; $('#rb-hearts').innerHTML = h; }
+    const has = G.level.tools.length > 0; $('#rb-g-cost').style.display = has ? '' : 'none';
+    const e = Math.floor(G.energy);
+    if (has && (RB.cost !== e || RB.max !== G.maxE)) { RB.cost = e; RB.max = G.maxE; $('#rb-bar').firstElementChild.style.width = (100 * G.energy / Math.max(1, G.maxE)) + '%'; $('#rb-bar').classList.toggle('low', G.energy < minCost()); $('#rb-cost').textContent = e; }
+    const ng = G.level.gems.length; $('#rb-g-sigma').style.display = ng ? '' : 'none';
+    if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 3) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
+    const t = Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'); if (RB.time !== t) { RB.time = t; $('#rb-time').textContent = t; }
+    const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; }
+    const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').textContent = mu; }
+  }
+  function render() {
+    if (!G.level) return;
+    updateRibbon();
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
     drawBackground(); drawWorld();
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
-    if (G.edit.on) drawEditOverlay();
+    if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
+    drawHUD();
     if (G.p.dead) { ctx.fillStyle = 'rgba(31,42,68,' + Math.min(.6, (0.7 - G.p.dead)) + ')'; ctx.fillRect(0, 0, W, H); }
   }
 
-  // ===== 日本語のドット文字(font_ja.js) と、キャンバスのUI =====
-  const FJ = window.FONT_JA || { 10: {}, 12: {} };
-  const glyphCache = new Map();
-  const charAdv = (ch, size) => (ch.charCodeAt(0) < 0x80 ? size >> 1 : size);
-  function glyphImg(ch, size, color) {
-    const key = size + color + ch; let c = glyphCache.get(key); if (c !== undefined) return c;
-    const hx = (FJ[size] || {})[ch]; if (!hx) { glyphCache.set(key, null); return null; }
-    const adv = charAdv(ch, size), cvs = document.createElement('canvas'); cvs.width = adv; cvs.height = size; const g2 = cvs.getContext('2d'); g2.fillStyle = color;
-    for (let y = 0; y < size; y++) { const row = parseInt(hx.substr(y * 3, 3), 16); for (let x = 0; x < adv; x++) if ((row >> (adv - 1 - x)) & 1) g2.fillRect(x, y, 1, 1); }
-    glyphCache.set(key, cvs); return cvs;
-  }
-  function textW(str, size, scale) { let w = 0; for (const ch of String(str)) w += charAdv(ch, size || 10) * (scale || 1); return w; }
-  const TXT_FONT = '"Yu Gothic UI","Meiryo UI","Hiragino Sans","Noto Sans CJK JP","Noto Sans JP",sans-serif';
-  function drawText(str, x, y, color, size, scale) {
-    size = size || 10; scale = scale || 1; color = color || '#1A1A1A'; let cx = x;
-    ctx.fillStyle = color; ctx.textBaseline = 'top'; ctx.font = '600 ' + Math.round(size * scale * 1.05 * 10) / 10 + 'px ' + TXT_FONT;
-    for (const ch of String(str)) {
-      if (ch === '\n') { cx = x; y += size * scale + 1; continue; }
-      if (ch !== ' ' && ch !== '\u3000') ctx.fillText(ch, cx, y - 1);
-      cx += charAdv(ch, size) * scale;
-    }
-    return cx - x;
-  }
-  function wrapText(str, maxW, size) {
-    const lines = []; let cur = '', w = 0;
-    for (const ch of String(str)) {
-      if (ch === '\n') { lines.push(cur); cur = ''; w = 0; continue; }
-      const a = charAdv(ch, size);
-      if (w + a > maxW && cur) { lines.push(cur); cur = ''; w = 0; }
-      cur += ch; w += a;
-    }
-    if (cur) lines.push(cur); return lines;
-  }
-  // ドット絵のアイコン(1=いろ)
-  const ICON = {
-    edit: ['.......##', '......###', '.....###.', '....###..', '...###...', '..###....', '.###.....', '###......', '##.......'],
-    restart: ['..#####..', '.#.....#.', '#.....###', '#......#.', '#........', '#.......#', '.#.....#.', '..#####..'],
-    sound: ['...#.....', '..##.#...', '####..#..', '####..#..', '####..#..', '..##.#...', '...#.....'],
-    mute: ['...#.....', '..##.#.#.', '####..#..', '####.#.#.', '####.....', '..##.....', '...#.....'],
-    menu: ['#########', '.........', '#########', '.........', '#########'],
-    hand: ['...#.#...', '.#.#.#.#.', '.#.#.#.#.', '.#.#.#.##', '.#######.', '.#######.', '..######.', '...#####.'],
-    undo: ['..#......', '.##.####.', '###.....#', '.##.....#', '..#....#.', '.......#.'],
-    redo: ['......#..', '.####.##.', '#.....###', '#.....##.', '.#....#..', '.#.......'],
-    left: ['....#', '...##', '..###', '.####', '#####', '.####', '..###', '...##', '....#'],
-    right: ['#....', '##...', '###..', '####.', '#####', '####.', '###..', '##...', '#....'],
-  };
-  function drawIcon(name, x, y, color, scale) {
-    const rows = ICON[name]; scale = scale || 1; ctx.fillStyle = color || '#262626';
-    for (let j = 0; j < rows.length; j++) for (let i = 0; i < rows[j].length; i++) if (rows[j][i] === '#') ctx.fillRect(Math.round(x + i * scale), Math.round(y + j * scale), scale, scale);
-  }
-  const iconSize = (name) => [ICON[name][0].length, ICON[name].length];
-  function iconScaled(rows, x, y, c1, scale) { for (let j = 0; j < rows.length; j++) for (let i = 0; i < rows[j].length; i++) if (rows[j][i] !== '.') { ctx.fillStyle = c1; ctx.fillRect(x + i * scale, y + j * scale, scale, scale); } }
-
-  // ---- ウィンドウの大きさ(論理)と、ボタンの当たり判定 ----
-  const VIEW = { w: 416, h: 204, portrait: false, ph: 100, rh: 24, pw: 96, s: 2 };
-  let SX = 48, SY = 15; // シート(マス目の世界)の左上(横向き: 左ペインのつぎ。縦向き: リボンの下)
-  const MY = 24; // メニュー画面の、リボンの高さ
-  const UIC = { hits: [], scroll: {}, down: null, touch: false, press: null };
-  const COL = { bg: '#F3F3F3', line: '#ABABAB', text: '#262626', sub: '#595959', green: '#217346', gdark: '#185C37', note: '#FFFFE1', sel: '#E2F0D9' };
-  function box(x, y, w, h, fill, border) { if (fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); } if (border) { ctx.fillStyle = border; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h); } }
-  // ボタン: label か icon。type 'tap'(離したとき) / 'hold'(おしている間)。
-  function btn(x, y, w, h, o) {
-    const hit = { x, y, w, h, type: o.hold ? 'hold' : 'tap', fn: o.fn, name: o.name, label: o.hl || o.label || o.icon || o.name || '' };
-    UIC.hits.push(hit);
-    const pressed = UIC.press === hit || (o.hold && o.name && ((o.name === 'left' && input.left) || (o.name === 'right' && input.right) || (o.name === 'jump' && input.jumpHeld)));
-    const primary = o.primary, sel = o.sel;
-    let fill = primary ? (pressed ? COL.gdark : COL.green) : (sel ? COL.sel : (pressed ? '#CFE3D6' : '#F8F8F8'));
-    box(x, y, w, h, fill, primary ? COL.gdark : (sel ? COL.green : '#8C8C8C'));
-    if (!primary && !sel) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + 1, y + 1, w - 2, 1); }
-    const ink = primary ? '#FFFFFF' : COL.text, size = o.size || 10;
-    if (o.icon) { const [iw, ih] = iconSize(o.icon), sc = o.iscale || 1; drawIcon(o.icon, x + ((w - iw * sc) >> 1), y + ((h - ih * sc) >> 1), o.icolor || ink, sc); }
-    else if (o.label) {
-      const tw = textW(o.label, size);
-      if (o.left) drawText(o.label, x + 3, y + ((h - size) >> 1), ink, size); else drawText(o.label, x + ((w - tw) >> 1), y + ((h - size) >> 1), ink, size);
-      if (o.right) drawText(o.right, x + w - 3 - textW(o.right, size), y + ((h - size) >> 1), primary ? '#FFFFFF' : COL.green, size);
-    }
-    if (sel) { ctx.fillStyle = COL.green; ctx.fillRect(x, y, 2, h); }
-    return hit;
-  }
-  const hitAt = (x, y) => { for (let i = UIC.hits.length - 1; i >= 0; i--) { const h = UIC.hits[i]; if (x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) return h; } return null; };
-  // スクロールする一覧: {id,x,y,w,h,total}。ドラッグ・ホイールでうごく
-  function scrollRegion(id, x, y, w, h, total) {
-    const s = UIC.scroll[id] || (UIC.scroll[id] = { off: 0 }); s.max = Math.max(0, total - h); s.off = clamp(s.off, 0, s.max);
-    UIC.hits.push({ x, y, w, h, type: 'scroll', id }); return s;
-  }
-  function scrollbar(s, x, y, h, total) { if (s.max <= 0) return; const th = Math.max(10, h * h / total), ty = y + (h - th) * s.off / s.max; box(x, y, 3, h, '#E1E1E1'); box(x, Math.round(ty), 3, Math.round(th), COL.green); }
-  const toLogical = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (VIEW.w / r.width), y: (e.clientY - r.top) * (VIEW.h / r.height) }; };
-
-  // ===== 入力 =====
+  // ===== い力 =====
   const KEYS = {
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowDown: 'down', KeyS: 'down', ArrowUp: 'up', KeyW: 'up',
   };
@@ -1097,38 +1030,33 @@
     if (e.code === 'Space' || e.code === 'KeyZ' || e.code === 'KeyK') press('jump', false);
   });
   addEventListener('blur', () => { input.left = input.right = input.down = input.up = input.jumpHeld = false; });
-  // ポインタ: ボタン(キャンバスにえがいたUI) → シート(編集のドラッグ・タップ)の順に、あたりを調べる
+  // タッチボタン
+  document.querySelectorAll('[data-btn]').forEach((b) => {
+    const name = b.dataset.btn;
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); b.setPointerCapture(e.pointerId); b.classList.add('on'); press(name, true); });
+    const up = (e) => { b.classList.remove('on'); press(name, false); };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+  // なおす: ポインタではんいをえらぶ・タップする
   function toWorld(e) {
-    const L = toLogical(e), px = L.x - SX + Math.round(G.cam.x), py = L.y - SY + Math.round(G.cam.y);
+    const r = cv.getBoundingClientRect(), s = r.width / W;
+    const px = (e.clientX - r.left) / s + Math.round(G.cam.x), py = (e.clientY - r.top) / s + Math.round(G.cam.y);
     return { px, py, tx: clamp(Math.floor(px / T), 0, G.level.w - 1), ty: clamp(Math.floor(py / T), 0, G.level.h - 1) };
   }
-  const inSheet = (L) => L.x >= SX && L.x < SX + W && L.y >= SY && L.y < SY + H;
   let dragging = false, panLast = null, tapMode = false;
   const wantsRect = () => { const d = toolDef(), E = G.edit; return d && (d.mode === 'rect' || (d.mode === 'two' && E.step === 0) || (d.mode === 'painter' && E.step === 1)); };
-  const ptrs = new Map();
-  const scrollAt = (x, y) => { for (const h of UIC.hits) if (h.type === 'scroll' && x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) return h; return null; };
-  cv.addEventListener('contextmenu', (e) => e.preventDefault());
   cv.addEventListener('pointerdown', (e) => {
-    audio(); if (e.pointerType === 'touch') UIC.touch = true; e.preventDefault(); cv.setPointerCapture(e.pointerId);
-    const L = toLogical(e), h = hitAt(L.x, L.y);
-    if (h && h.type === 'hold') { press(h.name, true); UIC.press = h; ptrs.set(e.pointerId, { hold: h }); return; }
-    const sc = scrollAt(L.x, L.y);
-    if (h && h.type === 'tap' || sc) { UIC.press = h && h.type === 'tap' ? h : null; ptrs.set(e.pointerId, { tap: h && h.type === 'tap' ? h : null, scroll: sc, y0: L.y, ly: L.y, moved: false }); return; }
-    // シート(編集中だけ)
-    if (G.mode !== 'play' || !G.edit.on || !inSheet(L)) return;
+    audio(); if (G.mode !== 'play' || !G.edit.on) return; e.preventDefault(); cv.setPointerCapture(e.pointerId);
     const E = G.edit, w = toWorld(e);
-    if (E.pan) { panLast = { x: L.x, y: L.y }; return; }
+    if (E.pan) { panLast = { x: e.clientX, y: e.clientY }; return; }
     E.kb = null; E.cursor = [w.tx, w.ty]; E.hover = [w.tx, w.ty];
     if (wantsRect()) { dragging = true; tapMode = false; E.sel = { x0: w.tx, y0: w.ty, x1: w.tx, y1: w.ty }; }
     else { dragging = true; tapMode = true; E.sel = null; }
   });
   cv.addEventListener('pointermove', (e) => {
-    const L = toLogical(e), pt = ptrs.get(e.pointerId);
-    if (pt && pt.scroll) { if (!pt.moved && Math.abs(L.y - pt.y0) > 5) { pt.moved = true; UIC.press = null; } if (pt.moved) { UIC.scroll[pt.scroll.id].off -= (L.y - pt.ly); } pt.ly = L.y; return; }
-    if (pt) return;
     const E = G.edit; if (G.mode !== 'play' || !E.on) return;
-    if (panLast) { G.cam.x = clamp(G.cam.x - (L.x - panLast.x), 0, G.level.w * T - W); G.cam.y = clamp(G.cam.y - (L.y - panLast.y), 0, Math.max(0, G.level.h * T - H)); panLast = { x: L.x, y: L.y }; return; }
-    if (!dragging && !inSheet(L)) return;
+    if (panLast) { const s = cv.getBoundingClientRect().width / W; G.cam.x = clamp(G.cam.x - (e.clientX - panLast.x) / s, 0, G.level.w * T - W); G.cam.y = clamp(G.cam.y - (e.clientY - panLast.y) / s, 0, Math.max(0, G.level.h * T - H)); panLast = { x: e.clientX, y: e.clientY }; return; }
     const w = toWorld(e); E.hover = [w.tx, w.ty]; if (!dragging) { E.cursor = [w.tx, w.ty]; return; }
     if (E.sel) { E.sel.x1 = w.tx; E.sel.y1 = w.ty; }
   });
@@ -1138,256 +1066,127 @@
     if (tapMode) { const h = E.hover; tapMode = false; if (h) onTap(h[0], h[1]); return; }
     if (!E.sel) return; const r = normRect(E.sel); E.sel = null; onRectDone(r);
   };
-  const ptrUp = (e, cancel) => {
-    const pt = ptrs.get(e.pointerId);
-    if (pt) {
-      ptrs.delete(e.pointerId); UIC.press = null;
-      if (pt.hold) { press(pt.hold.name, false); return; }
-      if (!cancel && pt.tap && !pt.moved) { const L = toLogical(e), h = pt.tap; if (L.x >= h.x && L.x < h.x + h.w && L.y >= h.y && L.y < h.y + h.h && h.fn) h.fn(); }
-      return;
-    }
-    if (cancel) { dragging = false; G.edit.sel = null; panLast = null; return; }
-    endDrag();
-  };
-  cv.addEventListener('pointerup', (e) => ptrUp(e, false)); cv.addEventListener('pointercancel', (e) => ptrUp(e, true));
-  cv.addEventListener('wheel', (e) => { const L = toLogical(e), sc = scrollAt(L.x, L.y); if (sc) { e.preventDefault(); UIC.scroll[sc.id].off += e.deltaY * .5; } }, { passive: false });
+  cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', () => { dragging = false; G.edit.sel = null; panLast = null; });
 
-  // ===== UI(キャンバスで描く: ゲームと同じドット文字・同じ倍率) =====
-  const TOUCH_DEV = () => UIC.touch || (window.matchMedia && matchMedia('(hover: none)').matches);
+  // ===== UI(DOM) =====
   const UI = {
-    toastMsg: '', toastT: 0, result: null,
-    toast(msg, ms) { UI.toastMsg = msg; UI.toastT = (ms || 2200) / 1000; },
-    show() { fit(); }, refresh() {}, refreshTools() {}, helpText() {},
+    toastT: 0,
+    toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); clearTimeout(UI.toastT); UI.toastT = setTimeout(() => t.classList.add('hide'), ms || 2200); },
+    show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); fit(); },
+    refresh() {
+      const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
+      UI.refreshTools();
+    },
+    helpText() { const E = G.edit, d = TOOL_BY[E.tool]; const t = E.pan ? 'ドラッグでがめんをうごかす' : (E.msg || E.hint || (d ? d.help : '')); const el = $('#edithelp'); if (el.textContent !== t) el.textContent = t; },
     tabsOf() { const t = new Set(); G.level.tools.forEach(id => t.add(TOOL_BY[id].tab)); return TABS.map(x => x.id).filter(id => t.has(id)); },
     toolsOfTab(tab) { return G.level.tools.map(id => TOOL_BY[id]).filter(t => t.tab === tab); },
-    pickTab(tab) { const E = G.edit; E.tab = tab; const l = UI.toolsOfTab(tab); if (!l.find(t => t.id === E.tool)) UI.pickTool(l[0].id); },
-    pickTool(id) { const E = G.edit; E.tool = id; E.tab = TOOL_BY[id].tab; E.sel = null; E.kb = null; E.step = 0; E.src = null; E.srcCell = null; E.pan = false; E.msg = ''; },
-    restart() { if (G.mode !== 'play') return; loadLevel(G.levelIdx); },
-    start(i) { G.mode = 'play'; loadLevel(i); UI.toastT = 0; G.paused = false; },
-    title() { G.mode = 'title'; },
-    select() { G.mode = 'select'; },
-    unlocked(i) { return true; }, // 試遊用: ステージは自由に選べる
-    buildSelect() {},
-    showResult(goals) { G.mode = 'result'; UI.result = goals; },
+    pickTab(tab) { const E = G.edit; E.tab = tab; const l = UI.toolsOfTab(tab); if (!l.find(t => t.id === E.tool)) UI.pickTool(l[0].id); else UI.refreshTools(); },
+    pickTool(id) { const E = G.edit; E.tool = id; E.tab = TOOL_BY[id].tab; E.sel = null; E.kb = null; E.step = 0; E.src = null; E.srcCell = null; E.pan = false; E.msg = ''; UI.refreshTools(); },
+    refreshTools() {
+      const E = G.edit; if (!G.level) return;
+      const tabs = $('#tabs'), bar = $('#tools'), opts = $('#opts'); tabs.innerHTML = ''; bar.innerHTML = ''; opts.innerHTML = '';
+      UI.tabsOf().forEach((id) => {
+        const b = document.createElement('button'); b.textContent = TABS.find(t => t.id === id).name; b.className = E.tab === id ? 'sel' : ''; b.onclick = () => UI.pickTab(id); tabs.appendChild(b);
+      });
+      UI.toolsOfTab(E.tab).forEach((t, i) => {
+        const b = document.createElement('button'); b.innerHTML = '<kbd>' + (i + 1) + '</kbd> ' + t.name + '<small>' + t.cost + '</small>'; b.className = E.tool === t.id && !E.pan ? 'sel' : ''; b.onclick = () => UI.pickTool(t.id); bar.appendChild(b);
+      });
+      const chips = (label, items, cur, pick) => {
+        const row = document.createElement('div'); row.className = 'chips'; if (label) { const l = document.createElement('span'); l.textContent = label; row.appendChild(l); }
+        items.forEach(it => { const c = document.createElement('button'); c.className = 'chip' + (cur === it.v ? ' sel' : ''); c.textContent = it.label || ''; if (it.color !== undefined) { c.style.background = COLORS[it.color].hex; c.title = COLORS[it.color].n + ': ' + COLORS[it.color].fx; c.textContent = it.label || COLORS[it.color].n; c.style.color = '#1f2a44'; } c.onclick = () => pick(it.v); row.appendChild(c); });
+        opts.appendChild(row);
+      };
+      const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
+      const o = E.opts, id = E.tool;
+      if (id === 'transform') chips('', [{ v: 'flipH', label: 'よこにひっくり' }, { v: 'flipV', label: 'たてにひっくり' }, { v: 'rot', label: '90°まわす' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
+      else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
+      else if (id === 'filter') chips('のこすいろ', colorItems.concat([{ v: null, label: 'はずす' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
+      const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグでがめんをうごかす' : (E.msg || E.hint || (d ? d.help : ''));
+      $('#e-pan').className = E.pan ? 'sel' : '';
+    },
+    restart() { if (G.mode !== 'play') return; loadLevel(G.levelIdx); UI.show(null); },
+    start(i) { G.mode = 'play'; loadLevel(i); UI.show(null); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
+    title() { G.mode = 'title'; UI.show('#screen-title'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); },
+    select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
+    unlocked(i) { return true; }, // ためしあそびよう: ステージはじゆうにえらべる
+    buildSelect() {
+      const box = $('#levels'); box.innerHTML = ''; let perfect = 0, sigma = 0, sigmaAll = 0;
+      LEVELS.forEach((lv, i) => {
+        const s = save.levels[lv.id], b = document.createElement('button'); const ok = UI.unlocked(i); if (s && s.goals && s.goals[2]) perfect++; sigma += gemsOf(lv, s); sigmaAll += lv.gems.length;
+        b.className = 'lv' + (ok ? '' : ' lock'); b.disabled = !ok;
+        b.innerHTML = '<b>' + lv.id + '</b><span>' + lv.name + '</span>' + badgesHTML(s ? s.goals : [false, false, false], gemsOf(lv, s), lv.gems.length, false);
+        b.onclick = () => UI.start(i); box.appendChild(b);
+      });
+      $('#total').textContent = 'ノーミス ' + perfect + '/' + LEVELS.length + '　Σ ' + sigma + '/' + sigmaAll;
+    },
+    showResult(goals) {
+      G.mode = 'result'; UI.show('#screen-result');
+      $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true);
+      const lv = G.level;
+      $('#r-info').innerHTML = 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + 'びょう　ダメージ ' + G.hits + 'かい';
+      const tips = []; if (!goals[1]) tips.push('Σを3つぜんぶあつめる'); if (!goals[2]) tips.push('ノーミス（ダメージをうけない）でクリア');
+      $('#r-tip').textContent = tips.length ? tips.join('　') : 'パーフェクト！';
+      const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージえらびへ' : 'つぎのステージへ';
+    },
   };
-  const hasEditBtn = () => G.level && G.level.tools.length > 0;
-  const toggleMute = () => { muted = !muted; save.muted = muted; persist(); };
-
-  // ---- 目標のバッジ(✓クリア / Σが3つ / ノーミス)をキャンバスにえがく ----
-  function drawBadges(x, y, goals, gemsGot, n, sc) {
-    sc = sc || 1; const s = 10 * sc; let cx = x;
-    box(cx, y, s, s, goals[0] ? COL.green : '#BFBFBF', null); const ck = ['...........', '.........#.', '........##.', '.#.....##..', '.##...##...', '..##.##....', '...###.....', '....#......']; // ✓
-    ctx.fillStyle = '#FFFFFF'; for (let j = 0; j < 8; j++) for (let i = 0; i < 11; i++) if (ck[j][i] === '#') ctx.fillRect(cx + Math.round((i - 1) * sc * (s - 2) / 10) + sc, y + Math.round((j + 1) * sc * (s - 2) / 10), Math.max(1, sc), Math.max(1, sc));
-    cx += s + 3 * sc;
-    if (n > 0) { for (let i = 0; i < Math.min(n, 3); i++) { sigmaTile(cx, y, s, i < gemsGot); cx += s + 1 * sc; } cx += 2 * sc; }
-    const label = 'ノーミス', size = sc > 1 ? 12 : 10, tw = textW(label, size) + 6 * sc;
-    box(cx, y, tw, s, goals[2] ? '#FFC000' : '#E1E1E1', goals[2] ? '#B38600' : '#BFBFBF'); drawText(label, cx + 3 * sc, y + ((s - size) >> 1), goals[2] ? '#262626' : '#8C8C8C', size);
-    return cx + tw - x;
+  $('#e-undo').onclick = () => undoEdit(); $('#e-redo').onclick = () => redoEdit(); $('#e-done').onclick = () => setEdit(false);
+  $('#e-pan').onclick = () => { G.edit.pan = !G.edit.pan; UI.refreshTools(); };
+  $('#btn-play').onclick = () => { audio(); UI.select(); };
+  $('#btn-back').onclick = () => UI.title();
+  let guideFrom = 'title';
+  // 実際のゲームとおなじ描画で、み本のえ(16×16)をつくる
+  function tileSample(draw) {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16; const g2 = c.getContext('2d'); g2.imageSmoothingEnabled = false;
+    ctx = g2; try { draw(); } finally { ctx = mainCtx; }
+    return c;
   }
-  const badgesW = (n, sc) => { sc = sc || 1; const s = 10 * sc; return s + 3 * sc + (n > 0 ? Math.min(n, 3) * (s + sc) + 2 * sc : 0) + textW('ノーミス', sc > 1 ? 12 : 10) + 6 * sc; };
-
-  // ---- リボン(上): ライフ・コスト・Σ・タイム・ボタン ----
-  function drawRibbonBase(title, h) {
-    h = h || MY; const w = VIEW.w; box(0, 0, w, h, COL.bg); ctx.fillStyle = COL.line; ctx.fillRect(0, h - 1, w, 1);
-    box(0, 0, 38, h - 1, '#FFFFFF'); ctx.fillStyle = COL.green; ctx.fillRect(0, h - 4, 38, 3); drawText('ホーム', 4, (h - 4 - 10) >> 1, COL.green, 10);
-    ctx.fillStyle = '#D4D4D4'; ctx.fillRect(38, 0, 1, h - 1);
-    if (title) drawText(title, 46, (h - 10) >> 1, COL.text, 10);
-  }
-  function actionButtons(list) { list.forEach(([x, y, w, h, o]) => btn(x, y, w, h, o)); }
-  function menuActions() { return { menu: { icon: 'menu', label: 'ステージえらび', fn: () => UI.select() }, sound: { icon: muted ? 'mute' : 'sound', label: '音', fn: toggleMute }, restart: { icon: 'restart', label: 'やりなおし', fn: () => UI.restart() } }; }
-  function drawRibbonPlay() {
-    const P = VIEW.portrait, rh = P ? MY : 15; drawRibbonBase(null, rh); const w = VIEW.w, ty = (rh - 10) >> 1; let x = 44; const sep = (xx) => { ctx.fillStyle = '#D4D4D4'; ctx.fillRect(xx, 2, 1, rh - 5); };
-    for (let i = 0; i < 3; i++) iconScaled(['.1.1.', '11111', '11111', '.111.', '..1..'], x + i * 12, ty, i < G.p.hp ? '#E04444' : '#D0D0D0', 2);
-    x += 3 * 12 + 4; sep(x); x += 6;
-    if (hasEditBtn()) {
-      const e = Math.floor(G.energy), bw = P ? 24 : 34, by = (rh - 8) >> 1; box(x, by, bw, 8, '#FFFFFF', '#8C8C8C'); ctx.fillStyle = G.energy < minCost() ? '#E04444' : '#70AD47'; ctx.fillRect(x + 1, by + 1, Math.round((bw - 2) * G.energy / Math.max(1, G.maxE)), 6);
-      x += bw + 3; x += drawText(String(e), x, ty, COL.text, 10) + 5; sep(x); x += 6;
-    }
-    const ng = G.level.gems.length; if (ng) { if (ng <= 3) for (let i = 0; i < ng; i++) { sigmaTile(x, ty, 10, i < G.gems); x += 11; } else { sigmaTile(x, ty, 10, true); x += 12; x += drawText(G.gems + '/' + ng, x, ty, COL.text, 10); } x += 3; sep(x); x += 6; }
-    drawText(Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'), x, ty, COL.text, 10);
-    if (!P) { // 横向き: ボタンは、左のペイン。ここには、ステージ名を出す
-      const nm = G.level.id + ' ' + G.level.name; drawText(nm, w - 6 - textW(nm, 10), ty, COL.green, 10); return;
-    }
-    const M = menuActions(); let bx = w - 3; const by = 4, bh = 16;
-    bx -= 18; btn(bx, by, 18, bh, M.menu); bx -= 20; btn(bx, by, 18, bh, M.sound); bx -= 20; btn(bx, by, 18, bh, M.restart); bx -= 4;
-    if (hasEditBtn()) { bx -= 20; btn(bx, by, 20, bh, { hl: '編集', sel: G.edit.on, icon: 'edit', fn: () => toggleEdit() }); }
-  }
-  // ---- ペイン(横/下): 操作ボタン・キー説明・編集の道具 ----
-  function paneRect() { return VIEW.portrait ? { x: 0, y: SY + H, w: VIEW.w, h: VIEW.h - SY - H } : { x: SX + W, y: SY, w: VIEW.w - W, h: H }; }
-  function editHelp() { const E = G.edit, d = TOOL_BY[E.tool]; return E.pan ? 'ドラッグで画面を動かす' : (E.msg || E.hint || (d ? d.help : '')); }
-  function drawPane() { if (VIEW.portrait) drawPanePortrait(); else { drawLeftPane(); drawRightPane(); } }
-  function drawPanePortrait() {
-    const P = paneRect(); box(P.x, P.y, P.w, P.h, COL.bg, null); ctx.fillStyle = COL.line; if (VIEW.portrait) ctx.fillRect(P.x, P.y, P.w, 1); else ctx.fillRect(P.x, P.y, 1, P.h);
-    const E = G.edit;
-    if (!E.on) {
-      if (TOUCH_DEV()) {
-        if (VIEW.portrait) { const cy = P.y + ((P.h - 44) >> 1); btn(P.x + 10, cy, 52, 44, { hold: true, name: 'left', icon: 'left', iscale: 2, label: '左' }); btn(P.x + 68, cy, 52, 44, { hold: true, name: 'right', icon: 'right', iscale: 2, label: '右' }); btn(P.x + P.w - 110, cy, 100, 44, { hold: true, name: 'jump', primary: true, label: 'はばたき', size: 12 }); }
-        else { btn(P.x + 6, P.y + 92, 40, 40, { hold: true, name: 'left', icon: 'left', iscale: 2, label: '左' }); btn(P.x + 50, P.y + 92, 40, 40, { hold: true, name: 'right', icon: 'right', iscale: 2, label: '右' }); btn(P.x + 6, P.y + 138, 84, 34, { hold: true, name: 'jump', primary: true, label: 'はばたき', size: 12 }); }
-      } else {
-        const lines = ['キー操作', '← → 移動', 'Z / Space', 'はばたき', '空中で押し続けると', 'ふわり', 'E 編集(時間停止)', 'R やりなおし'];
-        lines.forEach((t, i) => drawText(t, P.x + 6, P.y + 6 + i * 13, i === 0 ? COL.green : COL.sub, 10));
-      }
-      return;
-    }
-    // 編集のパネル
-    let y = P.y + 3; const w = P.w - 6, x0 = P.x + 3;
-    const note = wrapText(editHelp(), w - 6, 10).slice(0, VIEW.portrait ? 3 : 5); const nh = note.length * 11 + 4;
-    box(x0, y, w, nh, COL.note, '#000000'); note.forEach((t, i) => drawText(t, x0 + 3, y + 2 + i * 11, '#000000', 10)); y += nh + 3;
-    const tabs = UI.tabsOf(), tw = Math.floor(w / Math.max(1, tabs.length));
-    tabs.forEach((id, i) => btn(x0 + i * tw, y, tw - 1, 14, { sel: E.tab === id, label: TABS.find(t => t.id === id).name, fn: () => UI.pickTab(id) })); y += 17;
-    UI.toolsOfTab(E.tab).forEach((t, i) => { btn(x0, y, w, 15, { sel: E.tool === t.id && !E.pan, left: true, label: (i + 1) + ' ' + t.name, right: String(t.cost), fn: () => UI.pickTool(t.id) }); y += 16; });
-    y += 2; const o = E.opts, id = E.tool;
-    const chipRow = (items) => { let cx = x0; for (const it of items) { const cw = it.color !== undefined ? 14 : textW(it.label, 10) + 8; if (cx + cw > x0 + w) { cx = x0; y += 15; } if (it.color !== undefined) { const h = btn(cx, y, cw, 13, { sel: it.sel, fn: it.fn, label: COLORS[it.color].n }); box(cx + 2, y + 2, cw - 4, 9, COLORS[it.color].hex, '#404040'); } else btn(cx, y, cw, 13, { sel: it.sel, label: it.label, fn: it.fn }); cx += cw + 2; } y += 15; };
-    if (id === 'transform') chipRow([{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }].map(it => ({ ...it, sel: o.tf === it.v, fn: () => { o.tf = it.v; } })));
-    else if (id === 'sort') chipRow([{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }].map(it => ({ ...it, sel: o.sort === it.v, fn: () => { o.sort = it.v; } })));
-    else if (id === 'filter') { drawText('残す色', x0, y, COL.sub, 10); y += 12; chipRow(COLORS.map((c, i) => ({ color: i, sel: G.filter === i, fn: () => { runPlan(planFor('filter', { fcolor: i })); } })).concat([{ label: '解除', sel: G.filter === null, fn: () => { runPlan(planFor('filter', { fcolor: null })); } }])); }
-    // フッター: やり直し・やり直す・画面を動かす・終了
-    const fy = P.y + P.h - 19, fw = Math.floor((w - 6) / 3);
-    btn(x0, fy, 18, 16, { icon: 'undo', label: '元に戻す', fn: () => undoEdit() }); btn(x0 + 20, fy, 18, 16, { icon: 'redo', label: 'やり直す', fn: () => redoEdit() }); btn(x0 + 40, fy, 18, 16, { sel: E.pan, icon: 'hand', label: '画面を動かす', fn: () => { E.pan = !E.pan; } });
-    btn(x0 + 60, fy, w - 60, 16, { primary: true, label: VIEW.portrait ? '編集を終える' : '終了', fn: () => setEdit(false) });
-  }
-  // ---- 横向き: 左ペイン(ボタン・指の左)と右ペイン(はばたき・説明・編集) ----
-  function drawLeftPane() {
-    const P = { x: 0, y: SY, w: SX, h: H }, E = G.edit; box(P.x, P.y, P.w, P.h, COL.bg, null); ctx.fillStyle = COL.line; ctx.fillRect(P.x + P.w - 1, P.y, 1, P.h);
-    if (!E.on) {
-      const M = menuActions(), y0 = P.y + 3;
-      btn(2, y0, 21, 21, M.menu); btn(25, y0, 21, 21, M.sound); btn(2, y0 + 23, 21, 21, M.restart);
-      if (hasEditBtn()) btn(25, y0 + 23, 21, 21, { hl: '編集', icon: 'edit', fn: () => toggleEdit() });
-      if (TOUCH_DEV()) { btn(2, P.y + 86, 21, 90, { hold: true, name: 'left', icon: 'left', iscale: 2, label: '左' }); btn(25, P.y + 86, 21, 90, { hold: true, name: 'right', icon: 'right', iscale: 2, label: '右' }); }
-      return;
-    }
-    UI.tabsOf().forEach((id, i) => btn(2, P.y + 3 + i * 16, 44, 14, { sel: E.tab === id, label: TABS.find(t => t.id === id).name, fn: () => UI.pickTab(id) }));
-    const fy = P.y + P.h - 44;
-    btn(2, fy, 21, 19, { icon: 'undo', label: '元に戻す', fn: () => undoEdit() }); btn(25, fy, 21, 19, { icon: 'redo', label: 'やり直す', fn: () => redoEdit() });
-    btn(2, fy + 22, 21, 19, { sel: E.pan, icon: 'hand', label: '画面を動かす', fn: () => { E.pan = !E.pan; } }); btn(25, fy + 22, 21, 19, { primary: true, label: '終了', fn: () => setEdit(false) });
-  }
-  function drawRightPane() {
-    const P = { x: SX + W, y: SY, w: VIEW.w - SX - W, h: H }, E = G.edit; box(P.x, P.y, P.w, P.h, COL.bg, null); ctx.fillStyle = COL.line; ctx.fillRect(P.x, P.y, 1, P.h);
-    const x0 = P.x + 3, w = P.w - 5; let y = P.y + 3;
-    if (!E.on) {
-      if (TOUCH_DEV()) btn(P.x + 4, P.y + 100, P.w - 8, 76, { hold: true, name: 'jump', primary: true, label: 'はばたき', size: 12 });
-      else { ['キー操作', '← → 移動', 'Z / Space', 'はばたき', '空中で押し', '続けると', 'ふわり', 'E 編集', 'R やりなおし'].forEach((t, i) => drawText(t, x0 + 2, y + 2 + i * 12, i === 0 ? COL.green : COL.text, 10)); }
-      return;
-    }
-    UI.toolsOfTab(E.tab).forEach((t, i) => { btn(x0, y, w, 15, { sel: E.tool === t.id && !E.pan, left: true, label: (w < 90 ? '' : (i + 1) + ' ') + t.name, right: String(t.cost), fn: () => UI.pickTool(t.id) }); y += 16; });
-    y += 2; const o = E.opts, id = E.tool;
-    const chipRow = (items) => { let cx = x0; for (const it of items) { const cw = it.color !== undefined ? 14 : textW(it.label, 10) + 8; if (cx + cw > x0 + w) { cx = x0; y += 15; } if (it.color !== undefined) { btn(cx, y, cw, 13, { sel: it.sel, fn: it.fn, label: COLORS[it.color].n }); box(cx + 2, y + 2, cw - 4, 9, COLORS[it.color].hex, '#404040'); } else btn(cx, y, cw, 13, { sel: it.sel, label: it.label, fn: it.fn }); cx += cw + 2; } y += 15; };
-    if (id === 'transform') chipRow([{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '回転90°' }].map(it => ({ ...it, sel: o.tf === it.v, fn: () => { o.tf = it.v; } })));
-    else if (id === 'sort') chipRow([{ v: 'L', label: '←寄せ' }, { v: 'R', label: '寄せ→' }, { v: 'U', label: '↑寄せ' }, { v: 'D', label: '寄せ↓' }].map(it => ({ ...it, sel: o.sort === it.v, fn: () => { o.sort = it.v; } })));
-    else if (id === 'filter') { drawText('残す色', x0, y, COL.sub, 10); y += 12; chipRow(COLORS.map((c, i) => ({ color: i, sel: G.filter === i, fn: () => { runPlan(planFor('filter', { fcolor: i })); } })).concat([{ label: '解除', sel: G.filter === null, fn: () => { runPlan(planFor('filter', { fcolor: null })); } }])); }
-    // 説明は、のこりの高さに入るだけ(下から)
-    y += 3; const room = Math.floor((P.y + P.h - 3 - y - 4) / 11); let note = wrapText(editHelp(), w - 6, 10);
-    if (note.length > room) { note = note.slice(0, Math.max(1, room)); note[note.length - 1] = note[note.length - 1].slice(0, -1) + '…'; }
-    const nh = note.length * 11 + 4; box(x0, y, w, nh, COL.note, '#000000'); note.forEach((t, i) => drawText(t, x0 + 3, y + 2 + i * 11, '#000000', 10));
-  }
-  function drawToastAndName() {
-    if (UI.toastT > 0 && !G.edit.on && UI.toastMsg) {
-      const lines = wrapText(UI.toastMsg, W - 18, 10), bh = lines.length * 11 + 6, bw = Math.min(W - 6, Math.max(...lines.map(l => textW(l, 10))) + 10), bx = SX + ((W - bw) >> 1), by = SY + 4;
-      box(bx, by, bw, bh, COL.note, '#000000'); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(bx + 2, by + bh, bw, 2); lines.forEach((l, i) => drawText(l, bx + 5, by + 3 + i * 11, '#000000', 10));
-    }
-    if (window.__noName) return;
-    const nm = G.level.id + ' ' + G.level.name, nw = textW(nm, 10) + 10; box(SX, SY + H - 14, nw, 14, '#FFFFFF', COL.line); ctx.fillStyle = COL.green; ctx.fillRect(SX, SY + H - 14, nw, 2); drawText(nm, SX + 5, SY + H - 11, COL.green, 10);
-  }
-  // ---- 遊ぶ画面(ウィンドウ全体) ----
-  function drawPlayWindow() {
-    drawRibbonPlay();
-    ctx.save(); ctx.translate(SX, SY); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip(); renderSheet(); ctx.restore();
-    drawPane(); drawToastAndName();
-  }
-  // ---- メニューの画面 ----
-  function sheetBg() { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, MY, VIEW.w, VIEW.h - MY); ctx.fillStyle = '#E1E1E1'; for (let x = 0; x < VIEW.w; x += 16) ctx.fillRect(x, MY, 1, VIEW.h - MY); for (let y = MY; y < VIEW.h; y += 16) ctx.fillRect(0, y, VIEW.w, 1); }
-  function drawTitle() {
-    drawRibbonBase('ゲコ＆エナー v2'); sheetBg(); const cx = VIEW.w >> 1, P = VIEW.portrait, top = MY + (P ? 40 : 2), gap = P ? 1 : 0;
-    const tw = textW('ゲコ＆エナー', 12, 3); drawText('ゲコ＆エナー', cx - (tw >> 1), top + 2, COL.green, 12, 3);
-    const sub = P ? '時間を止めて、世界を直しながら進む' : '時間を止めて、世界を直しながら進む　アクション・パズル', sw = textW(sub, 10); drawText(sub, cx - (sw >> 1), top + 42, COL.sub, 10);
-    if (P) { const s2 = 'アクション・パズル'; drawText(s2, cx - (textW(s2, 10) >> 1), top + 54, COL.sub, 10); }
-    const bw = 130; let y = top + (P ? 76 : 58);
-    btn(cx - (bw >> 1), y, bw, 22, { primary: true, label: 'あそぶ', size: 12, fn: () => { audio(); UI.select(); } }); y += P ? 30 : 26;
-    btn(cx - (bw >> 1), y, bw, 16, { label: 'ブロックのずかん', fn: () => openGuide('title') }); y += P ? 22 : 19;
-    btn(cx - (bw >> 1), y, bw, 16, { label: 'ステージ作成(テスト用)', fn: () => { location.href = 'editor.html'; } }); y += P ? 24 : 21;
-    const th = [['excel', 'Excel風', './'], ['snes', 'ソリッド版', '?gfx=snes'], ['classic', '元の絵', '?gfx=classic']]; let tx = cx - 100;
-    th.forEach(([k, name, href]) => { btn(tx, y, 64, 14, { sel: THEME === k, label: name, fn: () => { location.href = href; } }); tx += 68; }); y += P ? 20 : 18;
-    const old = '旧バージョン(Pyxel版)はこちら', ow = textW(old, 10); drawText(old, cx - (ow >> 1), y, COL.sub, 10); ctx.fillStyle = COL.sub; ctx.fillRect(cx - (ow >> 1), y + 10, ow, 1); UIC.hits.push({ x: cx - (ow >> 1), y: y - 2, w: ow, h: 14, type: 'tap', label: '旧バージョン', fn: () => { location.href = '../'; } });
-  }
-  function drawSelect() {
-    drawRibbonBase('ステージえらび'); sheetBg(); const w = VIEW.w, port = VIEW.portrait, rowH = port ? 28 : 16, top = MY + 14, bot = VIEW.h - 19;
-    btn(w - 62, 4, 58, 16, { label: '← もどる', fn: () => UI.title() }); btn(w - 112, 4, 46, 16, { label: 'ずかん', fn: () => openGuide('select') });
-    box(0, MY, w, 14, '#E6E6E6', null); ctx.fillStyle = COL.line; ctx.fillRect(0, MY + 13, w, 1); drawText('ステージ', 6, MY + 2, COL.sub, 10); drawText('名前', 48, MY + 2, COL.sub, 10); if (!port) drawText('目標', 316, MY + 2, COL.sub, 10);
-    const total = LEVELS.length * rowH, s = scrollRegion('sel', 0, top, w, bot - top, total);
-    let perfect = 0, sigma = 0, sigmaAll = 0;
-    ctx.save(); ctx.beginPath(); ctx.rect(0, top, w, bot - top); ctx.clip();
-    LEVELS.forEach((lv, i) => {
-      const sv = save.levels[lv.id], goals = sv ? sv.goals : [false, false, false], gots = gemsOf(lv, sv); if (goals[2]) perfect++; sigma += gots; sigmaAll += lv.gems.length;
-      const y = top + i * rowH - s.off; if (y + rowH < top || y > bot) return;
-      const hit = { x: 0, y, w: w - 5, h: rowH, type: 'tap', label: lv.id + ' ' + lv.name, fn: () => { audio(); UI.start(i); } }; UIC.hits.push(hit);
-      ctx.fillStyle = UIC.press === hit ? '#CFE3D6' : (i % 2 ? '#F6F8FC' : '#FFFFFF'); ctx.fillRect(0, y, w - 5, rowH); ctx.fillStyle = '#E1E1E1'; ctx.fillRect(0, y + rowH - 1, w, 1);
-      drawText(lv.id, 6, y + 3, COL.green, 10); drawText(lv.name, 48, y + 3, COL.text, 10);
-      if (port) drawBadges(48, y + 15, goals, gots, lv.gems.length, 1); else drawBadges(w - 8 - badgesW(lv.gems.length, 1), y + 3, goals, gots, lv.gems.length, 1);
-    });
-    ctx.restore(); scrollbar(s, w - 4, top, bot - top, total);
-    box(0, bot, w, VIEW.h - bot, COL.bg, null); ctx.fillStyle = COL.line; ctx.fillRect(0, bot, w, 1);
-    drawText('ノーミス ' + perfect + '/' + LEVELS.length + '　Σ ' + sigma + '/' + sigmaAll, 6, bot + 5, COL.green, 10);
-    btn(w - 148, bot + 2, 72, 15, { label: 'ステージ作成', fn: () => { location.href = 'editor.html'; } }); btn(w - 74, bot + 2, 70, 15, { label: 'セーブを消す', fn: () => { if (confirm('セーブデータを消しますか？')) { save = { levels: {}, muted }; persist(); } } });
-  }
-  let guideFrom = 'title', guideItems = null;
-  function tileSample(draw) { const c = document.createElement('canvas'); c.width = 16; c.height = 16; const g2 = c.getContext('2d'); g2.imageSmoothingEnabled = false; const keep = ctx; ctx = g2; try { draw(); } finally { ctx = keep; } return c; }
-  function buildGuide() {
+  function openGuide(from) {
+    guideFrom = from; G.mode = from; UI.show('#screen-guide');
     const blk = (c, alpha) => tileSample(() => drawBlock(TL.STONE, c, 0, 0, true, true, alpha, 0));
-    const it = [['h', '色つきブロック（編集で色を変えられる）']];
-    COLORS.forEach((k, i) => it.push([blk(i), k.n + 'ブロック', k.fx]));
-    it.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), '元ガラス（書式をつけたガラス）', '書式のコピーで色をつけたガラス。色の性質はふつうのブロックと同じで、白い「つやの枠」が残るので、元ガラスだと分かる。もう一度は書式をつけられない']);
-    it.push(['h', 'そのほかの地形']);
-    it.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼（はがね）', '編集できない金属の壁・床・天井。どの道具も効かない']);
-    it.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '黄ブロックと同じ（乗るとくずれる）。編集の対象']);
-    it.push(['h', '編集のしるし']);
-    it.push([tileSample(() => { const keep = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = keep; } }), 'リフト', '決まった道（うすく見える道）を、一定の周期で往復する足場。乗ると運ばれる。編集では動かせず、道にブロックを置くこともできない。リフトにも色（性質）があり、フィルターで消せる（うすくなって通りぬけられる）。ガラスのリフトは、書式のコピーで色をつけられる']);
-    it.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。どの編集も受けず、フィルターでも消えない。寄せるときの仕切りになる。「保護の解除」で外せる']);
-    it.push([blk(0, .28), 'うすい表示', 'フィルター中。選んだ色以外のブロック（ガラスも）は、うすくなって通りぬけられる']);
-    return it;
-  }
-  function openGuide(from) { guideFrom = from; G.mode = 'guide'; guideItems = buildGuide(); (UIC.scroll.guide || (UIC.scroll.guide = { off: 0 })).off = 0; }
-  function drawGuide() {
-    drawRibbonBase('ブロックのずかん'); sheetBg(); const w = VIEW.w, top = MY, bot = VIEW.h;
-    btn(w - 62, 4, 58, 16, { label: '← もどる', fn: () => (guideFrom === 'select' ? UI.select() : UI.title()) });
-    const tw = w - 52, lay = guideItems.map(it => (it[0] === 'h' ? { h: 16 } : { lines: wrapText(it[2], tw, 10), h: 0 })); lay.forEach(l => { if (l.lines) l.h = Math.max(38, 16 + l.lines.length * 11 + 4); });
-    const total = lay.reduce((a, l) => a + l.h, 0) + 6, s = scrollRegion('guide', 0, top, w, bot - top, total); let y = top + 3 - s.off;
-    ctx.save(); ctx.beginPath(); ctx.rect(0, top, w, bot - top); ctx.clip();
-    guideItems.forEach((it, i) => {
-      const l = lay[i];
-      if (it[0] === 'h') { drawText(it[1], 6, y + 3, COL.green, 10); ctx.fillStyle = COL.green; ctx.fillRect(6, y + 14, w - 18, 1); }
-      else { box(4, y, w - 12, l.h - 3, '#FFFFFF', COL.line); ctx.imageSmoothingEnabled = false; ctx.drawImage(it[0], 8, y + 3, 32, 32); box(8, y + 3, 32, 32, null, '#ABABAB'); drawText(it[1], 46, y + 3, COL.text, 10); l.lines.forEach((t, k) => drawText(t, 46, y + 15 + k * 11, COL.sub, 10)); }
-      y += l.h;
+    const items = [['h', 'いろつきブロック（なおすでいろをかえられる）']];
+    COLORS.forEach((k, i) => items.push([blk(i), k.n + 'ブロック', k.fx]));
+    items.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), 'もとガラス（いろをつけたガラス）', 'いろコピーでいろをつけたガラス。いろのちからはふつうのブロックとおなじで、しろい「つやのわく」がのこるので、もとガラスだとわかる。もういちどはいろをつけられない']);
+    items.push(['h', 'そのほかのじめん']);
+    items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), 'はがね', 'なおせないはがねのかべ・ゆか・てんじょう。どのどうぐもきかない']);
+    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひびわれかべ', 'きいろブロックとおなじ（のるとくずれる）。どうぐがきく']);
+    items.push(['h', 'なおすときのしるし']);
+    items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', 'きまったみち（うすくみえるみち）を、きまったくりかえしていったりきたりするあしば。のるとはこばれる。どうぐではうごかせず、みちにブロックをおくこともできない。リフトにもいろ（ちから）があり、フィルターでけせる（うすくなってとおりぬけられる）。ガラスのリフトは、いろコピーでいろをつけられる']);
+    items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（まもり）', 'まもったブロック。どのどうぐもきかず、フィルターでもきえない。よせるときのしきりになる。「まもりをはずす」ではずせる']);
+    items.push([blk(0, .28), 'うすいひょうじ', 'フィルターをかけているところ。えらんだいろいがいのブロック（ガラスも）は、うすくなってとおりぬけられる']);
+    const box = $('#guide'); box.innerHTML = '';
+    items.forEach(it => {
+      if (it[0] === 'h') { const p = document.createElement('p'); p.className = 'gh'; p.textContent = it[1]; box.appendChild(p); return; }
+      const d = document.createElement('div'); d.className = 'gi';
+      d.innerHTML = '<div><b></b><span></span></div>'; d.insertBefore(it[0], d.firstChild); it[0].className = 'gtile';
+      d.querySelector('b').textContent = it[1]; d.querySelector('span').textContent = it[2]; box.appendChild(d);
     });
-    ctx.restore(); scrollbar(s, w - 4, top, bot - top, total);
   }
-  function drawResult() {
-    drawRibbonBase('クリア'); sheetBg(); const goals = UI.result || [true, false, false], lv = G.level, cx = VIEW.w >> 1, top = MY + (VIEW.portrait ? 30 : 4);
-    const t = 'クリア！', tw = textW(t, 12, 2); drawText(t, cx - (tw >> 1), top + 4, COL.green, 12, 2);
-    const n = lv.gems.length, bw = badgesW(n, 2); drawBadges(cx - (bw >> 1), top + 36, goals, G.gems, n, 2);
-    const info = 'Σ ' + G.gems + '/' + n + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回'; drawText(info, cx - (textW(info, 10) >> 1), top + 64, COL.text, 10);
-    const tips = []; if (!goals[1] && n) tips.push('Σを3つぜんぶ集める'); if (!goals[2]) tips.push('ノーミス（ダメージを受けない）でクリア'); const tip = tips.length ? tips.join('　') : 'パーフェクト！';
-    wrapText(tip, VIEW.w - 20, 10).forEach((l, i) => drawText(l, cx - (textW(l, 10) >> 1), top + 80 + i * 11, COL.sub, 10));
-    const last = G.levelIdx >= LEVELS.length - 1, bwid = 140; let y = top + 106;
-    btn(cx - (bwid >> 1), y, bwid, 22, { primary: true, label: last ? 'ステージえらびへ' : '次のステージへ', size: 12, fn: () => { if (last) UI.select(); else UI.start(G.levelIdx + 1); } }); y += 27;
-    btn(cx - 71, y, 68, 16, { label: 'もう一度', fn: () => UI.start(G.levelIdx) }); btn(cx + 3, y, 68, 16, { label: 'ステージえらび', fn: () => UI.select() });
-  }
-  function render() {
-    if (!G.level) return; ctx.setTransform(VIEW.k || 1, 0, 0, VIEW.k || 1, 0, 0); ctx.imageSmoothingEnabled = false;
-    UIC.hits.length = 0; ctx.fillStyle = '#D9D9D9'; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
-    if (G.mode === 'play') drawPlayWindow(); else if (G.mode === 'title') drawTitle(); else if (G.mode === 'select') drawSelect(); else if (G.mode === 'guide') drawGuide(); else if (G.mode === 'result') drawResult();
-  }
-  // ===== 拡大表示 =====
-  // ウィンドウ全体(リボン・シート・ペイン)を、画面にあわせて拡大する。シートは、いつも320×180(マス目の世界)。
+  $('#btn-guide').onclick = () => openGuide('title');
+  $('#btn-guide2').onclick = () => openGuide('select');
+  $('#btn-guide-back').onclick = () => (guideFrom === 'select' ? UI.select() : UI.title());
+  document.querySelectorAll('[data-proxy]').forEach(b => { b.onclick = () => $(b.dataset.proxy).click(); });
+  $('#btn-edit').onclick = () => toggleEdit();
+  $('#btn-restart').onclick = () => UI.restart();
+  $('#btn-menu').onclick = () => UI.select();
+  $('#btn-mute').onclick = () => { muted = !muted; save.muted = muted; persist(); $('#btn-mute').textContent = muted ? '🔇' : '🔊'; };
+  $('#btn-mute').textContent = muted ? '🔇' : '🔊';
+  $('#r-retry').onclick = () => { UI.start(G.levelIdx); };
+  $('#r-next').onclick = () => { if (G.levelIdx >= LEVELS.length - 1) UI.select(); else UI.start(G.levelIdx + 1); };
+  $('#r-menu').onclick = () => UI.select();
+  $('#btn-reset').onclick = () => { if (confirm('セーブデータをけしますか？')) { save = { levels: {}, muted }; persist(); UI.buildSelect(); } };
+
+  // ===== 拡大ひょうじ(整数倍) =====
+  // ウィンドウ全からだ(リボン・シート・ペイン)を、がめんにあわせて拡大する。シートは、いつも320×180(マス目の世界)。
   function fit() {
     const wrap = $('#stage'), vw = wrap.clientWidth, vh = wrap.clientHeight, portrait = vw < vh;
-    const LPW = 48, RPW = 80, RH = portrait ? MY : 15; let LW = portrait ? W : LPW + W + RPW, LH = RH + H, ph = 0;
-    let s = Math.min(vw / LW, vh / (portrait ? LH + 90 : LH)); if (s >= 2) s = Math.floor(s); // 整数倍に、ぴったり入れる(ドット文字を読みやすく)
+    const RH = portrait ? 24 : 15, LPW = portrait ? 0 : 48, PW = portrait ? 0 : 80; let LW = LPW + W + PW, LH = RH + H;
+    let s = Math.min(vw / LW, vh / (portrait ? RH + H + 90 : LH)); if (s >= 2) s = Math.floor(s); // せいすうばいに、ぴったりいれる
+    let ph = 100;
     if (portrait) { ph = Math.max(90, Math.min(300, Math.floor(vh / s) - RH - H)); LH = RH + H + ph; if (LH * s > vh) s = vh / LH; }
-    Object.assign(VIEW, { w: LW, h: LH, portrait, ph, s }); SX = portrait ? 0 : LPW; SY = RH;
-    const k = Math.max(1, Math.min(6, Math.round(s * (window.devicePixelRatio || 1)))); VIEW.k = k; // 文字をくっきり描くため、実際の画素にあわせた解像度で描く
-    if (cv.width !== LW * k || cv.height !== LH * k) { cv.width = LW * k; cv.height = LH * k; ctx.imageSmoothingEnabled = false; }
-    cv.style.width = LW * s + 'px'; cv.style.height = LH * s + 'px';
+    const r = document.documentElement.style; r.setProperty('--s', s); r.setProperty('--rh', RH); r.setProperty('--lw', LPW); r.setProperty('--pw', PW); r.setProperty('--ph', ph);
+    cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px';
     $('#game').style.width = LW * s + 'px'; $('#game').style.height = LH * s + 'px';
+    document.body.classList.toggle('s3', s >= 2.7);
   }
   addEventListener('resize', fit); fit();
 
@@ -1396,21 +1195,22 @@
   function loop(now) {
     requestAnimationFrame(loop);
     if (G.paused) { last = now; return; }
-    acc += Math.min(.1, (now - last) / 1000); UI.toastT = Math.max(0, UI.toastT - Math.min(.1, (now - last) / 1000)); last = now;
+    acc += Math.min(.1, (now - last) / 1000); last = now;
     while (acc >= DT) { update(DT); acc -= DT; }
     render();
   }
   loadLevel(0); render(); UI.title();
-  { // ?test=ID : ステージ作成ページからのテストプレイ
+  { // ?test=ID : ステージさくせいページからのテストプレイ
     const m = /[?&]test=([^&]+)/.exec(location.search);
     if (m) { const i = LEVELS.findIndex(l => l.id === decodeURIComponent(m[1])); if (i >= 0) { audio(); UI.start(i); } }
   }
+  $('#btn-editor').onclick = () => { location.href = 'editor.html'; };
   requestAnimationFrame(loop);
 
-  // ===== テスト用の口(自動プレイが使う) =====
+  // ===== テストようの口(自どうプレイが使う) =====
   window.__geko = {
-    G, input, press, update, render, UI, hits: () => UIC.hits.map(h => ({ type: h.type, label: h.label, x: h.x, y: h.y, w: h.w, h: h.h })), VIEW, LEVELS, T, TL, COLORS, TOOLS, setEdit, undoEdit, redoEdit, runPlan, planFor, normRect,
-    // 自動プレイ・テスト用: {tool, rect, dst, srcCell, col, opts} を指定して、実際の編集と同じ処理を行う
+    G, input, press, update, render, UI, LEVELS, T, TL, COLORS, TOOLS, setEdit, undoEdit, redoEdit, runPlan, planFor, normRect,
+    // 自どうプレイ・テストよう: {tool, rect, dst, srcCell, col, opts} を指定して、実際のなおすとおなじ処理をぎょうう
     runTool(spec) {
       const E = G.edit; E.tool = spec.tool; Object.assign(E.opts, spec.opts || {});
       const plan = planFor(spec.tool, { rect: spec.rect, dst: spec.dst, srcCell: spec.srcCell, col: spec.col, fcolor: spec.fcolor });
