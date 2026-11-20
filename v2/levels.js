@@ -632,6 +632,75 @@
     solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 7, y0: 9, x1: 13, y1: 9 }, opts: { sort: 'R' } }] }],
   }));
 
+  // ---- ワールド11: はんていセルと リフト ----
+  L.push(make({
+    id: '11-1', name: 'ふたつの リフト', world: 11, w: 70, tools: ['sort', 'painter'], energy: 22, bg: '#C9DCEB', bg2: '#B7CDE0', par: 22,
+    hints: [
+      { x: 1, text: 'とまっている リフトが ふたつ。かどの 三角の 数字が おなじ リフトを、そのセルが ONの あいだだけ うごかせる' },
+      { x: 5, text: 'ひとつめは「よせ→」で ブロックを はんていセル（むらさき）へ' },
+      { x: 34, text: 'ふたつめの はんていセルは みどりを ほしがっている。ガラスに いろコピー して、よせよう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(22, 33); m.pit(50, 61);
+      m.lift(22, 10, 3, 9, 0, 8, 0, 0, 0); m.lift(50, 10, 3, 9, 0, 8, 0, 0, 1);
+      m.judge(13, 9, 'exist', 0, 0); m.blk(7, 9, 2);
+      m.judge(41, 9, 'color', 3, 1); m.blk(36, 9, 5); m.blk(38, 6, 3);
+      m.gem(5, 8); m.gem(28, 8); m.gem(56, 8);
+      m.check(34, 9);
+      m.flag = [66, 9];
+    },
+    solution: [
+      { x: 2, edits: [{ tool: 'sort', rect: { x0: 7, y0: 9, x1: 13, y1: 9 }, opts: { sort: 'R' } }] },
+      { x: 36, edits: [{ tool: 'painter', srcCell: [38, 6], rect: { x0: 36, y0: 9, x1: 36, y1: 9 } }, { tool: 'sort', rect: { x0: 36, y0: 9, x1: 41, y1: 9 }, opts: { sort: 'R' } }] },
+    ],
+  }));
+
+  L.push(make({
+    id: '11-2', name: 'のぼる リフトと あきセル', world: 11, w: 56, tools: ['filter', 'sort'], energy: 18, bg: '#C9DCEB', bg2: '#B7CDE0', par: 18,
+    hints: [
+      { x: 1, text: 'たかい たなに リフトで のぼろう。リフトは とまっている。はいいろの 三角は「あきセル」…ここが あいていると うごく' },
+      { x: 5, text: 'ブロックは はがねの あなに はまっていて うごかせない。「フィルター」で ちゃいろだけ のこすと、あおい ブロックが うすくなって「あき」になる' },
+      { x: 33, text: 'たなの すきまには、うかぶブロックを「よせ↓」で はしに しよう' },
+    ],
+    build(m) {
+      m.floor(); m.pit(30, 32);
+      m.lift(30, 10, 3, 0, -6, 8, 0, 0, 0);
+      m.judge(10, 9, 'empty', 0, 0); m.blk(10, 9, 2); m.set(9, 9, 'S'); m.set(11, 9, 'S'); m.set(10, 8, 'S');
+      m.rect(33, 5, 33, 9, 'S');
+      m.rect(33, 4, 38, 4, 'S'); m.rect(45, 4, 52, 4, 'S');
+      [1, 2, 3, 1, 2, 3].forEach((y, i) => m.blk(39 + i, y, 0));
+      m.gem(4, 8); m.gem(31, 6); m.gem(48, 2);
+      m.check(22, 9);
+      m.flag = [50, 3];
+    },
+    solution: [
+      { x: 2, edits: [{ tool: 'filter', fcolor: 0 }] },
+      { x: 36, edits: [{ tool: 'sort', rect: { x0: 39, y0: 1, x1: 44, y1: 4 }, opts: { sort: 'D' } }] },
+    ],
+  }));
+
+  L.push(make({
+    id: '11-3', name: 'リフトで わたって あけて すすむ', world: 11, w: 60, tools: ['sort', 'filter'], energy: 18, bg: '#C9DCEB', bg2: '#B7CDE0', par: 18,
+    hints: [
+      { x: 1, text: 'リフトが とまっている。まず ブロックを はんていセルへ（ブロックは「あお」）' },
+      { x: 36, text: 'むこうぎしの とびらは はいいろの「あきセル」。うかぶ ちゃいろの ブロックを どかせば あく' },
+      { x: 37, text: 'のこりの エナジーは すくない。「フィルター」で あおだけ のこすと…？' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(22, 33);
+      m.lift(22, 10, 3, 9, 0, 8, 0, 0, 0);
+      m.judge(13, 9, 'exist', 0, 0); m.blk(7, 9, 2);
+      m.judge(40, 7, 'empty', 0, 1); m.blk(40, 7, 0); m.door(44, 0, 10, 1);
+      m.gem(5, 8); m.gem(28, 8); m.gem(50, 8);
+      m.check(36, 9);
+      m.flag = [54, 9];
+    },
+    solution: [
+      { x: 2, edits: [{ tool: 'sort', rect: { x0: 7, y0: 9, x1: 13, y1: 9 }, opts: { sort: 'R' } }] },
+      { x: 36, edits: [{ tool: 'filter', fcolor: 2 }] },
+    ],
+  }));
+
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
   L.push(make({
     id: 'LAB', name: 'じっけんシート（ぜんぶ）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
