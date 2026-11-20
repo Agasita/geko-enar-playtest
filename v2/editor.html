@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ステージをつくる ゲコ＆エナー v2</title>
 <style>
@@ -110,7 +111,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   </details>
 </main>
 <div id="scrim"></div>
-<script src="levels.js"></script>
+<script>document.write('<script src="levels.js?t='+Date.now()+'"><\/script>')</script>
 <script>
 (function () {
   'use strict';
