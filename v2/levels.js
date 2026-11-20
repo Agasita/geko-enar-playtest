@@ -78,7 +78,7 @@
       { x: 8, text: '広い穴は C でダッシュしながらジャンプ！' },
       { x: 26, text: '盾の敵は、ダッシュでぶつかるとたおせる' },
       { x: 42, text: 'ひび割れた壁は、攻撃かダッシュで壊れる' },
-      { x: 50, text: '赤いブロックは、さわると即ミス。ジャンプでこえよう' },
+      { x: 50, text: '赤いブロックは、さわるとダメージ。ジャンプでこえよう' },
     ],
     build(m) {
       m.floor(); m.pit(18, 21);
@@ -124,6 +124,7 @@
       m.gem(24, 8); m.gem(46, 8);
       m.ent('walker', 46, 9);
       m.check(32, 9);
+      m.gem(34, 8);
       m.flag = [56, 9];
     },
     solution: [
@@ -168,6 +169,7 @@
       m.gem(30, 8); m.gem(48, 8);
       m.ent('walker', 22, 9); m.ent('walker', 50, 9);
       m.check(20, 9);
+      m.gem(20, 8);
       m.flag = [60, 9];
     },
     solution: [
@@ -249,6 +251,7 @@
       m.gem(26, 8); m.gem(46, 8);
       m.ent('walker', 44, 9);
       m.check(34, 9);
+      m.gem(36, 8);
       m.flag = [54, 9];
     },
     solution: [{ x: 18, edits: [{ tool: 'unprotect', rect: { x0: 22, y0: 7, x1: 28, y1: 7 } }, { tool: 'sort', rect: { x0: 22, y0: 4, x1: 29, y1: 10 }, opts: { sort: 'D' } }] }],
@@ -267,6 +270,7 @@
       m.gem(40, 5); m.gem(12, 9);
       m.ent('walker', 10, 9);
       m.check(14, 9);
+      m.gem(30, 5);
       m.flag = [46, 5];
     },
     solution: [{ x: 11, edits: [{ tool: 'sort', rect: { x0: 16, y0: 6, x1: 21, y1: 9 }, opts: { sort: 'L' } }, { tool: 'transform', rect: { x0: 16, y0: 6, x1: 21, y1: 9 }, opts: { tf: 'flipH' } }] }],
@@ -322,6 +326,7 @@
       m.gem(28, 8); m.gem(46, 8);
       m.ent('walker', 42, 9);
       m.check(16, 9);
+      m.gem(36, 8);
       m.flag = [54, 9];
     },
     solution: [],
@@ -340,6 +345,7 @@
       m.rect(36, 1, 37, 4, '#');
       m.blk(30, 4, 2); m.gem(31, 3); m.gem(46, 3);
       m.ent('walker', 44, 4);
+      m.gem(42, 4);
       m.flag = [56, 9];
     },
     solution: [],
@@ -358,6 +364,7 @@
       m.blk(14, 6, 3);
       m.gem(26, 8); m.gem(40, 4);
       m.check(16, 9);
+      m.gem(36, 4);
       m.flag = [46, 4];
     },
     solution: [],
@@ -367,7 +374,7 @@
     id: '7-4', name: 'リフトをフィルターで出し入れ', world: 7, w: 66, tools: ['filter'], energy: 8, bg: '#E3D18F', bg2: '#D8C47C', par: 8,
     hints: [
       { x: 4, text: 'リフトにも色（性質）がある。フィルターは、リフトにもきく。残す色いがいのリフトは、うすくなって通りぬけられる' },
-      { x: 8, text: '青い壁を通りぬけたい。でも、穴をわたる茶色のリフトは残したい。赤いリフトは、さわると即ミス。さて、どの色を残す？' },
+      { x: 8, text: '青い壁を通りぬけたい。でも、穴をわたる茶色のリフトは残したい。赤いリフトは、さわるとダメージ。さて、どの色を残す？' },
     ],
     build(m) {
       m.floor(); m.ceil(3); m.pit(22, 33);
@@ -376,6 +383,7 @@
       m.lift(44, 4, 3, 0, 5, 6, 0.5, 1);
       m.gem(28, 8); m.gem(52, 8);
       m.check(18, 9);
+      m.gem(38, 8);
       m.flag = [60, 9];
     },
     solution: [],
@@ -393,6 +401,7 @@
       m.gem(28, 8); m.gem(46, 8);
       m.ent('walker', 44, 9);
       m.check(16, 9);
+      m.gem(38, 8);
       m.flag = [54, 9];
     },
     solution: [],
@@ -412,6 +421,7 @@
       m.blk(6, 6, 3);
       m.lift(44, 1, 3, 0, 3, 5, 0, 1);
       m.gem(26, 8); m.gem(38, 4);
+      m.gem(48, 4);
       m.flag = [52, 4];
     },
     solution: [],

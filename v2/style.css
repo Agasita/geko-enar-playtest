@@ -149,3 +149,15 @@ body.theme-excel,body.theme-excel html{background:#D9D9D9}
 .themes{margin:0;font-size:11px}
 .gi .gtile{flex:none;width:44px;height:44px;image-rendering:pixelated;box-shadow:0 0 0 1px #0003;background:#fff2}
 .theme-excel .gi .gtile{background:#fff;box-shadow:0 0 0 1px #ABABAB}
+
+/* 目標のバッジ: ✓クリア / Σが3つそろう / ノーミス */
+.bds{display:inline-flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap}
+.bd{display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;line-height:1;border-radius:3px;background:#D9D9D9;color:#fff;min-height:18px}
+.bd.ck{width:18px;background:#BFBFBF}.bd.ck.on{background:#217346}
+.bd.sgs{gap:2px;background:none;padding:0}
+.sg{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:17px;height:18px;border-radius:3px;background:#D9D9D9;color:#A6A6A6;border:1px solid #BFBFBF;font-size:12px;font-weight:800}
+.sg.on{background:#217346;border-color:#185C37;color:#fff}
+.bd.pf{padding:0 7px;background:#E1E1E1;color:#8C8C8C;border:1px solid #BFBFBF}.bd.pf.on{background:#FFC000;color:#262626;border-color:#B38600}
+.bds.big{gap:10px}.bds.big .bd{font-size:20px;min-height:36px}.bds.big .bd.ck{width:36px}.bds.big .sg{width:34px;height:36px;font-size:22px}.bds.big .bd.pf{padding:0 14px;font-size:18px}
+.lv .bds{margin-top:3px}.lv .bd{font-size:10px;min-height:16px}.lv .bd.ck{width:16px}.lv .sg{width:15px;height:16px;font-size:10px}.lv .bd.pf{padding:0 5px;font-size:9px}
+#r-stars{font-size:inherit;letter-spacing:0}
