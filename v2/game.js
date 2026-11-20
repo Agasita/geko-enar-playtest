@@ -27,7 +27,7 @@
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   function newEdit(lv) {
     const first = lv && lv.tools.length ? TOOL_BY[lv.tools[0]] : TOOLS[0];
-    return { on: false, tab: first.tab, tool: first.id, opts: { color: 1, tf: 'flipH', sort: 'L', from: 1, to: 2, axis: 'row', fcolor: 2 },
+    return { on: false, tab: first.tab, tool: first.id, opts: { color: 1, tf: 'flipH', sort: 'D', from: 1, to: 2, axis: 'row', fcolor: 2 },
       step: 0, src: null, srcCell: null, sel: null, hover: null, kb: null, undo: [], redo: [], pan: false, cursor: [0, 0], msg: '' };
   }
   const $ = (s) => document.querySelector(s);
