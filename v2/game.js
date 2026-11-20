@@ -156,7 +156,7 @@
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
-    G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = [];
+    G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = []; G.under = {};
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
     G.doors = (lv.doors || []).map(d => ({ x: d[0], y: d[1], h: d[2], id: d[3] || 0, open: false, anim: 0, latched: false }));
     G.judges = (lv.judges || []).map(j => ({ x: j[0], y: j[1], type: j[2], color: j[3] || 0, id: j[4] || 0, on: false })); G.idOn = {};
@@ -653,14 +653,14 @@
   function minCost() { let m = 999; for (const id of G.level.tools) m = Math.min(m, TOOL_BY[id].cost); return m; }
   function snapshot() {
     return {
-      front: G.front.map(r => r.slice()), col: G.col.map(r => r.slice()), lock: G.lock.map(r => r.slice()),
+      front: G.front.map(r => r.slice()), col: G.col.map(r => r.slice()), lock: G.lock.map(r => r.slice()), under: JSON.stringify(G.under),
       hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, lc: G.lifts.map(L => L.col), lm: G.lifts.map(L => !!L.mark),
       en: G.enemies.map(e => ({ e, x: e.x, y: e.y, bx: e.bx, dead: e.dead })), pick: G.pick.map(k => ({ k, x: k.x, gone: !!k.gone })),
       checks: G.checks.map(c => ({ c, x: c.x, gone: !!c.gone })), flagX: G.flag.x, resp: { x: G.respawn.x, y: G.respawn.y }, px: G.p.x,
     };
   }
   function restoreSnap(s) {
-    G.mgs = [];
+    G.mgs = []; G.under = s.under ? JSON.parse(s.under) : {};
     G.front = s.front.map(r => r.slice()); G.col = s.col.map(r => r.slice()); G.lock = s.lock.map(r => r.slice());
     G.hideRow = new Set(s.hideRow); G.hideCol = new Set(s.hideCol); G.filter = s.filter; if (s.lc) s.lc.forEach((c, i) => { G.lifts[i].col = c; G.lifts[i].mark = !!(s.lm && s.lm[i]); });
     for (const o of s.en) { o.e.x = o.x; o.e.y = o.y; if (o.bx !== undefined) o.e.bx = o.bx; o.e.dead = o.dead; }
@@ -744,19 +744,22 @@
         const tx = x + dx * d, ty = y + dy * d; if (!inb(tx, ty)) break;
         if (G.doors.some(q => !q.open && tx === q.x && ty >= q.y && ty < q.y + q.h)) break;
         const t = G.front[ty][tx]; if (t === 0) continue;
+        if (isGhost(tx, ty)) continue; // フィルターで うすくなった ブロックは、すりぬけられる
         if (t === TL.STEEL) { if (!best || d < best.d) best = { dx, dy, d }; break; }
         break; // ほかのブロックがあるので、このむきは はたらかない
       }
     }
     return best;
   }
+  const isGhost = (x, y) => { const t = G.front[y][x]; return isBlockT(t) && t !== TL.MAGNET && !blockVisible(x, y); };
   function magStepFree(m) { // つぎのマスに、すすめるか(ひと・てきがいると、まつ)
-    const nx = m.x + m.dx, ny = m.y + m.dy; if (!inb(nx, ny) || G.front[ny][nx] !== 0) return false;
+    const nx = m.x + m.dx, ny = m.y + m.dy; if (!inb(nx, ny) || (G.front[ny][nx] !== 0 && !isGhost(nx, ny))) return false;
     if (G.doors.some(q => !q.open && nx === q.x && ny >= q.y && ny < q.y + q.h)) return false;
     for (const r of actorRects()) if (overlap(nx * T, ny * T, T, T, r.x, r.y, r.w, r.h)) return false;
     return true;
   }
   function updateMagnets(dt) {
+    for (const k of Object.keys(G.under)) { const [ux, uy] = k.split(',').map(Number); if (G.front[uy][ux] !== TL.MAGNET) { if (G.front[uy][ux] === 0) { const u = G.under[k]; G.front[uy][ux] = u.t; G.col[uy][ux] = u.c; G.lock[uy][ux] = u.l; } delete G.under[k]; } }
     const moving = new Set(G.mgs.map(m => m.x + ',' + m.y));
     // うごいていないじしゃくは、ひきよせられるか調べる
     for (let y = 0; y < G.level.h; y++) for (let x = 0; x < G.level.w; x++) {
@@ -772,7 +775,10 @@
       m.off += step / T; if (ride) { p.x += m.dx * step; p.y += m.dy * step; }
       while (m.off >= 1) { // 1マスすすんだ
         const nx = m.x + m.dx, ny = m.y + m.dy;
-        G.front[ny][nx] = G.front[m.y][m.x]; G.col[ny][nx] = G.col[m.y][m.x]; G.lock[ny][nx] = G.lock[m.y][m.x]; G.front[m.y][m.x] = 0; G.col[m.y][m.x] = 0; G.lock[m.y][m.x] = 0;
+        const ok = m.x + ',' + m.y, nk = nx + ',' + ny, prev = G.under[ok];
+        if (G.front[ny][nx] !== 0) G.under[nk] = { t: G.front[ny][nx], c: G.col[ny][nx], l: G.lock[ny][nx] }; // うすくなった ブロックの うえを とおる: したに のこしておく
+        G.front[ny][nx] = G.front[m.y][m.x]; G.col[ny][nx] = G.col[m.y][m.x]; G.lock[ny][nx] = G.lock[m.y][m.x];
+        if (prev) { G.front[m.y][m.x] = prev.t; G.col[m.y][m.x] = prev.c; G.lock[m.y][m.x] = prev.l; delete G.under[ok]; } else { G.front[m.y][m.x] = 0; G.col[m.y][m.x] = 0; G.lock[m.y][m.x] = 0; }
         m.x = nx; m.y = ny; m.off -= 1;
         const pl = magPull(m.x, m.y);
         if (!pl || pl.d <= 1 || pl.dx !== m.dx || pl.dy !== m.dy || !magStepFree(m)) { m.off = 0; G.mgs.splice(G.mgs.indexOf(m), 1); SFX.place(); break; }
@@ -1290,7 +1296,7 @@
     items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼', '編集できない鋼の壁・床・天井。どの道具も効かない']);
     items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '黄色ブロックと同じく、乗ると崩れる。編集できる']);
     items.push(['h', '磁石・スイッチ・扉']);
-    items.push([tileSample(() => drawMagnet(0, 0)), '磁石ブロック', '最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない。フィルターは効かない']);
+    items.push([tileSample(() => drawMagnet(0, 0)), '磁石ブロック', '最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない（フィルターで薄くなったブロックは通り抜ける）。磁石自体にはフィルターが効かない']);
     items.push(['h', '判定セル（扉などと連動）']);
     items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'exist', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '存在セル', 'このマスに実体のあるブロックかエナーがいるとON。薄くなったブロックは対象外。ONの間、同じ番号の扉が開き、リフトが動く']);
     items.push([tileSample(() => { const s = G.judges; G.judges = [{ x: 0, y: 0, type: 'empty', color: 0, id: 0, on: false }]; try { drawJudges(0, 0); } finally { G.judges = s; } }), '空きセル', 'このマスに実体のあるものもエナーもいなければON。フィルターで薄くなったブロックは空き扱い']);
