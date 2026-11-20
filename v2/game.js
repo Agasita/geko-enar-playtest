@@ -430,8 +430,12 @@
     const f = G.flag;
     if (!G.cleared && overlap(p.x, p.y, p.w, p.h, f.x, f.y, f.w, f.h)) winLevel();
   }
+  // ステージを つくる ページからの テストプレイ(?from=editor): クリアしても きろくを のこさず、すぐ つくる がめんに もどる
+  const EDITOR_TEST = /[?&]from=editor/.test(location.search);
+  const backToEditor = () => { location.href = 'editor.html?edit=' + encodeURIComponent(G.level.id); };
   function winLevel() {
     G.cleared = true; G.clearT = 0; SFX.win();
+    if (EDITOR_TEST) { UI.toast('クリア！ ステージ作成に戻ります', 1500); setTimeout(() => { if (G.cleared) backToEditor(); }, 1300); return; }
     // 3つのもくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない)
     const goals = [true, G.gems >= G.level.gems.length, G.deaths === 0 && G.hits === 0];
     const prev = save.levels[G.level.id] || { goals: [false, false, false] };
@@ -1321,7 +1325,7 @@
   document.querySelectorAll('[data-proxy]').forEach(b => { b.onclick = () => $(b.dataset.proxy).click(); });
   $('#btn-edit').onclick = () => toggleEdit();
   $('#btn-restart').onclick = () => UI.restart();
-  $('#btn-menu').onclick = () => UI.select();
+  $('#btn-menu').onclick = () => (EDITOR_TEST ? backToEditor() : UI.select());
   $('#btn-mute').onclick = () => { muted = !muted; save.muted = muted; persist(); $('#btn-mute').textContent = muted ? '🔇' : '🔊'; };
   $('#btn-mute').textContent = muted ? '🔇' : '🔊';
   $('#r-retry').onclick = () => { UI.start(G.levelIdx); };
@@ -1356,7 +1360,7 @@
   loadLevel(0); render(); UI.title();
   { // ?test=ID : ステージさくせいページからのテストプレイ
     const m = /[?&]test=([^&]+)/.exec(location.search);
-    if (m) { const i = LEVELS.findIndex(l => l.id === decodeURIComponent(m[1])); if (i >= 0) { audio(); UI.start(i); } }
+    if (m) { const i = LEVELS.findIndex(l => l.id === decodeURIComponent(m[1])); if (i >= 0) { audio(); UI.start(i); if (EDITOR_TEST) UI.toast('テストプレイ中：右上の ☰ でステージ作成に戻る', 4000); } }
   }
   $('#btn-editor').onclick = () => { location.href = 'editor.html'; };
   requestAnimationFrame(loop);
