@@ -382,7 +382,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   (window.LEVELS || []).forEach((l, i) => { if (l.custom) return; const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
   loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
-  { const q = /[?&]edit=([^&]+)/.exec(location.search); if (q) { const l = readAll().find(x => x.id === decodeURIComponent(q[1])); if (l) { loadData(l); msg('テストプレイから戻りました（' + l.id + '）'); } } } // テストプレイから もどったら、そのステージを ひらく
+  { const q = /[?&]edit=([^&]+)/.exec(location.search); if (q) { const l = readAll().find(x => x.id === decodeURIComponent(q[1])); if (l) { loadData(l); } } } // テストプレイから もどったら、そのステージを ひらく
   window.__editor = { get L() { return L; }, get sel() { return sel; }, apply, toData, save, loadData, draw, newLift, check };
 })();
 </script>
