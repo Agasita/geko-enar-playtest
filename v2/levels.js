@@ -430,7 +430,7 @@
 
   // ---- ワールド8: じしゃく ----
   L.push(make({
-    id: '8-1', name: '磁石と判定セル', world: 8, w: 60, tools: ['sort'], energy: 10, bg: '#D6C3A5', bg2: '#C9B392', par: 8,
+    id: '8-1', name: '磁石と判定セル', world: 8, w: 60, tools: ['sort'], energy: 10, bg: '#D6C3A5', bg2: '#C9B392', par: 10,
     hints: [
       { x: 1, text: '赤と青の磁石ブロックは、一番近い鋼に引き寄せられる' },
       { x: 5, text: '扉の向こうに判定セル（三角マーク）がある。磁石を動かして反応させよう' },

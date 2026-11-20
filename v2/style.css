@@ -251,3 +251,12 @@ body.menu #lpad,body.editing #lpad{display:none}
 /* 体験版 */
 .demo-badge{display:inline-block;background:#C99A1E;color:#fff;font-weight:800;letter-spacing:.2em;padding:2px 14px;border-radius:3px;font-size:18px;margin:-2px 0 4px}
 .demo-note{font-size:11px;color:#595959;margin:2px 0 0}
+
+/* ランク・ムダなし・れんしゅうモード */
+.lv{position:relative}
+.rk{font-style:normal;font-weight:800;color:#fff;border-radius:3px;padding:0 6px;display:inline-block;line-height:1.5}
+.lv .rk{position:absolute;right:5px;top:4px;font-size:11px}
+.rkS{background:#C99A1E}.rkA{background:#217346}.rkB{background:#2E75B6}.rkC{background:#8C8C8C}
+#r-info .rk{font-size:15px}
+#btn-practice.on{background:#E2F0D9;border-color:#217346;font-weight:700;color:#185C37}
+.bd.pf{white-space:nowrap}
