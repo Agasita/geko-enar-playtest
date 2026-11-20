@@ -9,7 +9,7 @@
     const front = [], color = [], lock = [];
     for (let y = 0; y < h; y++) { front.push(new Array(w).fill('.')); color.push(new Array(w).fill(0)); lock.push(new Array(w).fill(0)); }
     const m = {
-      ents: [], gems: [], sparks: [], checks: [], lifts: [], switches: [], doors: [], start: [2, h - 3], flag: [w - 4, h - 3],
+      ents: [], gems: [], sparks: [], checks: [], lifts: [], switches: [], doors: [], judges: [], start: [2, h - 3], flag: [w - 4, h - 3],
       set(x, y, ch) { front[y][x] = ch; },
       rect(x0, y0, x1, y1, ch) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) front[y][x] = ch; },
       floor() { m.rect(0, h - 2, w - 1, h - 1, 'S'); },
@@ -21,6 +21,7 @@
       ent(type, x, y, extra) { m.ents.push(Object.assign({ type, x, y }, extra || {})); },
       gem(x, y) { m.gems.push([x, y]); },
       lift(x, y, w, dx, dy, period, phase, col) { m.lifts.push({ x, y, w, dx, dy, period: period || 7, phase: phase || 0, col: col || 0 }); },
+      judge(x, y, type, color, id) { m.judges.push([x, y, type, color || 0, id || 0]); },
       sw(x, y, id) { m.switches.push([x, y, id || 0]); },
       door(x, y, h, id) { m.doors.push([x, y, h, id || 0]); },
       spark(x, y) { m.sparks.push([x, y]); },
@@ -30,7 +31,7 @@
     return {
       id: def.id, name: def.name, world: def.world, w, h, tools: def.tools || [], energy: def.energy !== undefined ? def.energy : 60, regen: def.regen,
       front: front.map(r => r.join('')), color, lock,
-      ents: m.ents, lifts: m.lifts, switches: m.switches, doors: m.doors, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
+      ents: m.ents, lifts: m.lifts, switches: m.switches, doors: m.doors, judges: m.judges, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
       hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0,
     };
   }
@@ -563,6 +564,55 @@
       { x: 6, edits: [{ tool: 'unprotect', rect: { x0: 14, y0: 9, x1: 14, y1: 9 } }, { tool: 'transform', rect: { x0: 12, y0: 6, x1: 15, y1: 9 }, opts: { tf: 'flipH' } }] },
       { x: 17, edits: [{ tool: 'filter', fcolor: 2 }] },
     ],
+  }));
+
+  // ---- ワールド10: はんていセル(ブロックのじょうたいで、とびらがひらく) ----
+  L.push(make({
+    id: '10-1', name: 'そんざいセル', world: 10, w: 50, tools: ['sort'], energy: 10, bg: '#E6D3A3', bg2: '#D9C48F', par: 10,
+    hints: [
+      { x: 1, text: 'きいろい わくは「はんていセル」。ここに ブロックが あると、とびらが ひらく' },
+      { x: 5, text: 'ひだりの あおいブロックを「よせ→」で、はんていセルまで おくろう' },
+    ],
+    build(m) {
+      m.floor(); m.door(30, 0, 10, 0); m.judge(26, 9, 'exist', 0, 0);
+      m.blk(8, 9, 2);
+      m.gem(5, 8); m.gem(15, 7); m.gem(22, 8);
+      m.check(24, 9);
+      m.flag = [46, 9];
+    },
+    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 8, y0: 9, x1: 26, y1: 9 }, opts: { sort: 'R' } }] }],
+  }));
+
+  L.push(make({
+    id: '10-2', name: 'あきセルと そんざいセル', world: 10, w: 50, tools: ['sort', 'filter'], energy: 18, bg: '#E6D3A3', bg2: '#D9C48F', par: 18,
+    hints: [
+      { x: 1, text: 'ふたつの はんていセルが ぜんぶ ONで、とびらが ひらく。「■」=ブロックが ある、「□」=なにも ない' },
+      { x: 5, text: 'ブロックを みぎへ よせると ちゃいろが「□」の マスに ひっかかる。フィルターで うすくすれば「ない」になる' },
+    ],
+    build(m) {
+      m.floor(); m.door(30, 0, 10, 0); m.judge(22, 9, 'exist', 0, 0); m.judge(21, 9, 'empty', 0, 0);
+      m.blk(6, 9, 0); m.blk(10, 9, 2);
+      m.gem(4, 8); m.gem(14, 7); m.gem(26, 8);
+      m.check(24, 9);
+      m.flag = [46, 9];
+    },
+    solution: [{ x: 2, edits: [{ tool: 'sort', rect: { x0: 6, y0: 9, x1: 22, y1: 9 }, opts: { sort: 'R' } }, { tool: 'filter', fcolor: 2 }] }],
+  }));
+
+  L.push(make({
+    id: '10-3', name: 'いろセル', world: 10, w: 50, tools: ['painter', 'sort'], energy: 12, bg: '#E6D3A3', bg2: '#D9C48F', par: 12,
+    hints: [
+      { x: 1, text: 'この はんていセルは「みどり」の ブロックを ほしがっている' },
+      { x: 5, text: 'ガラスに「いろコピー」で みどりを うつして、「よせ→」で はんていセルへ' },
+    ],
+    build(m) {
+      m.floor(); m.door(30, 0, 10, 0); m.judge(24, 9, 'color', 3, 0);
+      m.blk(10, 9, 5); m.blk(14, 6, 3);
+      m.gem(4, 8); m.gem(16, 8); m.gem(27, 8);
+      m.check(26, 9);
+      m.flag = [46, 9];
+    },
+    solution: [{ x: 2, edits: [{ tool: 'painter', srcCell: [14, 6], rect: { x0: 10, y0: 9, x1: 10, y1: 9 } }, { tool: 'sort', rect: { x0: 10, y0: 9, x1: 24, y1: 9 }, opts: { sort: 'R' } }] }],
   }));
 
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
