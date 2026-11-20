@@ -54,21 +54,13 @@
   let lockImg = null;
 
 
-  // ---- 金属(鋼): 青みのある銀いろ。光沢はななめに入れず、たて方向のグラデーションと、よこ方向のブラシのすじで質感を出す ----
+  // ---- 金属(鋼): ほぼ単色の青みのある鋼いろ。ほかのブロックより目立つように、質感はひかえめ(ふちの明暗とネジだけ) ----
   function makeMetal() {
-    const s = surface(16, 16), top = hex('#DCE4EF'), mid = hex('#9AAAC0'), bot = hex('#5A6883'), off = [0, 3, 6, 2, 5, 8, 1, 4, 7, 3, 0, 6, 2, 5, 8, 4];
-    for (let y = 0; y < 16; y++) {
-      const base = y < 5 ? mix(top, mid, y / 5) : mix(mid, bot, (y - 5) / 10);
-      for (let x = 0; x < 16; x++) {
-        let c = base;
-        if (((x + off[y]) % 9) < 4) c = mix(c, [255, 255, 255], .09); else if (((x + off[y]) % 9) > 6) c = mix(c, [20, 28, 50], .07); // よこ向きのブラシのすじ
-        if (y === 2 || y === 3) c = mix(c, [255, 255, 255], .18);                                                                      // 上がわのやわらかい照り返し
-        s.set(x, y, c);
-      }
-    }
-    for (let i = 0; i < 16; i++) { s.set(i, 0, '#F6F9FD'); s.set(i, 15, '#2F3A52'); s.set(0, i, '#EAF0F8'); s.set(15, i, '#3E4A64'); }
-    s.set(0, 0, '#FFFFFF'); s.set(15, 15, '#232C40');
-    for (const [x, y] of [[2, 2], [12, 2], [2, 12], [12, 12]]) { s.set(x, y, '#E9F0FA'); s.set(x + 1, y, '#8895AE'); s.set(x, y + 1, '#8895AE'); s.set(x + 1, y + 1, '#2C3750'); s.set(x - 1, y - 1, '#6B7993'); } // ネジ
+    const s = surface(16, 16), base = '#8493AB';
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) s.set(x, y, base);
+    for (let i = 1; i < 15; i++) { s.set(i, 1, '#A7B4C8'); s.set(1, i, '#9AA8BE'); s.set(i, 14, '#6E7C95'); s.set(14, i, '#6E7C95'); }
+    for (let i = 0; i < 16; i++) { s.set(i, 0, '#2B3448'); s.set(i, 15, '#2B3448'); s.set(0, i, '#2B3448'); s.set(15, i, '#2B3448'); }
+    for (const [x, y] of [[3, 3], [11, 3], [3, 11], [11, 11]]) { s.set(x, y, '#C9D3E3'); s.set(x + 1, y, '#5F6D86'); s.set(x, y + 1, '#5F6D86'); s.set(x + 1, y + 1, '#3A4660'); } // ネジ
     return s.done();
   }
   let metalImg = null;
@@ -153,12 +145,27 @@
   const BIRD_ROWS = ['............', '....WWWW....', '...WWWWWW...', '..WWWWWWeW..', '..WWWWWWWWOO', '.UUWWWWWWW..', 'UUUVWWWWWW..', '.UUUUWWWSW..', '...UUUSSSS..', '.....f.f....', '............', '............'];
   function birdGrid() { return BIRD_ROWS.map(r => [...r].map(ch => (ch === '.' ? null : BC[ch]))); }
 
+  // ---- エナー(主人公・ドローンのような鳥): 14×14の絵。はばたきのコマ ----
+  const ENER_ROWS = ['..............', '.....WWWW.....', '....WWWWWW....', '...WWWWWWeW...', '...WWWWWWWWOO.', '..UUWWWWWWW...', '.UUUVWWWWWW...', '..UUUUWWWSW...', '....UUUSSSS...', '......f.f.....', '..............', '..............', '..............', '..............'];
+  function enerGrid(name, pal) {
+    const g = ENER_ROWS.map(r => [...r].map(ch => (ch === '.' ? null : pal[ch]))), U = pal.U, V = pal.V, W = pal.W;
+    const P = (x, y, c) => { if (x >= 0 && x < 14 && y >= 0 && y < 14) g[y][x] = c; };
+    if (name === 'up') { // はばたき(うえ)
+      [[3, 1], [4, 0], [5, 0], [6, 0], [4, 1], [5, 1], [6, 1], [7, 1], [5, 2], [6, 2], [7, 2], [8, 2]].forEach(([x, y]) => P(x, y, y === 0 ? V : U));
+    } else if (name === 'down') { // はばたき(した)
+      [[3, 9], [4, 9], [4, 10], [5, 10], [6, 10], [5, 11], [6, 11], [7, 11], [8, 11], [7, 10], [8, 10]].forEach(([x, y]) => P(x, y, y >= 11 ? V : U));
+    } else if (name === 'hurt') { // ダメージ(目が×)
+      P(9, 3, pal.e); P(8, 3, pal.e); P(9, 4, W); P(8, 4, pal.e);
+    }
+    return g;
+  }
+
   window.GFX = {
     block(t, c, topOpen, botOpen) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
     steel() { return cache.s || (cache.s = makeSteel()); },
     lock() { return lockImg || (lockImg = makeLock()); },
     metal() { return metalImg || (metalImg = makeMetal()); },
-    bg: drawBg, heroFrame, gridSprite,
+    bg: drawBg, heroFrame, gridSprite, enerGrid,
     hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(heroFrame(name), flip)); },
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = gridSprite(birdGrid(), flip)); },
   };

@@ -11,6 +11,19 @@
 </head>
 <body>
 <div id="stage">
+  <div id="ribbon" class="hide">
+    <div class="rb-tab">ホーム</div>
+    <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
+    <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
+    <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
+    <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
+    <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
+      <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="編集">✎ 編集 <kbd>E</kbd></button>
+      <button class="rb-btn" data-proxy="#btn-restart" aria-label="やりなおし">↻</button>
+      <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊</button>
+      <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージえらび">☰</button>
+    </div><div class="rb-cap">操作</div></div>
+  </div>
   <div id="game">
     <canvas id="cv" width="320" height="180"></canvas>
 
@@ -24,19 +37,6 @@
       </div>
     </div>
     <div id="toast" class="hide"></div>
-
-    <div id="touch" class="hide">
-      <div class="pad">
-        <button data-btn="left" aria-label="左">◀</button>
-        <button data-btn="right" aria-label="右">▶</button>
-        <button data-btn="down" class="small" aria-label="下">▼</button>
-      </div>
-      <div class="acts">
-        <button data-btn="dash" class="b-dash">ダッシュ</button>
-        <button data-btn="attack" class="b-atk">攻撃</button>
-        <button data-btn="jump" class="b-jump">ジャンプ</button>
-      </div>
-    </div>
 
     <div id="editbar" class="hide">
       <div id="edithelp"></div>
@@ -56,7 +56,7 @@
       <p class="sub">時間を止めて、世界を直しながら進む<br>アクション・パズル</p>
       <button id="btn-play" class="big">あそぶ</button>
       <button id="btn-guide" class="ghost">ブロックのずかん</button>
-      <p class="keys">PC: ← → 移動　Z/Space ジャンプ　X 攻撃　C ダッシュ　E 編集（時間停止）<br>編集中: ドラッグで範囲を選ぶ／1〜9 道具　[ ] タブ　Z 戻す　Y やり直し　R やりなおし</p>
+      <p class="keys">PC: ← → 移動　Z/Space ジャンプ（空中で押しつづけると、ふわり）　E 編集（時間停止）<br>編集中: ドラッグで範囲を選ぶ／1〜9 道具　[ ] タブ　Z 戻す　Y やり直し　R やりなおし</p>
       <p class="themes"><a class="oldlink" href="./">Excel風（標準）</a>　<a class="oldlink" href="?gfx=snes">ソリッド版</a>　<a class="oldlink" href="?gfx=classic">元の絵</a></p><a class="oldlink" href="../">旧バージョン（Pyxel版）はこちら</a>
     </section>
 
@@ -81,6 +81,18 @@
     </section>
   </div>
 </div>
+    <div id="touch" class="hide">
+      <div class="pad">
+        <button data-btn="left" aria-label="左">◀</button>
+        <button data-btn="right" aria-label="右">▶</button>
+      </div>
+      <div class="acts">
+        <button data-btn="dash" class="b-dash">ダッシュ</button>
+        <button data-btn="attack" class="b-atk">攻撃</button>
+        <button data-btn="jump" class="b-jump">はばたき</button>
+      </div>
+    </div>
+
 <script>
 // 毎回あたらしいファイルを読み込む（スマホで古いキャッシュが残らないように）。順番どおりに実行される。
 (function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
