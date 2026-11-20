@@ -394,160 +394,160 @@
 ▼ game.js:712  .place(); } else { E.msg =
 [T0126] ブロックをタップしてください
 
-▼ game.js:786  おしらせ(ふきだし)
+▼ game.js:792  おしらせ(ふきだし)
 [T0127] どこかの扉が開きました！
 
-▼ game.js:1220  E.tool]; const t = E.pan ?
+▼ game.js:1226  E.tool]; const t = E.pan ?
 [T0128] ドラッグで画面を移動
 
-▼ game.js:1241  ボタンの もじ
+▼ game.js:1247  ボタンの もじ
 [T0129] 左右反転
 
-▼ game.js:1241  ボタンの もじ
+▼ game.js:1247  ボタンの もじ
 [T0130] 上下反転
 
-▼ game.js:1241  ボタンの もじ
+▼ game.js:1247  ボタンの もじ
 [T0131] 90°回転
 
-▼ game.js:1242  ボタンの もじ
+▼ game.js:1248  ボタンの もじ
 [T0132] ←よせ
 
-▼ game.js:1242  ボタンの もじ
+▼ game.js:1248  ボタンの もじ
 [T0133] よせ→
 
-▼ game.js:1242  ボタンの もじ
+▼ game.js:1248  ボタンの もじ
 [T0134] ↑よせ
 
-▼ game.js:1242  ボタンの もじ
+▼ game.js:1248  ボタンの もじ
 [T0135] よせ↓
 
-▼ game.js:1243  chips
+▼ game.js:1249  chips
 [T0136] 残す色
 
-▼ game.js:1243  ボタンの もじ
+▼ game.js:1249  ボタンの もじ
 [T0137] 外す
 
-▼ game.js:1244  lp').textContent = E.pan ?
+▼ game.js:1250  lp').textContent = E.pan ?
 [T0138] ドラッグで画面を移動
 
-▼ game.js:1260  $('#total').textContent =
+▼ game.js:1266  $('#total').textContent =
 [T0139] ノーミス 
 
-▼ game.js:1266  s + '/' + lv.gems.length +
+▼ game.js:1272  s + '/' + lv.gems.length +
 [T0140] 　タイム 
 
-▼ game.js:1266  イム ' + G.time.toFixed(1) +
+▼ game.js:1272  イム ' + G.time.toFixed(1) +
 [T0141] 秒　ダメージ 
 
-▼ game.js:1266  (1) + '秒 ダメージ ' + G.hits +
+▼ game.js:1272  (1) + '秒 ダメージ ' + G.hits +
 [T0142] 回
 
-▼ game.js:1267  push
+▼ game.js:1273  push
 [T0143] Σをすべて集める
 
-▼ game.js:1267  push
+▼ game.js:1273  push
 [T0144] ダメージを受けずにクリア
 
-▼ game.js:1268  .length ? tips.join(' ') :
+▼ game.js:1274  .length ? tips.join(' ') :
 [T0145] パーフェクト！
 
-▼ game.js:1269  ext').textContent = last ?
+▼ game.js:1275  ext').textContent = last ?
 [T0146] ステージ選択へ
 
-▼ game.js:1269  ntent = last ? 'ステージ選択へ' :
+▼ game.js:1275  ntent = last ? 'ステージ選択へ' :
 [T0147] 次のステージへ
 
-▼ game.js:1286  const items = [['h',
+▼ game.js:1292  const items = [['h',
 [T0148] 色つきブロック（色ごとに性質が違う）
 
-▼ game.js:1287  items.push([blk(i), k.n +
+▼ game.js:1293  items.push([blk(i), k.n +
 [T0149] ブロック
 
-▼ game.js:1288  rue, true, undefined, 0)),
+▼ game.js:1294  rue, true, undefined, 0)),
 [T0150] 色つきガラス
 
-▼ game.js:1288  undefined, 0)), '色つきガラス',
+▼ game.js:1294  undefined, 0)), '色つきガラス',
 [T0151] いろコピーで色をつけたガラス。色の性質を持ち、白い枠が残る。一度色をつけると変更できない
 
-▼ game.js:1289  items.push(['h',
+▼ game.js:1295  items.push(['h',
 [T0152] その他の地形
 
-▼ game.js:1290  Image(GFX.metal(), 0, 0)),
+▼ game.js:1296  Image(GFX.metal(), 0, 0)),
 [T0153] 鋼
 
-▼ game.js:1290  (GFX.metal(), 0, 0)), '鋼',
+▼ game.js:1296  (GFX.metal(), 0, 0)), '鋼',
 [T0154] 編集できない鋼の壁・床・天井。どの道具も効かない
 
-▼ game.js:1291  rue, true, undefined, 0)),
+▼ game.js:1297  rue, true, undefined, 0)),
 [T0155] ひび割れ壁
 
-▼ game.js:1291  , undefined, 0)), 'ひび割れ壁',
+▼ game.js:1297  , undefined, 0)), 'ひび割れ壁',
 [T0156] 黄色ブロックと同じく、乗ると崩れる。編集できる
 
-▼ game.js:1292  items.push(['h',
+▼ game.js:1298  items.push(['h',
 [T0157] 磁石・スイッチ・扉
 
-▼ game.js:1293  e(() => drawMagnet(0, 0)),
+▼ game.js:1299  e(() => drawMagnet(0, 0)),
 [T0158] 磁石ブロック
 
-▼ game.js:1293  awMagnet(0, 0)), '磁石ブロック',
-[T0159] 最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない。フィルターは効かない
-
-▼ game.js:1294  items.push(['h',
-[T0160] 判定セル（扉などと連動）
-
-▼ game.js:1295  ally { G.judges = s; } }),
-[T0161] 存在セル
-
-▼ game.js:1295  .judges = s; } }), '存在セル',
-[T0162] このマスに実体のあるブロックかエナーがいるとON。薄くなったブロックは対象外。ONの間、同じ番号の扉が開き、リフトが動く
-
-▼ game.js:1296  ally { G.judges = s; } }),
-[T0163] 空きセル
-
-▼ game.js:1296  .judges = s; } }), '空きセル',
-[T0164] このマスに実体のあるものもエナーもいなければON。フィルターで薄くなったブロックは空き扱い
-
-▼ game.js:1297  ally { G.judges = s; } }),
-[T0165] 色セル
-
-▼ game.js:1297  G.judges = s; } }), '色セル',
-[T0166] 指定色のブロックがあるとON。いろコピーで色をつけたガラスも対象
-
-▼ game.js:1298  d: 0, on: false }, 0, 0)),
-[T0167] スイッチ
-
-▼ game.js:1298  : false }, 0, 0)), 'スイッチ',
-[T0168] 磁石が重なるとONになり、そのまま維持。同じ色の扉が開く
-
-▼ game.js:1299  ly { G.doors = save; } }),
-[T0169] 扉
-
-▼ game.js:1299  G.doors = save; } }), '扉',
-[T0170] 対応するスイッチや判定セルで開く。閉じている間は通れず、ブロックも置けない
+▼ game.js:1299  awMagnet(0, 0)), '磁石ブロック',
+[T0159] 最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない（フィルターで薄くなったブロックは通り抜ける）。磁石自体にはフィルターが効かない
 
 ▼ game.js:1300  items.push(['h',
+[T0160] 判定セル（扉などと連動）
+
+▼ game.js:1301  ally { G.judges = s; } }),
+[T0161] 存在セル
+
+▼ game.js:1301  .judges = s; } }), '存在セル',
+[T0162] このマスに実体のあるブロックかエナーがいるとON。薄くなったブロックは対象外。ONの間、同じ番号の扉が開き、リフトが動く
+
+▼ game.js:1302  ally { G.judges = s; } }),
+[T0163] 空きセル
+
+▼ game.js:1302  .judges = s; } }), '空きセル',
+[T0164] このマスに実体のあるものもエナーもいなければON。フィルターで薄くなったブロックは空き扱い
+
+▼ game.js:1303  ally { G.judges = s; } }),
+[T0165] 色セル
+
+▼ game.js:1303  G.judges = s; } }), '色セル',
+[T0166] 指定色のブロックがあるとON。いろコピーで色をつけたガラスも対象
+
+▼ game.js:1304  d: 0, on: false }, 0, 0)),
+[T0167] スイッチ
+
+▼ game.js:1304  : false }, 0, 0)), 'スイッチ',
+[T0168] 磁石が重なるとONになり、そのまま維持。同じ色の扉が開く
+
+▼ game.js:1305  ly { G.doors = save; } }),
+[T0169] 扉
+
+▼ game.js:1305  G.doors = save; } }), '扉',
+[T0170] 対応するスイッチや判定セルで開く。閉じている間は通れず、ブロックも置けない
+
+▼ game.js:1306  items.push(['h',
 [T0171] 仕掛け・カギ
 
-▼ game.js:1301  ly { G.lifts = save; } }),
+▼ game.js:1307  ly { G.lifts = save; } }),
 [T0172] リフト
 
-▼ game.js:1301  lifts = save; } }), 'リフト',
+▼ game.js:1307  lifts = save; } }), 'リフト',
 [T0173] 決まった道を往復する足場。乗ると運ばれる。リフトは編集で動かせず、通り道にブロックも置けない。色の性質やフィルターが効き、ガラス製は「いろコピー」が使える
 
-▼ game.js:1302  , 10, 2, '#F5C842'); } }),
+▼ game.js:1308  , 10, 2, '#F5C842'); } }),
 [T0174] カギ（保護）
 
-▼ game.js:1302  #F5C842'); } }), 'カギ（保護）',
+▼ game.js:1308  #F5C842'); } }), 'カギ（保護）',
 [T0175] 保護されたブロック。編集やフィルターが効かず、寄せるときの仕切りになる。「まもりをはずす」で解除できる
 
-▼ game.js:1303  items.push([blk(0, .28),
+▼ game.js:1309  items.push([blk(0, .28),
 [T0176] 薄い表示
 
-▼ game.js:1303  push([blk(0, .28), '薄い表示',
+▼ game.js:1309  push([blk(0, .28), '薄い表示',
 [T0177] フィルターで残す色以外のブロック（ガラスを含む）は薄くなり、通り抜けられる
 
-▼ game.js:1324  confirm
+▼ game.js:1330  confirm
 [T0178] セーブデータを消しますか？
 
 
