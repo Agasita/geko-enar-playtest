@@ -895,19 +895,25 @@
     ctx.fillStyle = 'rgba(255,255,255,.6)'; if (!s.on) ctx.fillRect(x + 4, y + 10, 8, 1);
   }
 
-  // はんていセルのわく(ブロックのうえに かさねる): きいろ=まだ / みどり=ON
+  // はんていセルのわく(ブロックのうえに かさねる): しゅるいごとの いろの、ふとめの てんせん。ON=うすく いろをぬり、チェック
+  const JUDGE_COL = { exist: '#8A4FD0', empty: '#4D4D4D' };
+  const judgeColor = (j) => j.type === 'color' ? ((COLORS[j.color] || COLORS[0]).hex) : JUDGE_COL[j.type];
+  function dashedFrame(x, y, c, th) { // 3ドットのせん・2ドットのすきま。かどは かならず ぬる
+    ctx.fillStyle = c;
+    for (let k = 0; k < T; k += 5) { const l = Math.min(3, T - k); ctx.fillRect(x + k, y, l, th); ctx.fillRect(x + k, y + T - th, l, th); ctx.fillRect(x, y + k, th, l); ctx.fillRect(x + T - th, y + k, th, l); }
+  }
   function drawJudges(cx, cy) {
     for (const j of G.judges) {
-      const x = j.x * T - cx, y = j.y * T - cy, on = j.on, c = on ? '#217346' : '#D9A400';
-      ctx.fillStyle = on ? 'rgba(33,115,70,.22)' : 'rgba(255,214,0,.20)'; ctx.fillRect(x, y, T, T);
-      ctx.fillStyle = c; ctx.fillRect(x, y, T, 1); ctx.fillRect(x, y + T - 1, T, 1); ctx.fillRect(x, y, 1, T); ctx.fillRect(x + T - 1, y, 1, T);
-      ctx.fillRect(x + 1, y + 1, 3, 1); ctx.fillRect(x + 1, y + 1, 1, 3); ctx.fillRect(x + T - 4, y + T - 2, 3, 1); ctx.fillRect(x + T - 2, y + T - 4, 1, 3);
-      // しるし: そんざい=ブロック / あき=わく / いろ=そのいろ
+      const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j);
+      if (j.on) { ctx.globalAlpha = .22; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 1, y - 1, T + 2, 1); ctx.fillRect(x - 1, y + T, T + 2, 1); ctx.fillRect(x - 1, y, 1, T); ctx.fillRect(x + T, y, 1, T); // ふちどり(うすい いろでも見える)
+      dashedFrame(x, y, c, 2);
+      // まんなかの しるし: そんざい=ぬりつぶし / あき=わく / いろ=そのいろ
       if (j.type === 'exist') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); }
       else if (j.type === 'empty') { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
-      else { ctx.fillStyle = (COLORS[j.color] || COLORS[0]).hex; ctx.fillRect(x + 5, y + 5, 6, 6); ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
-      ctx.fillStyle = SW_COL[j.id % 4]; ctx.fillRect(x + T - 5, y + 1, 4, 3); // どのとびらに つながるか
-      if (on) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 6, y + 8, 2, 1); ctx.fillRect(x + 7, y + 9, 2, 1); ctx.fillRect(x + 8, y + 8, 1, 1); ctx.fillRect(x + 9, y + 7, 1, 1); ctx.fillRect(x + 10, y + 6, 1, 1); }
+      else { ctx.fillStyle = c; ctx.fillRect(x + 5, y + 5, 6, 6); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x + 5, y + 5, 6, 1); ctx.fillRect(x + 5, y + 10, 6, 1); ctx.fillRect(x + 5, y + 5, 1, 6); ctx.fillRect(x + 10, y + 5, 1, 6); }
+      ctx.fillStyle = SW_COL[j.id % 4]; ctx.fillRect(x + T - 6, y + 2, 4, 3); // どのとびらに つながるか
+      if (j.on) { ctx.fillStyle = '#217346'; ctx.fillRect(x + 2, y + 9, 2, 2); ctx.fillRect(x + 3, y + 10, 2, 2); ctx.fillRect(x + 4, y + 11, 2, 2); ctx.fillRect(x + 5, y + 10, 2, 2); ctx.fillRect(x + 6, y + 9, 2, 2); ctx.fillRect(x + 7, y + 8, 2, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + 3, y + 10, 1, 1); }
     }
   }
   function drawDoors(cx, cy) {
