@@ -903,19 +903,7 @@
   const judgeColor = (j) => j.type === 'color' ? ((COLORS[j.color] || COLORS[0]).hex) : JUDGE_COL[j.type];
   const idNum = (n) => String(n + 1);
   function outlinedNum(str, x, y, col) { text(str, x + 1, y, '#FFFFFF'); text(str, x - 1, y, '#FFFFFF'); text(str, x, y + 1, '#FFFFFF'); text(str, x, y - 1, '#FFFFFF'); text(str, x, y, col); }
-  function drawLinks(cx, cy) { // どのはんていセルが、どのとびら・リフトに つながっているか(おなじ いろの てんせん)
-    for (const j of G.judges) {
-      const col = SW_COL[j.id % 4], x0 = j.x * T + 8 - cx, y0 = j.y * T + 8 - cy, ends = [];
-      for (const d of G.doors) if (d.id === j.id) ends.push([d.x * T + 8 - cx, clamp(j.y * T + 8, d.y * T + 4, d.y * T + d.h * T - 4) - cy]);
-      for (const L of G.lifts) if (L.ctl === j.id) ends.push([L.x + L.w / 2 - cx, L.y + L.h / 2 - cy]);
-      for (const [x1, y1] of ends) {
-        const len = Math.hypot(x1 - x0, y1 - y0), n = Math.floor(len / 5);
-        for (let k = 1; k < n; k++) { const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillRect(x - 1, y - 1, 3, 3); ctx.fillStyle = col; ctx.fillRect(x, y, 2, 2); }
-      }
-    }
-  }
   function drawJudges(cx, cy) {
-    drawLinks(cx, cy);
     for (const j of G.judges) {
       const x = j.x * T - cx, y = j.y * T - cy, c = judgeColor(j);
       if (j.on) { ctx.globalAlpha = .16; ctx.fillStyle = c; ctx.fillRect(x, y, T, T); ctx.globalAlpha = 1; }
