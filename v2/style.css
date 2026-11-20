@@ -161,3 +161,37 @@ body.theme-excel,body.theme-excel html{background:#D9D9D9}
 .bds.big{gap:10px}.bds.big .bd{font-size:20px;min-height:36px}.bds.big .bd.ck{width:36px}.bds.big .sg{width:34px;height:36px;font-size:22px}.bds.big .bd.pf{padding:0 14px;font-size:18px}
 .lv .bds{margin-top:3px}.lv .bd{font-size:10px;min-height:16px}.lv .bd.ck{width:16px}.lv .sg{width:15px;height:16px;font-size:10px}.lv .bd.pf{padding:0 5px;font-size:9px}
 #r-stars{font-size:inherit;letter-spacing:0}
+
+/* エナーは、攻撃とダッシュがない */
+body.ener .b-atk,body.ener .b-dash{display:none!important}
+
+/* ===== Excelのリボン(画面の上)。ライフ・コスト・Σ・タイム・ボタンが、リボンのグループになっている ===== */
+#ribbon{display:none}
+body.has-ribbon #stage{flex-direction:column;justify-content:flex-start}
+body.has-ribbon #ribbon{display:flex;align-items:stretch;width:100%;height:32px;flex:none;background:linear-gradient(#FFFFFF,#F0F0F0);border-bottom:1px solid #C6C6C6;box-shadow:0 1px 0 #fff inset;color:#262626;font-size:12px;overflow:hidden}
+body.has-ribbon #game{margin:auto 0}
+.rb-tab{display:flex;align-items:center;padding:0 12px;font-weight:700;color:#217346;border-right:1px solid #D4D4D4;box-shadow:inset 0 -3px 0 #217346;background:#fff;flex:none}
+.rb-group{display:flex;flex-direction:column;justify-content:center;padding:0 10px;border-right:1px solid #D4D4D4;flex:none;position:relative}
+.rb-group.rb-right{margin-left:auto;border-right:0;border-left:1px solid #D4D4D4}
+.rb-items{display:flex;align-items:center;gap:4px;height:100%}
+.rb-cap{display:none;text-align:center;font-size:9px;color:#666;line-height:1;padding-bottom:2px}
+#ribbon.idle .rb-group{visibility:hidden}
+#ribbon .hp{font-style:normal;color:#D0D0D0;font-size:16px;line-height:1}#ribbon .hp.on{color:#E04444}
+#rb-bar{width:70px;height:10px;background:#fff;border:1px solid #8C8C8C}#rb-bar i{display:block;height:100%;background:#70AD47}#rb-bar.low i{background:#E04444}
+#ribbon b{font-weight:700;font-variant-numeric:tabular-nums}
+#ribbon .sg{width:17px;height:18px;font-size:12px}
+.rb-btn{min-height:24px;height:24px;padding:0 9px;border:1px solid #BFBFBF;border-radius:3px;background:linear-gradient(#FFFFFF,#E9E9E9);color:#262626;font-size:12px;touch-action:manipulation}
+.rb-btn:active{background:#CFE3D6}.rb-btn kbd{background:#0001;font-size:9px}
+@media (hover:none){.rb-btn kbd{display:none}}
+@media (min-height:520px){body.has-ribbon #ribbon{height:58px}.rb-cap{display:block}.rb-items{height:auto;flex:1}.rb-btn{height:30px}}
+@media (orientation:portrait){body.has-ribbon.menu #ribbon{display:none}body.has-ribbon #ribbon{height:auto;flex-wrap:wrap;font-size:11px}.rb-tab{display:none}.rb-group{padding:0 8px;min-height:30px;border-bottom:1px solid #E0E0E0}.rb-group.rb-right{width:100%;margin-left:0;border-left:0;border-top:1px solid #D4D4D4}.rb-right .rb-items{width:100%;justify-content:space-around;padding:3px 0}.rb-btn{height:32px;min-width:64px}body.has-ribbon #stage{justify-content:flex-start}body.has-ribbon #game{margin:0}}
+/* 操作ボタンは、画面(ゲームのわく)の外。横向きは左右のあき、縦向きは下 */
+#touch{position:fixed;inset:0;height:auto;pointer-events:none}
+#touch .pad,#touch .acts{position:absolute;bottom:10px;display:flex;gap:6px;align-items:flex-end;pointer-events:auto}
+#touch .pad{left:calc(8px + env(safe-area-inset-left))}#touch .acts{right:calc(8px + env(safe-area-inset-right))}
+body.ener #touch button{width:48px;height:56px;border-radius:12px;font-size:20px}
+body.ener #touch .b-jump{width:72px;height:72px;border-radius:50%;font-size:12px}
+.theme-excel #touch button{background:#F3F3F3;border:1px solid #8C8C8C;color:#262626}
+.theme-excel #touch .b-jump{background:#217346;color:#fff;border-color:#185C37}
+.theme-excel .hudbtns{display:none}
+@media (orientation:portrait){#touch{position:fixed;inset:auto 0 0 0;height:240px}body.ener #touch button{width:64px;height:64px}body.ener #touch .b-jump{width:88px;height:88px}}

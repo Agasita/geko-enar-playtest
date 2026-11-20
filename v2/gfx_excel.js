@@ -137,6 +137,7 @@
     steel() { return window.GFX.metal(); },
     hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.heroFrame(name, HCX), flip, OUTX)); },
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(BIRD.map(r => [...r].map(ch => (ch === '.' ? null : BCX[ch]))), flip, OUTX)); },
+    ener(name, flip) { const k = 'en' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.enerGrid(name, BCX), flip, OUTX)); },
     enemy(name, fr, flip) { const k = 'e' + name + fr + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr), flip, OUTX)); },
     bg: drawBg, frame: drawFrame,
   };

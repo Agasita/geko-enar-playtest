@@ -10,7 +10,7 @@
     { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: 'あつい（さわるとダメージ）' },
     { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: 'すべる（氷）' },
     { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: 'はずむ（ばね）' },
-    { n: '黄', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（攻撃・ダッシュで壊れる）' },
+    { n: '黄', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: 'もろい（乗ると、0.5秒ほどでくずれる）' },
     { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: '未書式のセル（性質なし）。書式のコピーで色（性質）をつけられる' },
   ];
   const GLASS = 5;
@@ -141,6 +141,11 @@
     edit: null,
     hintShown: {}, respawn: null, flash: 0,
   };
+  // 主人公はエナー（ドローンのような鳥）。操作は ◀ ▶ と「はばたき」だけ。ジャンプで跳び、空中で押し続けると、少しのあいだ「ふわり」と落ちるのがゆっくりになる。
+  // 攻撃とダッシュはない（敵は、上からふんで たおす）。もとのゲコは ?hero=gekko で遊べる。
+  const ENER = ((/[?&]hero=(\w+)/.exec(location.search) || [])[1]) !== 'gekko';
+  const HOVER_T = .35, HOVER_VY = 36;
+  if (ENER) document.body.classList.add('ener');
   const input = { left: false, right: false, down: false, up: false, jumpHeld: false, jumpP: false, atkP: false, dashP: false, editP: false };
 
   // ===== レベル読み込み =====
@@ -150,7 +155,7 @@
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // 実験シート以外は、ステージごとの「コスト上限」だけ。回復しない
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
-    G.lifts = (lv.lifts || []).map(l => makeLift(l));
+    G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {};
     G.pick = [];
     lv.gems.forEach((g, k) => G.pick.push({ type: 'gem', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
     if (lv.regen) lv.sparks.forEach((g, k) => G.pick.push({ type: 'spark', x: g[0] * T + 4, y: g[1] * T + 4, w: 8, h: 8, k, got: false }));
@@ -253,12 +258,13 @@
     if (p.inv > 0) p.inv -= dt;
     if (p.stun > 0) p.stun = Math.max(0, p.stun - dt);
     p.atkCd -= dt;
+    if (ENER) { input.atkP = false; input.dashP = false; }
     const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
     if (dir && p.stun <= 0) p.face = dir;
     // 接地判定
     p.wasGround = p.ground;
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
-    if (p.ground) { p.coyote = .1; p.dashAvail = true; } else p.coyote -= dt;
+    if (p.ground) { p.coyote = .1; p.dashAvail = true; p.hover = HOVER_T; } else p.coyote -= dt;
     if (input.jumpP) p.jbuf = .11; else p.jbuf -= dt;
     // 足もとの色(青=氷)
     let onIce = false;
@@ -280,6 +286,9 @@
       let g = GRAV; if (p.vy > 0) { g *= FALLM; p.free = false; } else if (!input.jumpHeld && p.vy < -80 && !p.free) g *= 2.6;
       p.vy = Math.min(MAXFALL, p.vy + g * dt);
     }
+    // ふわり(エナー): 空中でジャンプを押し続けると、少しのあいだ、落ちる速さがおさえられる
+    p.hovering = false;
+    if (ENER && !window.__noHover && !p.ground && p.vy > 0 && input.jumpHeld && p.hover > 0 && p.stun <= 0) { p.hover -= dt; p.hovering = true; if (p.vy > HOVER_VY) p.vy = HOVER_VY; }
     // 攻撃
     if (input.atkP && p.atkCd <= 0 && p.stun <= 0) { p.atkT = .22; p.atkCd = .3; p.atkHit = new Set(); p.pogo = input.down && !p.ground; SFX.swing(); }
     if (p.atkT > 0) { p.atkT -= dt; if (p.atkT < .17 && p.atkT > .05) doAttack(); }
@@ -287,12 +296,17 @@
     moveX(p, p.vx * dt); moveY(p, p.vy * dt);
     // 着地
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
+    if (ENER) { // もろいブロックは、乗ってから0.45秒で、くずれる
+      const stand = new Set();
+      if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (isFragile(tx, fy) && !G.lock[fy][tx]) { const k = tx + ',' + fy; stand.add(k); G.crumb[k] = (G.crumb[k] || 0) + dt; if (G.crumb[k] > .45) { breakCrack(tx, fy); delete G.crumb[k]; } } }
+      for (const k of Object.keys(G.crumb)) if (!stand.has(k)) { G.crumb[k] -= dt; if (G.crumb[k] <= 0) delete G.crumb[k]; }
+    }
     if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); spawnParts(p.x + 5, p.y + 14, 3, '#fff', 20); }
     // 緑のブロック=ばね
-    if (p.ground && p.vy >= 0 && G.lifts.some(L => L.col === 3 && onLift(L))) { p.vy = -BOUNCE; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); }
+    if (p.ground && p.vy >= 0 && G.lifts.some(L => L.col === 3 && onLift(L))) { p.vy = -BOUNCE; p.hover = HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); }
     if (p.ground && p.vy >= 0) {
       const ty = Math.floor((p.y + p.h + 1) / T), tx0 = Math.floor(p.x / T), tx1 = Math.floor((p.x + p.w - 1) / T);
-      for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -BOUNCE; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
+      for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -BOUNCE; p.hover = HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
     }
     // 赤いブロック=あつい(さわるとダメージ)
     for (const L of G.lifts) if (L.col === 1 && liftOn(L) && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, false);
@@ -378,7 +392,7 @@
       // 接触ダメージ・ダッシュ攻撃
       if (!p.dead && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
         if (p.dashT > 0 && (e.type === 'guard' || e.type === 'walker' || e.type === 'flyer')) { if (e.type === 'guard') { e.stun = .8; } damageEnemy(e, 1); p.dashT = 0; p.vx = -p.face * 60; }
-        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret') { damageEnemy(e, 1); p.vy = -240; p.free = true; p.dashAvail = true; } // ふみつけ
+        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret') { damageEnemy(e, 1); p.vy = -240; p.hover = HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
         else hurtPlayer(e);
       }
     }
@@ -865,11 +879,26 @@
     drawPlayer(cx, cy);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
     // 相棒エナー
-    { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (EXCEL) ctx.drawImage(GFXX.bird(p.face < 0), bx - 1, by - 1); else if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
+    if (!ENER) { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (EXCEL) ctx.drawImage(GFXX.bird(p.face < 0), bx - 1, by - 1); else if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
+  }
+  const ENER_PAL = { W: '#FFFFFF', S: '#C6D3F0', U: '#4F7FE0', V: '#8FB0F5', O: '#F29B3A', e: '#1F2A44', f: '#E8663A' };
+  const enerCache = {};
+  function enerImg(name, flip) {
+    if (EXCEL) return GFXX.ener(name, flip);
+    const k = name + (flip ? 1 : 0); return enerCache[k] || (enerCache[k] = GFX.gridSprite(GFX.enerGrid(name, ENER_PAL), flip));
+  }
+  function drawEner(cx, cy) { // 主人公エナー
+    const p = G.p, flap = Math.floor(G.t * (p.hovering ? 16 : 9)) % 2;
+    let name = 'idle';
+    if (p.stun > 0) name = 'hurt'; else if (p.hovering) name = flap ? 'up' : 'down'; else if (!p.ground) name = p.vy < -40 ? 'up' : 'down'; else if (Math.abs(p.vx) > 25) name = flap ? 'idle' : 'down';
+    const bob = p.ground && Math.abs(p.vx) <= 25 ? Math.round(Math.sin(G.t * 4) * 1) : 0;
+    ctx.drawImage(enerImg(name, p.face < 0), Math.round(p.x - 3 - cx), Math.round(p.y - 1 - cy) + bob);
+    if (p.hovering) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(Math.round(p.x + 2 - cx), Math.round(p.y + p.h + 2 - cy), 6, 1); ctx.fillRect(Math.round(p.x + 4 - cx), Math.round(p.y + p.h + 4 - cy), 2, 1); }
   }
   function drawPlayer(cx, cy) {
     const p = G.p; if (p.dead) return;
     if (p.inv > 0 && Math.floor(p.inv * 20) % 2) return;
+    if (ENER) { drawEner(cx, cy); return; }
     let name = 'idle0';
     if (p.stun > 0) name = 'hurt';
     else if (p.atkT > 0) name = p.atkT > .13 ? 'windup' : 'swing';
@@ -888,6 +917,7 @@
     }
   }
   function drawHUD() {
+    if (EXCEL) return;
     const X = EXCEL; // Excel風: 白い板(コメントのような)の上に、暗い色で描く
     if (X) { ctx.save(); ctx.translate(GFXX.HW + 2, GFXX.HH + 2); const ph = (G.level.tools.length ? 33 : 24) + (G.filter !== null ? 9 : 0); ctx.fillStyle = '#F3F3F3'; ctx.fillRect(0, 0, 88, ph); ctx.fillStyle = '#ABABAB'; ctx.fillRect(0, 0, 88, 1); ctx.fillRect(0, ph - 1, 88, 1); ctx.fillRect(0, 0, 1, ph); ctx.fillRect(87, 0, 1, ph); }
     const ink = X ? '#262626' : '#fff', sub = X ? '#595959' : '#D5DBE6';
@@ -932,8 +962,26 @@
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(E.cursor[0] * T - cx + .5, E.cursor[1] * T - cy + .5, T - 1, T - 1); E.hint = '';
     }
   }
+  // Excelのリボン(画面の上): ライフ・コスト・Σ・タイム・ボタンを、リボンのグループの見た目で
+  const RB = { hp: -1, cost: -1, max: -1, gems: -1, ng: -1, time: '', play: null, mute: null, edit: null };
+  function updateRibbon() {
+    const rib = $('#ribbon'); if (!rib || !EXCEL) return;
+    const play = G.mode === 'play' && !!G.level;
+    if (RB.play !== play) { RB.play = play; rib.classList.toggle('idle', !play); }
+    if (!play) return;
+    if (RB.hp !== G.p.hp) { RB.hp = G.p.hp; let h = ''; for (let i = 0; i < 3; i++) h += '<i class="hp' + (i < G.p.hp ? ' on' : '') + '">♥</i>'; $('#rb-hearts').innerHTML = h; }
+    const has = G.level.tools.length > 0; $('#rb-g-cost').style.display = has ? '' : 'none';
+    const e = Math.floor(G.energy);
+    if (has && (RB.cost !== e || RB.max !== G.maxE)) { RB.cost = e; RB.max = G.maxE; $('#rb-bar').firstElementChild.style.width = (100 * G.energy / Math.max(1, G.maxE)) + '%'; $('#rb-bar').classList.toggle('low', G.energy < minCost()); $('#rb-cost').textContent = e; }
+    const ng = G.level.gems.length; $('#rb-g-sigma').style.display = ng ? '' : 'none';
+    if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 3) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
+    const t = Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'); if (RB.time !== t) { RB.time = t; $('#rb-time').textContent = t; }
+    const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; }
+    const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').textContent = mu; }
+  }
   function render() {
     if (!G.level) return;
+    updateRibbon();
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
     drawBackground(); drawWorld();
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
@@ -1024,7 +1072,7 @@
   const UI = {
     toastT: 0,
     toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); clearTimeout(UI.toastT); UI.toastT = setTimeout(() => t.classList.add('hide'), ms || 2200); },
-    show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); },
+    show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); fit(); },
     refresh() {
       const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
       UI.refreshTools();
@@ -1100,7 +1148,7 @@
     items.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), '元ガラス（書式をつけたガラス）', '書式のコピーで色をつけたガラス。色の性質はふつうのブロックと同じで、白い「つやの枠」が残るので、元ガラスだと分かる。もう一度は書式をつけられない']);
     items.push(['h', 'そのほかの地形']);
     items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼（はがね）', '編集できない金属の壁・床・天井。どの道具も効かない']);
-    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '攻撃かダッシュでこわせる（黄ブロックと同じ）。編集の対象']);
+    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '黄ブロックと同じ（乗るとくずれる）。編集の対象']);
     items.push(['h', '編集のしるし']);
     items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', '決まった道（うすく見える道）を、一定の周期で往復する足場。乗ると運ばれる。編集では動かせず、道にブロックを置くこともできない。リフトにも色（性質）があり、フィルターで消せる（うすくなって通りぬけられる）。ガラスのリフトは、書式のコピーで色をつけられる']);
     items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。どの編集も受けず、フィルターでも消えない。寄せるときの仕切りになる。「保護の解除」で外せる']);
@@ -1116,6 +1164,8 @@
   $('#btn-guide').onclick = () => openGuide('title');
   $('#btn-guide2').onclick = () => openGuide('select');
   $('#btn-guide-back').onclick = () => (guideFrom === 'select' ? UI.select() : UI.title());
+  document.querySelectorAll('[data-proxy]').forEach(b => { b.onclick = () => $(b.dataset.proxy).click(); });
+  if (EXCEL) { $('#ribbon').classList.remove('hide'); document.body.classList.add('has-ribbon'); }
   $('#btn-edit').onclick = () => toggleEdit();
   $('#btn-restart').onclick = () => UI.restart();
   $('#btn-menu').onclick = () => UI.select();
@@ -1128,7 +1178,7 @@
 
   // ===== 拡大表示(整数倍) =====
   function fit() {
-    const wrap = $('#stage'), cw = wrap.clientWidth, ch = wrap.clientHeight;
+    const wrap = $('#stage'), rib = $('#ribbon'), rh = rib && rib.offsetParent !== null ? rib.offsetHeight : 0, cw = wrap.clientWidth, ch = wrap.clientHeight - rh;
     let s = Math.floor(Math.min(cw / W, ch / H)); if (s < 2) s = Math.min(cw / W, ch / H); // 狭い画面では小数倍にして大きく見せる
     cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px';
     $('#game').style.width = W * s + 'px'; $('#game').style.height = H * s + 'px';
