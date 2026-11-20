@@ -125,7 +125,7 @@
   function normalizeCustom(l) {
     const w = l.w | 0, h = Array.isArray(l.front) ? l.front.length : 0;
     if (w < 20 || w > 160 || h < 12 || h > 60 || !Array.isArray(l.color) || l.color.length !== h) throw new Error('bad level');
-    return Object.assign({ world: 9, hints: [], solution: [], bg: '#9ADBC0', bg2: '#86CEB0', par: 0, sparks: [], checks: [], gems: [], ents: [], start: [2, 9], flag: [w - 4, 9], custom: true },
+    return Object.assign({ world: 9, hints: [], solution: [], bg: '#9ADBC0', bg2: '#86CEB0', par: 0, sparks: [], lifts: [], checks: [], gems: [], ents: [], start: [2, 9], flag: [w - 4, 9], custom: true },
       l, { w, h, energy: l.energy | 0, tools: (l.tools || []).filter(id => TOOL_BY[id]), lock: l.lock || l.front.map(() => new Array(w).fill(0)), hints: l.hint ? [{ x: 0, text: l.hint }] : (l.hints || []) });
   }
   (function loadCustomLevels() {
