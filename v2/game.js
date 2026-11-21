@@ -87,7 +87,15 @@
 
   // ===== おと(WebAudio) =====
   let ac = null, muted = false;
-  function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } } return ac; }
+  function audio() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } }
+    if (ac && ac.state === 'suspended' && !document.hidden) { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  // BGM・ジングル(music.js)。どこかをさわった/キーを押した さいしょの瞬間に、音を ゆるしてもらう（スマホ対策）
+  const BGM = window.BGM || { attach() {}, want() {}, jingle() {}, duck() {} };
+  BGM.attach(() => ac || null, () => muted);
+  ['pointerdown', 'keydown', 'touchend'].forEach(ev => addEventListener(ev, () => audio(), { passive: true }));
   function tone(f0, f1, dur, type, vol) {
     const a = audio(); if (!a || muted) return;
     const o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
@@ -108,8 +116,8 @@
     spark() { tone(880, 1200, .07, 'triangle', .04); },
     editOn() { tone(500, 200, .18, 'sine', .06); }, editOff() { tone(200, 500, .18, 'sine', .06); },
     place() { tone(440, 660, .06, 'square', .04); }, bad() { tone(140, 100, .1, 'square', .04); },
-    hurt() { tone(300, 90, .25, 'sawtooth', .07); }, die() { tone(260, 40, .5, 'sawtooth', .07); },
-    win() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, f, .14, 'square', .05), i * 110)); },
+    hurt() { tone(300, 90, .25, 'sawtooth', .07); }, die() { BGM.jingle('miss'); },
+    win() { BGM.jingle('clear'); }, perfect() { BGM.jingle('perfect'); }, check() { BGM.jingle('check'); },
     bounce() { tone(200, 700, .18, 'sine', .07); }, dash() { noise(.1, .05); tone(400, 200, .1, 'square', .03); },
     freeze() { tone(900, 300, .25, 'triangle', .06); },
   };
@@ -431,7 +439,7 @@
     }
     for (const c of G.checks) {
       if (c.gone) continue;
-      if (!c.on && Math.abs(p.x - c.x) < 10 && Math.abs(p.y - c.y) < 24) { c.on = true; G.respawn = { x: c.x + 3, y: c.y + 2 }; SFX.spark(); UI.toast('チェックポイント'); }
+      if (!c.on && Math.abs(p.x - c.x) < 10 && Math.abs(p.y - c.y) < 24) { c.on = true; G.respawn = { x: c.x + 3, y: c.y + 2 }; SFX.check(); UI.toast('チェックポイント'); }
     }
     const f = G.flag;
     if (!G.cleared && overlap(p.x, p.y, p.w, p.h, f.x, f.y, f.w, f.h)) winLevel();
@@ -444,11 +452,12 @@
   const rankOf = (goals, lv) => { const poss = parApplies(lv) ? 3 : 2, got = (goals[1] ? 1 : 0) + (goals[2] ? 1 : 0) + (parApplies(lv) && goals[3] ? 1 : 0); return ['S', 'A', 'B', 'C'][poss - got]; };
   const RANK_ORD = { S: 0, A: 1, B: 2, C: 3 };
   function winLevel() {
-    G.cleared = true; G.clearT = 0; SFX.win();
-    if (EDITOR_TEST) { UI.toast('クリア！ ステージ作成に戻ります', 1500); setTimeout(() => { if (G.cleared) backToEditor(); }, 1300); return; }
+    G.cleared = true; G.clearT = 0;
+    if (EDITOR_TEST) { SFX.win(); UI.toast('クリア！ ステージ作成に戻ります', 1500); setTimeout(() => { if (G.cleared) backToEditor(); }, 1300); return; }
     // もくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない) ④ムダなし(コストが もくひょう いか)
     const lv = G.level, goals = [true, G.gems >= lv.gems.length, G.deaths === 0 && G.hits === 0, parApplies(lv) && G.spent <= lv.par];
     const rank = rankOf(goals, lv); G.lastRank = rank; G.lastGoals = goals;
+    if (rank === 'S') SFX.perfect(); else SFX.win();
     if (practice) { setTimeout(() => { if (G.cleared) UI.showResult(goals); }, 800); return; } // れんしゅうモードは、きろくを のこさない
     const prev = save.levels[lv.id] || { goals: [false, false, false, false] };
     const merged = goals.map((v, i) => v || !!(prev.goals && prev.goals[i]));
@@ -1407,11 +1416,24 @@
   }
   addEventListener('resize', fit); fit();
 
+  // ===== BGMの切りかえ: 画面・ステージ(ワールド)・「なおす」中かどうかで きめる =====
+  const bgmFor = (w) => w <= 3 ? 'stageA' : w <= 7 ? 'stageB' : 'stageC';
+  function syncBGM() {
+    let name = null, delay = 0.15;
+    if (G.mode === 'title') name = 'title';
+    else if (G.mode === 'select') name = 'select';
+    else if (G.mode === 'result') { name = 'select'; delay = 2.4; } // クリアのジングルが おわってから
+    else if (G.mode === 'play' && G.level && !G.cleared) name = bgmFor(G.level.world | 0);
+    BGM.want(name, delay);
+    BGM.duck(G.mode === 'play' && ((G.edit && G.edit.on) || (G.p && G.p.dead > 0)));
+  }
+
   // ===== メインループ =====
   let last = performance.now(), acc = 0;
   function loop(now) {
     requestAnimationFrame(loop);
     if (G.paused) { last = now; return; }
+    syncBGM();
     acc += Math.min(.1, (now - last) / 1000); last = now;
     while (acc >= DT) { update(DT); acc -= DT; }
     render();
