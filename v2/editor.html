@@ -108,8 +108,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   </details>
 
   <details><summary>書き出し ／ 読みこみ（ほかの人にわたす・バックアップ）</summary>
-    <div class="row" style="margin:6px 0"><button id="b-exp">書き出す</button><button id="b-imp">この中身を読みこむ</button></div>
-    <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。データをはりつけて「この中身を読みこむ」を押すこともできます"></textarea>
+    <div class="row" style="margin:6px 0"><button id="b-exp">書き出す（JSONファイルをダウンロード）</button><button id="b-file">ファイルから読みこむ</button><input type="file" id="f-file" accept=".json,application/json,text/plain" style="display:none"><button id="b-imp">下の欄の中身を読みこむ</button></div>
+    <textarea id="t-json" placeholder="書き出したデータ(JSON)がここにも出ます。データをはりつけて「下の欄の中身を読みこむ」を押すこともできます"></textarea>
   </details>
 </main>
 <div id="scrim"></div>
@@ -377,8 +377,23 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('読みこみました'); } };
   $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' を消しますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('消しました'); };
   $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひな形にします（今のものは消えます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー', hint: '' })); msg('ひな形を読みこみました（保存すると、新しいステージになります）'); };
-  $('#b-exp').onclick = () => { $('#t-json').value = JSON.stringify(toData()); $('#t-json').select(); msg('書き出しました。コピーして渡せます'); };
-  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました（保存すると、新しいステージになります）'); } catch (e) { msg('読みこめませんでした。データがこわれているかもしれません'); } };
+  // 書き出し: JSONファイルを ダウンロード(スマホでは テキストの コピーが むずかしいため)。欄にも 出す
+  function downloadText(name, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' })), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+  $('#b-exp').onclick = () => {
+    const d = toData(), text = JSON.stringify(d); $('#t-json').value = text;
+    const base = (d.id + '_' + d.name).replace(/[\\/:*?"<>|\s]+/g, '_');
+    downloadText(base + '.json', text); msg('書き出しました（' + base + '.json をダウンロード）');
+  };
+  function importText(text) {
+    try { const d = JSON.parse(text); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました（保存すると、新しいステージになります）'); }
+    catch (e) { msg('読みこめませんでした。データがこわれているかもしれません'); }
+  }
+  $('#b-imp').onclick = () => importText($('#t-json').value);
+  $('#b-file').onclick = () => $('#f-file').click();
+  $('#f-file').onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $('#t-json').value = String(r.result); importText(String(r.result)); }; r.readAsText(f); e.target.value = ''; };
   (window.LEVELS || []).forEach((l, i) => { if (l.custom) return; const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
   loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
