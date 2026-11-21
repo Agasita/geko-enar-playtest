@@ -50,66 +50,66 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
 </head>
 <body>
 <header>
-  <h1>ステージをつくる</h1>
-  <button id="b-save">ほぞん</button>
-  <button id="b-test" class="go">▶ ためしにあそぶ</button>
-  <button id="b-undo">↶ もどす</button>
-  <button id="b-new">あたらしく</button>
-  <a href="index.html">ゲームにもどる</a>
+  <h1>ステージを作る</h1>
+  <button id="b-save">保存</button>
+  <button id="b-test" class="go">▶ 試しに遊ぶ</button>
+  <button id="b-undo">↶ 戻す</button>
+  <button id="b-new">新しく</button>
+  <a href="index.html">ゲームに戻る</a>
 </header>
 <main>
-  <details class="fs"><summary>ステージのせってい（なまえ・おおきさ・コスト）</summary>
-    <div class="row"><span class="lbl">なまえ</span><input id="f-name" type="text" value="マイステージ" size="16">
-      <span class="lbl">よこ(マス)</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
-      <span class="lbl">たて(マス)</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
-      <button id="b-w">おおきさをかえる</button></div>
-    <div class="row" style="margin-top:4px"><span class="lbl">コストのうえげん</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:64px">
-      <span class="lbl">かいふく(びょう)</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">(0=なし。エナジーのたまをひろう)</span>
-      <span class="lbl">もくひょうコスト</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
-      <span class="lbl">いろ(せかい)</span><select id="f-theme"></select></div>
+  <details class="fs"><summary>ステージの設定（名前・大きさ・コスト）</summary>
+    <div class="row"><span class="lbl">名前</span><input id="f-name" type="text" value="マイステージ" size="16">
+      <span class="lbl">横(マス)</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
+      <span class="lbl">縦(マス)</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
+      <button id="b-w">大きさを変える</button></div>
+    <div class="row" style="margin-top:4px"><span class="lbl">コストの上限</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:64px">
+      <span class="lbl">回復（1秒あたり）</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">(0=なし。エナジーの玉をひろう)</span>
+      <span class="lbl">目標コスト</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
+      <span class="lbl">背景の色</span><select id="f-theme"></select></div>
   </details>
 
-  <details class="fs"><summary>ヒント（その場所にきたときに出ることば）</summary>
+  <details class="fs"><summary>ヒント（その場所に来たときに出る言葉）</summary>
     <table id="hints"></table>
-    <div class="row" style="margin-top:4px"><button id="b-hint">ヒントをふやす</button><span class="lbl">「よこ」は、なんマスめで出すか。シートのうえにカーソルを合わせると、すうじが出ます</span></div>
+    <div class="row" style="margin-top:4px"><button id="b-hint">ヒントを増やす</button><span class="lbl">「横」は、何マス目で出すか。シートの上にカーソルを合わせると、数字が出ます</span></div>
   </details>
 
-  <div class="row" id="toolbar"><button id="b-tool" class="toolbtn"></button><button id="b-mode" style="font-weight:700"></button><span class="lbl" id="cursor"></span><span class="lbl">「うごかす」のあいだは、さわってもブロックはおかれません</span></div>
+  <div class="row" id="toolbar"><button id="b-tool" class="toolbtn"></button><button id="b-mode" style="font-weight:700"></button><span class="lbl" id="cursor"></span><span class="lbl">「動かす」の間は、さわってもブロックは置かれません</span></div>
   <aside id="drawer" aria-label="どうぐ">
-    <div class="dh"><b>どうぐをえらぶ</b><button id="d-x">×</button></div>
+    <div class="dh"><b>道具を選ぶ</b><button id="d-x">×</button></div>
     <div class="dg">ブロック</div><div class="row pal" id="pal"></div>
-    <div class="dg">しかけ・キャラクター</div><div class="row pal" id="pal2"></div>
+    <div class="dg">仕掛け・キャラクター</div><div class="row pal" id="pal2"></div>
     <div class="dg">オプション</div>
-    <div class="row"><span class="lbl">スイッチ・とびらの いろ</span><select id="f-id"><option value="0">1 あか</option><option value="1">2 あお</option><option value="2">3 みどり</option><option value="3">4 きいろ</option></select></div>
-    <div class="row"><span class="lbl">はんていセル</span><select id="f-jt"><option value="exist">そんざい（ブロックがある）</option><option value="empty">あき（なにもない）</option><option value="color">いろ（その いろのブロック）</option></select><select id="f-jc"><option value="0">ちゃいろ</option><option value="1">あか</option><option value="2">あお</option><option value="3">みどり</option><option value="4">きいろ</option><option value="5">ガラス</option></select></div>
+    <div class="row"><span class="lbl">スイッチ・扉の色</span><select id="f-id"><option value="0">1 赤</option><option value="1">2 青</option><option value="2">3 緑</option><option value="3">4 黄</option></select></div>
+    <div class="row"><span class="lbl">判定セル</span><select id="f-jt"><option value="exist">存在（ブロックがある）</option><option value="empty">空き（何もない）</option><option value="color">色（その色のブロック）</option></select><select id="f-jc"><option value="0">茶色</option><option value="1">赤</option><option value="2">青</option><option value="3">緑</option><option value="4">黄</option><option value="5">ガラス</option></select></div>
     <div class="row"><label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label></div>
-    <div class="row"><button id="b-floor">ゆか（した2ぎょう）をはる</button></div>
+    <div class="row"><button id="b-floor">床（下2行）をはる</button></div>
   </aside>
-  <div id="lp"><fieldset><legend>えらんだリフト</legend>
-    <div class="row"><span class="lbl">いろ</span><select id="l-col"></select>
-      <span class="lbl">ながさ(マス)</span><input id="l-w" type="number" min="1" max="8">
-      <span class="lbl">よこにうごく(マス)</span><input id="l-dx" type="number" min="-40" max="40">
-      <span class="lbl">たてにうごく(マス)</span><input id="l-dy" type="number" min="-40" max="40"></div>
-    <div class="row"><span class="lbl">いったりきたりの じかん(びょう)</span><input id="l-period" type="number" min="2" max="30" step="0.5">
-      <span class="lbl">はじまりのいち</span><select id="l-phase"><option value="0">はしっこ</option><option value="0.25">すこしすすんだところ</option><option value="0.5">はんたいのはしっこ</option><option value="0.75">もどりぎわ</option></select>
-      <span class="lbl">うごかす はんていセル</span><select id="l-ctl"><option value="-1">なし（ずっと うごく）</option><option value="0">1 あか</option><option value="1">2 あお</option><option value="2">3 みどり</option><option value="3">4 きいろ</option></select>
-      <button id="l-del" class="warn">このリフトをけす</button></div>
-    <div class="lbl">シートのうえでは、■（はじまり）をドラッグ=いどう、●（おわり）をドラッグ=うごくみち、右はしの▮をドラッグ=ながさ。たて・よこのどちらかにだけ、うごけます。</div>
+  <div id="lp"><fieldset><legend>選んだリフト</legend>
+    <div class="row"><span class="lbl">色</span><select id="l-col"></select>
+      <span class="lbl">長さ(マス)</span><input id="l-w" type="number" min="1" max="8">
+      <span class="lbl">横に動く(マス)</span><input id="l-dx" type="number" min="-40" max="40">
+      <span class="lbl">縦に動く(マス)</span><input id="l-dy" type="number" min="-40" max="40"></div>
+    <div class="row"><span class="lbl">行き来の時間(秒)</span><input id="l-period" type="number" min="2" max="30" step="0.5">
+      <span class="lbl">最初の位置</span><select id="l-phase"><option value="0">はしっこ</option><option value="0.25">少し進んだところ</option><option value="0.5">反対のはしっこ</option><option value="0.75">戻りぎわ</option></select>
+      <span class="lbl">動かす判定セル</span><select id="l-ctl"><option value="-1">なし（ずっと動く）</option><option value="0">1 赤</option><option value="1">2 青</option><option value="2">3 緑</option><option value="3">4 黄</option></select>
+      <button id="l-del" class="warn">このリフトを消す</button></div>
+    <div class="lbl">シートの上では、■（始まり）をドラッグ＝移動、●（終わり）をドラッグ＝動く道、右はしの▮をドラッグ＝長さ。縦か横のどちらかにだけ動けます。</div>
   </fieldset></div>
 
   <div id="wrap"><canvas id="cv"></canvas></div>
   <div id="msg"></div>
 
-  <details open><summary>つかえるどうぐ（このステージでつかえるもの）</summary><div class="tools" id="tools"></div></details>
+  <details open><summary>使える道具（このステージで使えるもの）</summary><div class="tools" id="tools"></div></details>
 
-  <details><summary>ほぞんしたステージ ／ ゲームのステージからひながたをよみこむ</summary>
-    <div class="row" style="margin-top:6px"><select id="s-saved"></select><button id="b-load">よみこむ</button><button id="b-del" class="warn">けす</button></div>
-    <div class="row" style="margin-top:6px"><select id="s-base"></select><button id="b-base">ひながたにする</button></div>
+  <details><summary>保存したステージ ／ ゲームのステージからひな形を読みこむ</summary>
+    <div class="row" style="margin-top:6px"><select id="s-saved"></select><button id="b-load">読みこむ</button><button id="b-del" class="warn">消す</button></div>
+    <div class="row" style="margin-top:6px"><select id="s-base"></select><button id="b-base">ひな形にする</button></div>
   </details>
 
-  <details><summary>かきだし ／ よみこみ（ほかのひとにわたす・バックアップ）</summary>
-    <div class="row" style="margin:6px 0"><button id="b-exp">かきだす</button><button id="b-imp">このなかみをよみこむ</button></div>
-    <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。はりつけて「よみこむ」もできます"></textarea>
+  <details><summary>書き出し ／ 読みこみ（ほかの人にわたす・バックアップ）</summary>
+    <div class="row" style="margin:6px 0"><button id="b-exp">書き出す</button><button id="b-imp">この中身を読みこむ</button></div>
+    <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。はりつけて「読みこむ」もできます"></textarea>
   </details>
 </main>
 <div id="scrim"></div>
@@ -118,16 +118,16 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
 (function () {
   'use strict';
   const T = 20, KEY = 'geko-enar-v2-custom';
-  const COLORS = [['ちゃいろ', '#C9A15E', '#E8CFA0', '#735630'], ['あか', '#E8563F', '#F7A08F', '#A8403F'], ['あお', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['みどり', '#58B368', '#8FD18A', '#3F8F52'], ['きいろ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
-  const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（よせる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
+  const COLORS = [['茶色', '#C9A15E', '#E8CFA0', '#735630'], ['赤', '#E8563F', '#F7A08F', '#A8403F'], ['青', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['緑', '#58B368', '#8FD18A', '#3F8F52'], ['黄', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
+  const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
   const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95']];
-  const THEMES = [['あおみどり', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['あおぞら', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
+  const THEMES = [['青緑', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['青空', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
   const $ = (s) => document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d');
   let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
   let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw';
   const msg = (t) => { $('#msg').textContent = t; };
-  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ いま：うごかす（おすと「おく」に）' : '✏ いま：おく（おすと「うごかす」に）'; }
+  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ 今：動かす（おすと「置く」に）' : '✏ 今：置く（おすと「動かす」に）'; }
 
   // ---- データ ----
   function blank(w, h) {
@@ -145,7 +145,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   }
   const snap = () => JSON.stringify({ L, meta: collectMeta() });
   function pushUndo() { undoStack.push(snap()); if (undoStack.length > 60) undoStack.shift(); }
-  function undo() { const s = undoStack.pop(); if (!s) return msg('もどせるものがありません'); const d = JSON.parse(s); L = d.L; H = L.h; applyMeta(d.meta); sel = -1; fit(); showLift(); }
+  function undo() { const s = undoStack.pop(); if (!s) return msg('戻せるものがありません'); const d = JSON.parse(s); L = d.L; H = L.h; applyMeta(d.meta); sel = -1; fit(); showLift(); }
   function collectMeta() {
     return { name: $('#f-name').value.trim() || 'マイステージ', energy: Math.max(0, Math.min(100, +$('#f-energy').value || 0)), regen: Math.max(0, +$('#f-regen').value || 0), par: Math.max(0, +$('#f-par').value || 0), theme: +$('#f-theme').value || 0,
       hints: meta.hints.map(h => ({ x: h.x, text: h.text })), tools: [...document.querySelectorAll('#tools input:checked')].map(i => i.dataset.t) };
@@ -238,7 +238,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     if (k === 'crack') { eraseAt(x, y); L.front[y][x] = 'c'; return; }
     const free = L.front[y][x] === '.';
     if (k === 'ent') { if (!free) return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push({ type: cur.type, x, y }); return; }
-    if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('Σは、5こまでです（ゲームの わくも 5こまで）'); return; } L.gems.push([x, y]); } return; }
+    if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('Σは5個までです（ゲームの枠も5個まで）'); return; } L.gems.push([x, y]); } return; }
     if (k === 'spark') { if (free && !L.sparks.some(g => g[0] === x && g[1] === y)) L.sparks.push([x, y]); return; }
     if (k === 'check') { if (free && !L.checks.some(c => c[0] === x && c[1] === y)) L.checks.push([x, y]); return; }
     if (k === 'start') { L.start = [x, y]; return; }
@@ -309,25 +309,25 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   // ---- ヒント ----
   function drawHints() {
     const t = $('#hints'); t.innerHTML = '';
-    meta.hints.forEach((h, i) => { const tr = document.createElement('tr'); tr.innerHTML = '<td style="width:78px">よこ <input type="number" min="0" max="159" style="width:54px" value="' + h.x + '"></td><td><input type="text" style="width:100%" placeholder="（ひらがなで、みじかく）"></td><td style="width:50px"><button class="warn">けす</button></td>';
+    meta.hints.forEach((h, i) => { const tr = document.createElement('tr'); tr.innerHTML = '<td style="width:78px">横 <input type="number" min="0" max="159" style="width:54px" value="' + h.x + '"></td><td><input type="text" style="width:100%" placeholder="（短く書く）"></td><td style="width:50px"><button class="warn">消す</button></td>';
       const [nx, tx] = tr.querySelectorAll('input'); tx.value = h.text; nx.onchange = () => { h.x = Math.max(0, +nx.value | 0); draw(); }; tx.oninput = () => { h.text = tx.value; }; tr.querySelector('button').onclick = () => { meta.hints.splice(i, 1); drawHints(); draw(); }; t.appendChild(tr); });
   }
   $('#b-hint').onclick = () => { const c = $('#cursor').textContent.match(/\((\d+)/); meta.hints.push({ x: c ? +c[1] : 0, text: '' }); drawHints(); draw(); };
 
   // ---- パレット ----
   function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').classList.toggle('on', open); }
-  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>どうぐ</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
+  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>道具</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
   $('#b-tool').onclick = () => drawer(true); $('#d-x').onclick = () => drawer(false); $('#scrim').onclick = () => drawer(false);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
   function addBtn(box, html, v) { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => setCur(b, v); box.appendChild(b); return b; }
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
-    COLORS.forEach((c, i) => { const b = addBtn(p, '<span class="sw" style="background:' + c[1] + '"></span>' + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>どうぐ</small>' + b.innerHTML + ' ▸'; } });
-    addBtn(p, 'はがね（うごかない）', { kind: 'steel' }); addBtn(p, 'ひびわれかべ', { kind: 'crack' }); addBtn(p, 'けしゴム', { kind: 'erase' });
+    COLORS.forEach((c, i) => { const b = addBtn(p, '<span class="sw" style="background:' + c[1] + '"></span>' + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>道具</small>' + b.innerHTML + ' ▸'; } });
+    addBtn(p, '鋼（動かない）', { kind: 'steel' }); addBtn(p, 'ひび割れ壁', { kind: 'crack' }); addBtn(p, '消しゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => addBtn(p2, '<span class="sw" style="background:' + e[2] + ';border-radius:50%"></span>' + e[1], { kind: 'ent', type: e[0] }));
-    addBtn(p2, '<span class="sw" style="background:#4A5470"></span>じしゃく', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>はんていセル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, 'とびら（ドラッグでたかさ）', { kind: 'door' });
-    addBtn(p2, 'Σ(ほうせき)', { kind: 'gem' }); addBtn(p2, 'エナジーのたま', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
+    addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
+    addBtn(p2, 'Σ（宝石）', { kind: 'gem' }); addBtn(p2, 'エナジーの玉', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
     TOOLS.forEach(t => { const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" data-t="' + t[0] + '"> ' + t[1]; $('#tools').appendChild(l); });
     COLORS.forEach((c, i) => { const o = document.createElement('option'); o.value = i; o.textContent = c[0]; $('#l-col').appendChild(o); });
     THEMES.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = t[0]; $('#f-theme').appendChild(o); });
@@ -348,20 +348,20 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   }
   function check(d) {
     const out = [], solid = (x, y) => y >= 0 && y < L.h && x >= 0 && x < L.w && L.front[y][x] !== '.';
-    if (!solid(d.start[0], d.start[1] + 1)) out.push('スタートのあしもとに、じめんがありません');
-    if (d.flag[1] + 1 < L.h && !solid(d.flag[0], d.flag[1] + 1)) out.push('ゴールのあしもとに、じめんがありません');
+    if (!solid(d.start[0], d.start[1] + 1)) out.push('スタートの足もとに、地面がありません');
+    if (d.flag[1] + 1 < L.h && !solid(d.flag[0], d.flag[1] + 1)) out.push('ゴールの足もとに、地面がありません');
     d.lifts.forEach((l, i) => { const x0 = Math.min(l.x, l.x + l.dx), x1 = Math.max(l.x, l.x + l.dx) + l.w - 1, y0 = Math.min(l.y, l.y + l.dy), y1 = Math.max(l.y, l.y + l.dy); let hit = false;
-      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (solid(x, y)) hit = true; if (hit) out.push('リフト' + (i + 1) + 'のみちに、ブロックがあります（ぶつかります）'); });
-    d.lifts.forEach((l, i) => { if (l.ctl !== undefined && !d.judges.some(j => j[4] === l.ctl)) out.push('リフト' + (i + 1) + 'を うごかす はんていセル（' + (l.ctl + 1) + '）が ありません'); });
-    d.judges.forEach(j => { if (!d.doors.some(q => q[3] === j[4]) && !d.lifts.some(l => l.ctl === j[4])) out.push('はんていセル（' + j[4] + '）に、おなじ番号のとびらがありません'); });
-    d.switches.forEach(s => { if (!d.doors.some(q => q[3] === s[2])) out.push('スイッチ' + s[2] + 'に、おなじいろのとびらがありません'); });
-    d.doors.forEach(q => { if (!d.switches.some(s => s[2] === q[3]) && !d.judges.some(j => j[4] === q[3])) out.push('とびら' + q[3] + 'を、あけるスイッチ・はんていセルがありません'); });
-    if (d.regen && !d.sparks.length) out.push('かいふくがありますが、エナジーのたまがありません'); return out.join(' / ');
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (solid(x, y)) hit = true; if (hit) out.push('リフト' + (i + 1) + 'の道に、ブロックがあります（ぶつかります）'); });
+    d.lifts.forEach((l, i) => { if (l.ctl !== undefined && !d.judges.some(j => j[4] === l.ctl)) out.push('リフト' + (i + 1) + 'を動かす判定セル（' + (l.ctl + 1) + '）がありません'); });
+    d.judges.forEach(j => { if (!d.doors.some(q => q[3] === j[4]) && !d.lifts.some(l => l.ctl === j[4])) out.push('判定セル（' + j[4] + '）に、同じ番号の扉がありません'); });
+    d.switches.forEach(s => { if (!d.doors.some(q => q[3] === s[2])) out.push('スイッチ' + s[2] + 'に、同じ色の扉がありません'); });
+    d.doors.forEach(q => { if (!d.switches.some(s => s[2] === q[3]) && !d.judges.some(j => j[4] === q[3])) out.push('扉' + q[3] + 'を開けるスイッチ・判定セルがありません'); });
+    if (d.regen && !d.sparks.length) out.push('回復がありますが、エナジーの玉がありません'); return out.join(' / ');
   }
   function save() {
     const d = toData(), warn = check(d), all = readAll(), i = all.findIndex(l => l.id === d.id); if (i >= 0) all[i] = d; else all.push(d);
-    try { writeAll(all); } catch (e) { msg('ほぞんできませんでした（ブラウザのほぞんばしょがいっぱい？）'); return null; }
-    editingId = d.id; refreshSaved(); msg('ほぞんしました（' + d.id + '）' + (warn ? '  ※' + warn : '')); return d;
+    try { writeAll(all); } catch (e) { msg('保存できませんでした（ブラウザの保存場所がいっぱい？）'); return null; }
+    editingId = d.id; refreshSaved(); msg('保存しました（' + d.id + '）' + (warn ? '  ※' + warn : '')); return d;
   }
   function loadData(d) {
     L = fromLevel(d); H = L.h; editingId = d.id || null; sel = -1; undoStack = [];
@@ -371,14 +371,14 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   $('#b-save').onclick = save;
   $('#b-test').onclick = () => { const d = save(); if (d) location.href = 'index.html?from=editor&test=' + encodeURIComponent(d.id); };
   $('#b-undo').onclick = undo;
-  $('#b-new').onclick = () => { if (!confirm('あたらしいステージをつくります（ほぞんしていないものはきえます）')) return; editingId = null; loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: [], energy: 20 })); msg('あたらしいステージです'); };
+  $('#b-new').onclick = () => { if (!confirm('新しいステージを作ります（保存していないものは消えます）')) return; editingId = null; loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: [], energy: 20 })); msg('新しいステージです'); };
   $('#b-w').onclick = () => { pushUndo(); resize($('#f-w').value, $('#f-h').value); $('#f-w').value = L.w; $('#f-h').value = L.h; };
   $('#b-floor').onclick = () => { pushUndo(); for (let y = L.h - 2; y < L.h; y++) for (let x = 0; x < L.w; x++) { L.front[y][x] = 'S'; L.color[y][x] = 0; L.lock[y][x] = 0; } draw(); };
-  $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('よみこみました'); } };
-  $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' をけしますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('けしました'); };
-  $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひながたにします（いまのものはきえます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー', hint: '' })); msg('ひながたをよみこみました（ほぞんすると、あたらしいステージになります）'); };
-  $('#b-exp').onclick = () => { $('#t-json').value = JSON.stringify(toData()); $('#t-json').select(); msg('かきだしました。コピーしてわたせます'); };
-  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('よみこみました（ほぞんすると、あたらしいステージになります）'); } catch (e) { msg('よみこめませんでした。データがこわれているかもしれません'); } };
+  $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('読みこみました'); } };
+  $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' を消しますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('消しました'); };
+  $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひな形にします（今のものは消えます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー', hint: '' })); msg('ひな形を読みこみました（保存すると、新しいステージになります）'); };
+  $('#b-exp').onclick = () => { $('#t-json').value = JSON.stringify(toData()); $('#t-json').select(); msg('書き出しました。コピーして渡せます'); };
+  $('#b-imp').onclick = () => { try { const d = JSON.parse($('#t-json').value); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました（保存すると、新しいステージになります）'); } catch (e) { msg('読みこめませんでした。データがこわれているかもしれません'); } };
   (window.LEVELS || []).forEach((l, i) => { if (l.custom) return; const o = document.createElement('option'); o.value = i; o.textContent = l.id + ' ' + l.name; $('#s-base').appendChild(o); });
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
   loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
