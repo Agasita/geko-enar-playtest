@@ -7,6 +7,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#1f2a44">
 <title>エナーとふしぎのシート 体験版</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="エナーとふしぎのシート 体験版">
+<meta property="og:description" content="時間を止めて、ブロックを動かして進むパズルアクション。体験版（8ステージ）を遊べます。">
+<meta property="og:image" content="https://agasita.github.io/geko-enar-playtest/demo/ogp.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="時間を止めて、ブロックを動かして進むパズルアクション。体験版（8ステージ）。">
 <script>document.write('<link rel="stylesheet" href="style.css?t='+Date.now()+'">')</script>
 <noscript><link rel="stylesheet" href="style.css"></noscript>
 </head>
@@ -80,12 +86,14 @@
       <div class="demo-badge">体験版</div>
       <button id="btn-play" class="big">遊ぶ</button>
       <button id="btn-guide" class="ghost">ブロック図鑑</button>
-      <p class="keys">PC：← → 移動　Z/Space はばたき（長押しでふわり）　E なおす（時間停止）<br>編集中：ドラッグで範囲選択／1〜9 道具／[ ] タブ／Z 戻す／Y やり直す／R 最初から</p>
-      <p class="demo-note">※ 体験版です。遊べるステージは一部で、ステージを作る機能はありません。</p>
+      <p class="keys">PC：← → 移動／Z・Space はばたき（長押しでふわり）／E「なおす」（時間を止めてブロックを動かす）／R 最初から<br>「なおす」中：ドラッグで範囲を選ぶ／1〜9 道具／Z 戻す／Y やり直す　　スマホ：画面の ◀ ▶ とボタン</p>
+      <p class="demo-note">※ 体験版です。遊べるステージは一部で、自分でステージを作る機能は含まれません。</p>
+      <p class="credit">© 2026 agasita　絵・音・文章はすべて自作です（音はプログラムで作っています）。文字は、お使いの端末のフォントを使います。進み具合は、この端末のブラウザの中にだけ保存されます。</p>
     </section>
 
     <section id="screen-select" class="screen hide">
       <header><button id="btn-back" class="ghost">◀ 戻る</button><h2>ステージ選択（体験版）</h2><button id="btn-guide2" class="ghost">図鑑</button><button id="btn-practice" class="ghost">れんしゅう：OFF</button><span id="total"></span></header>
+      <p class="legend">見かた：✓ クリア　Σ 宝石（全部集める）　ノーミス＝ダメージなし　ムダなし＝目標コスト以下　カード右上の文字＝ランク（S〜C）</p>
       <div id="levels"></div>
       <footer><button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
     </section>
