@@ -13,7 +13,6 @@
 <div id="stage">
   <div id="game">
     <div id="ribbon">
-      <div class="rb-tab">ホーム</div>
       <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
       <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
       <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
@@ -106,7 +105,7 @@
 </div>
 <script>
 // まいかいあたらしいファイルを読み込む（スマホで古いキャッシュがのこらないように）。じゅんばんどおりに実ぎょうされる。
-(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+(function () { var t = Date.now(); ['sprites.js', 'levels.js', 'gfx_snes.js', 'gfx_excel.js', 'music_data.js', 'music.js', 'game.js'].forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
 </script>
 </body>
 </html>
