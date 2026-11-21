@@ -1380,8 +1380,13 @@
     items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', '決まった道を往復する足場。乗ると運ばれる。リフトは編集で動かせず、通り道にブロックも置けない。色の性質やフィルターが効き、ガラス製は「いろコピー」が使える']);
     items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。編集やフィルターが効かず、寄せるときの仕切りになる。「まもりをはずす」で解除できる']);
     items.push([blk(0, .28), '薄い表示', 'フィルターで残す色以外のブロック（ガラスを含む）は薄くなり、通り抜けられる']);
+    // 体験版: ステージに でてこない しかけ(磁石・判定セル・リフト)の せつめいは だす (見せない)
+    let shown = items;
+    if (DEMO) { let skip = false; shown = items.filter(it => { if (it[0] === 'h') { skip = /磁石|判定セル/.test(it[1]); return !skip && true; } return !skip && it[1] !== 'リフト'; }); }
+    // 中身の ない 見出しは だす しない
+    shown = shown.filter((it, i) => !(it[0] === 'h' && (i === shown.length - 1 || shown[i + 1][0] === 'h')));
     const box = $('#guide'); box.innerHTML = '';
-    items.forEach(it => {
+    shown.forEach(it => {
       if (it[0] === 'h') { const p = document.createElement('p'); p.className = 'gh'; p.textContent = it[1]; box.appendChild(p); return; }
       const d = document.createElement('div'); d.className = 'gi';
       d.innerHTML = '<div><b></b><span></span></div>'; d.insertBefore(it[0], d.firstChild); it[0].className = 'gtile';

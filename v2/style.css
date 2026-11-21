@@ -288,3 +288,6 @@ body.menu #lbtns{display:none}
   .rb-btn{overflow:hidden}
   #rb-edit kbd,.rb-btn kbd{display:none}
 }
+
+.legend{font-size:11px;color:#595959;margin:0 0 4px;width:100%}
+.credit{font-size:10px;color:#595959;max-width:560px;margin:8px 0 0;line-height:1.5}
