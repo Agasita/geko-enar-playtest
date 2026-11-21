@@ -5,7 +5,7 @@
   'use strict';
   const D = window.MUSIC_DATA;
   if (!D) { window.BGM = null; return; }
-  const MASTER = 0.5;       // BGM全体の音量（効果音とのバランスは ここで 調整）
+  const MASTER = 0.3;       // BGM全体の音量（効果音とのバランスは ここで 調整）
   const DUCK_VOL = 0.28;    // 「なおす」中・ミス中の音量
   const DUCK_LP = 900;      // 同じく、こもらせる周波数
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
