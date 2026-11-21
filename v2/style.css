@@ -260,3 +260,31 @@ body.menu #lpad,body.editing #lpad{display:none}
 #r-info .rk{font-size:15px}
 #btn-practice.on{background:#E2F0D9;border-color:#217346;font-weight:700;color:#185C37}
 .bd.pf{white-space:nowrap}
+
+/* ===== 右上の ボタンを、左の ペインへ(横向き)。大きく・文字つき ===== */
+#lbtns{position:absolute;left:0;right:0;top:calc(var(--s)*2px);display:flex;flex-direction:column;gap:calc(var(--s)*2px);padding:0 calc(var(--s)*2px);z-index:2}
+.lb{height:calc(var(--s)*20px);min-height:0;padding:0 2px;font-size:max(11px,calc(var(--s)*5.5px));font-weight:700;line-height:1;border:1px solid #8C8C8C;border-radius:0;background:linear-gradient(#FFFFFF,#E5E5E5);color:#262626;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:3px;touch-action:manipulation}
+.lb:active{background:#CFE3D6}
+.lb-edit{background:#217346;color:#fff;border-color:#185C37}
+.lb-edit:active{background:#185C37}
+.lb kbd{background:#0002;font-size:.7em;padding:0 3px;border-radius:2px}
+@media (hover:none){.lb kbd{display:none}}
+body.menu #lbtns{display:none}
+#lpad{height:calc(var(--s)*80px)}
+@media (orientation:landscape){#rb-g-btn{display:none}}
+.theme-excel .lb{background:linear-gradient(#FFFFFF,#E5E5E5);color:#262626;border:1px solid #8C8C8C;border-radius:0}
+.theme-excel .lb-edit{background:#217346;color:#fff;border-color:#185C37}
+.theme-excel .lb:active{background:#CFE3D6}.theme-excel .lb-edit:active{background:#185C37}
+@media (orientation:portrait){
+  #lbtns{display:none}
+  /* 縦向き: リボンを2だんに。1だんめ=ライフなど、2だんめ=ボタン(文字つき・大きく) */
+  #ribbon{flex-wrap:wrap}
+  .rb-group.rb-right{flex:0 0 100%;order:5;margin-left:0;border-left:0;border-top:1px solid #D4D4D4;padding:calc(var(--s)*2px) calc(var(--s)*3px)}
+  .rb-group.rb-right .rb-items{width:100%;gap:calc(var(--s)*3px);justify-content:stretch}
+  .rb-btn{flex:1 1 0;height:calc(var(--s)*18px);min-width:0;font-size:max(12px,calc(var(--s)*7px));padding:0 calc(var(--s)*2px);white-space:nowrap;font-weight:700}
+  .rb-btn .lbl{display:inline!important}
+  #rb-edit{flex:1.15 1 0;background:#217346;color:#fff;border-color:#185C37}
+  #rb-g-btn .rb-btn:nth-child(4){flex:1.6 1 0;font-size:max(10px,calc(var(--s)*5.8px))}
+  .rb-btn{overflow:hidden}
+  #rb-edit kbd,.rb-btn kbd{display:none}
+}
