@@ -56,6 +56,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   <button id="b-undo">↶ 戻す</button>
   <button id="b-new">新しく</button>
   <a href="index.html">ゲームに戻る</a>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-e</span>
 </header>
 <main>
   <details class="fs"><summary>ステージの設定（名前・大きさ・コスト）</summary>
@@ -109,6 +110,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
 
   <details><summary>書き出し ／ 読みこみ（ほかの人にわたす・バックアップ）</summary>
     <div class="row" style="margin:6px 0"><button id="b-exp">書き出す（JSONファイルをダウンロード）</button><button id="b-file">ファイルから読みこむ</button><input type="file" id="f-file" accept=".json,application/json,text/plain" style="display:none"><button id="b-imp">下の欄の中身を読みこむ</button></div>
+    <div id="dl-area" class="row" style="margin:6px 0"></div>
     <textarea id="t-json" placeholder="書き出したデータ(JSON)がここにも出ます。データをはりつけて「下の欄の中身を読みこむ」を押すこともできます"></textarea>
   </details>
 </main>
@@ -377,15 +379,23 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   $('#b-load').onclick = () => { const l = readAll().find(q => q.id === $('#s-saved').value); if (l) { loadData(l); msg('読みこみました'); } };
   $('#b-del').onclick = () => { const id = $('#s-saved').value; if (!id || !confirm(id + ' を消しますか？')) return; writeAll(readAll().filter(l => l.id !== id)); if (editingId === id) editingId = null; refreshSaved(); msg('消しました'); };
   $('#b-base').onclick = () => { const lv = window.LEVELS[+$('#s-base').value]; if (!lv || !confirm(lv.id + ' をひな形にします（今のものは消えます）')) return; editingId = null; loadData(Object.assign({}, lv, { id: null, name: lv.name + 'のコピー', hint: '' })); msg('ひな形を読みこみました（保存すると、新しいステージになります）'); };
-  // 書き出し: JSONファイルを ダウンロード(スマホでは テキストの コピーが むずかしいため)。欄にも 出す
+  // 書き出し: JSONファイルを ダウンロード。スマホで 自動ダウンロードが ブロックされても、リンク(タップ)と 共有ボタンから 保存できる
+  let lastBlobUrl = null;
   function downloadText(name, text) {
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' })), a = document.createElement('a');
-    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 3000);
+    if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+    const blob = new Blob([text], { type: 'application/json' }); lastBlobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = lastBlobUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    const area = $('#dl-area'); area.innerHTML = '';
+    const link = document.createElement('a'); link.href = lastBlobUrl; link.download = name; link.textContent = '📥 ' + name + ' を保存（タップ）'; link.style.cssText = 'padding:6px 10px;border:1px solid #217346;background:#E2F0D9;color:#185C37;font-weight:700;text-decoration:none;word-break:break-all'; area.appendChild(link);
+    try {
+      const file = new File([blob], name, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { const sb = document.createElement('button'); sb.textContent = '📤 共有（ドライブ・メールなどへ）'; sb.onclick = () => navigator.share({ files: [file], title: name }).catch(() => {}); area.appendChild(sb); }
+    } catch (e) { /* 共有できない端末は、リンクだけ */ }
   }
   $('#b-exp').onclick = () => {
     const d = toData(), text = JSON.stringify(d); $('#t-json').value = text;
     const base = (d.id + '_' + d.name).replace(/[\\/:*?"<>|\s]+/g, '_');
-    downloadText(base + '.json', text); msg('書き出しました（' + base + '.json をダウンロード）');
+    downloadText(base + '.json', text); msg('書き出しました。ダウンロードされない場合は、下の「保存（タップ）」リンクを押してください');
   };
   function importText(text) {
     try { const d = JSON.parse(text); if (!d || !Array.isArray(d.front) || d.front.length < 12 || d.front.length > 60) throw 0; d.id = null; loadData(d); editingId = null; msg('読みこみました（保存すると、新しいステージになります）'); }
