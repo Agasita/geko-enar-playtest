@@ -1089,7 +1089,8 @@
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
-    drawPlayer(cx, cy);
+    // 主人公は丸めていないカメラ位置で描く(カメラと主人公を別々に丸めると、歩くたびに1pxずつ揺れてガクガクして見えるため)
+    drawPlayer(G.cam.x + (G.sx || 0), G.cam.y);
     for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
     drawJudges(cx, cy); // はんていセルは、ブロックがあっても、しゅじんこうがいても、いちばん手前
     // 相棒エナー
