@@ -139,8 +139,9 @@ def build():
                                   ('pad', .02, pads(PROG_SELECT))], echo=True, gain=1.1)
     # --- ステージA
     k, s, h = drums(16, kick=(0, 8), snare=(4, 12), hat=2)
-    T['stageA'] = track(128, 256, [('p25', .16, melody(MEL_A)), ('p12', .05, arps(PROG_A, step=1, pat3=(0, 1, 2, 1), pat4=(0, 1, 2, 1))),
-                                   ('tri', .32, bass8(PROG_A)), ('kick', .2, k), ('snare', .16, s), ('hat', .05, h)], gain=1.5)
+    # FM音源（ステージBと同じ ベル・エレピ・FMベース）。ステージAだけ チップチューンっぽかったので そろえた
+    T['stageA'] = track(128, 256, [('bell', .26, melody(MEL_A)), ('ep', .10, arps(PROG_A, step=2, pat3=(0, 1, 2, 1), pat4=(0, 1, 2, 1))),
+                                   ('fmbass', .30, bass8(PROG_A)), ('kick', .2, k), ('snare', .16, s), ('hat', .05, h)], echo=True, gain=0.8)
     # --- ステージB
     k, s, h = drums(16, kick=(0, 6, 8), snare=(4, 12), hat=2)
     T['stageB'] = track(108, 256, [('bell', .26, melody(MEL_B)), ('ep', .10, arps(PROG_B)), ('fmbass', .30, bass8(PROG_B)),
