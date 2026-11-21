@@ -64,8 +64,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
       <span class="lbl">縦(マス)</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
       <button id="b-w">大きさを変える</button></div>
     <div class="row" style="margin-top:4px"><span class="lbl">コストの上限</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:64px">
-      <span class="lbl">回復（1秒あたり）</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">(0=なし。エナジーの玉をひろう)</span>
-      <span class="lbl">目標コスト</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
+      <span class="lbl">エナジー回復（1秒あたり）</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">（0＝回復なし。回復があるときは「エナジーの玉」も置く）</span>
+      <span class="lbl">目標コスト（ムダなしの基準）</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
       <span class="lbl">背景の色</span><select id="f-theme"></select></div>
   </details>
 
@@ -74,7 +74,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     <div class="row" style="margin-top:4px"><button id="b-hint">ヒントを増やす</button><span class="lbl">「横」は、何マス目で出すか。シートの上にカーソルを合わせると、数字が出ます</span></div>
   </details>
 
-  <div class="row" id="toolbar"><button id="b-tool" class="toolbtn"></button><button id="b-mode" style="font-weight:700"></button><span class="lbl" id="cursor"></span><span class="lbl">「動かす」の間は、さわってもブロックは置かれません</span></div>
+  <div class="row" id="toolbar"><button id="b-tool" class="toolbtn"></button><button id="b-mode" style="font-weight:700"></button><span class="lbl" id="cursor"></span><span class="lbl">「動かす」にしている間は、さわってもブロックは置かれません</span></div>
   <aside id="drawer" aria-label="どうぐ">
     <div class="dh"><b>道具を選ぶ</b><button id="d-x">×</button></div>
     <div class="dg">ブロック</div><div class="row pal" id="pal"></div>
@@ -90,11 +90,11 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
       <span class="lbl">長さ(マス)</span><input id="l-w" type="number" min="1" max="8">
       <span class="lbl">横に動く(マス)</span><input id="l-dx" type="number" min="-40" max="40">
       <span class="lbl">縦に動く(マス)</span><input id="l-dy" type="number" min="-40" max="40"></div>
-    <div class="row"><span class="lbl">行き来の時間(秒)</span><input id="l-period" type="number" min="2" max="30" step="0.5">
-      <span class="lbl">最初の位置</span><select id="l-phase"><option value="0">はしっこ</option><option value="0.25">少し進んだところ</option><option value="0.5">反対のはしっこ</option><option value="0.75">戻りぎわ</option></select>
-      <span class="lbl">動かす判定セル</span><select id="l-ctl"><option value="-1">なし（ずっと動く）</option><option value="0">1 赤</option><option value="1">2 青</option><option value="2">3 緑</option><option value="3">4 黄</option></select>
+    <div class="row"><span class="lbl">行き来1回の時間(秒)</span><input id="l-period" type="number" min="2" max="30" step="0.5">
+      <span class="lbl">動き出しの位置</span><select id="l-phase"><option value="0">スタート側の端</option><option value="0.25">少し進んだ位置</option><option value="0.5">反対側の端</option><option value="0.75">戻る途中</option></select>
+      <span class="lbl">リフトを動かす判定セル</span><select id="l-ctl"><option value="-1">なし（ずっと動く）</option><option value="0">1 赤</option><option value="1">2 青</option><option value="2">3 緑</option><option value="3">4 黄</option></select>
       <button id="l-del" class="warn">このリフトを消す</button></div>
-    <div class="lbl">シートの上では、■（始まり）をドラッグ＝移動、●（終わり）をドラッグ＝動く道、右はしの▮をドラッグ＝長さ。縦か横のどちらかにだけ動けます。</div>
+    <div class="lbl">シートの上では、■（始まり）をドラッグ＝移動、●（終わり）をドラッグ＝動く道、右はしの▮をドラッグ＝長さ。縦か横の、どちらか一方向にだけ動けます。</div>
   </fieldset></div>
 
   <div id="wrap"><canvas id="cv"></canvas></div>
@@ -109,7 +109,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
 
   <details><summary>書き出し ／ 読みこみ（ほかの人にわたす・バックアップ）</summary>
     <div class="row" style="margin:6px 0"><button id="b-exp">書き出す</button><button id="b-imp">この中身を読みこむ</button></div>
-    <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。はりつけて「読みこむ」もできます"></textarea>
+    <textarea id="t-json" placeholder="ここにステージのデータ(JSON)が出ます。データをはりつけて「この中身を読みこむ」を押すこともできます"></textarea>
   </details>
 </main>
 <div id="scrim"></div>
