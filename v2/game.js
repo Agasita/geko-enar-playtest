@@ -1182,8 +1182,8 @@
     const ng = G.level.gems.length; $('#rb-g-sigma').style.display = ng ? '' : 'none';
     if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 5) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
     const t = Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'); if (RB.time !== t) { RB.time = t; $('#rb-time').textContent = t; }
-    const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; }
-    const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').textContent = mu; }
+    const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; $('#lb-edit').style.display = hasEdit ? '' : 'none'; }
+    const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').innerHTML = mu + '<span class="lbl"> 音</span>'; $('#lb-mute').textContent = mu + ' 音'; }
   }
   function render() {
     if (!G.level) return;
@@ -1396,7 +1396,7 @@
   // ウィンドウ全からだ(リボン・シート・ペイン)を、がめんにあわせて拡大する。シートは、いつも320×180(マス目の世界)。
   function fit() {
     const wrap = $('#stage'), vw = wrap.clientWidth, vh = wrap.clientHeight, portrait = vw < vh;
-    const RH = portrait ? 24 : 15, LPW = portrait ? 0 : 48, PW = portrait ? 0 : 80; let LW = LPW + W + PW, LH = RH + H;
+    const RH = portrait ? 48 : 15, LPW = portrait ? 0 : 48, PW = portrait ? 0 : 80; let LW = LPW + W + PW, LH = RH + H;
     let s = Math.min(vw / LW, vh / (portrait ? RH + H + 90 : LH)); if (s >= 2) s = Math.floor(s); // せいすうばいに、ぴったりいれる
     let ph = 100;
     if (portrait) { ph = Math.max(90, Math.min(300, Math.floor(vh / s) - RH - H)); LH = RH + H + ph; if (LH * s > vh) s = vh / LH; }

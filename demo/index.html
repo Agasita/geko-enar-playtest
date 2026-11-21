@@ -21,13 +21,20 @@
       <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
       <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
         <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="なおす">✎<span class="lbl"> なおす</span> <kbd>E</kbd></button>
-        <button class="rb-btn" data-proxy="#btn-restart" aria-label="最初から">↻</button>
-        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊</button>
-        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージ選択">☰</button>
+        <button class="rb-btn" data-proxy="#btn-restart" aria-label="最初から">↻<span class="lbl"> 最初から</span></button>
+        <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊<span class="lbl"> 音</span></button>
+        <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージ選択">☰<span class="lbl"> ステージ選択</span></button>
       </div><div class="rb-cap">操作</div></div>
     </div>
 
-    <div id="lpane"><div class="pad" id="lpad">
+    <div id="lpane">
+      <div id="lbtns">
+        <button class="lb lb-edit" id="lb-edit" data-proxy="#btn-edit" aria-label="なおす">なおす<kbd>E</kbd></button>
+        <button class="lb" data-proxy="#btn-restart" aria-label="最初から">最初から<kbd>R</kbd></button>
+        <button class="lb" id="lb-mute" data-proxy="#btn-mute" aria-label="音">🔊 音</button>
+        <button class="lb" data-proxy="#btn-menu" aria-label="ステージ選択">ステージ選択</button>
+      </div>
+      <div class="pad" id="lpad">
         <button data-btn="left" aria-label="左">◀</button>
         <button data-btn="right" aria-label="右">▶</button>
       </div></div>
