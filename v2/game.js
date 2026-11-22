@@ -158,7 +158,10 @@
   // しゅじんこうはエナー（ドローンのような鳥）。そうさは ◀ ▶ と「はばたき」だけ。ジャンプでとび、くうちゅうで押し続けると、すこしのあいだ「ふわり」とおちるのがゆっくりになる。
   // 攻撃とダッシュはない（てきは、うえからふんで たおす）。もとのゲコは ?hero=gekko で遊べる。
   const ENER = ((/[?&]hero=(\w+)/.exec(location.search) || [])[1]) !== 'gekko';
-  const HOVER_T = .35, HOVER_VY = 36;
+  // 操作感の数値。パネル(操作感チューニング)から リアルタイムに かえられる。もとの値は TUNE_DEF
+  const TUNE_DEF = { RUN: 105, ACC: 1000, AIR: 720, FRIC: 1400, AIRF: 200, GRAV: 1100, FALLM: 1.45, JUMP: 300, MAXFALL: 420, CUT: 2.6, COYOTE: .1, JBUF: .11,
+    HOVER_T: .35, HOVER_VY: 36, BOUNCE: 440, DASH_V: 235, DASH_T: .17, ICE_ACC: 260, ICE_FRIC: 70 };
+  const TU = Object.assign({}, TUNE_DEF);
   if (ENER) document.body.classList.add('ener');
   const input = { left: false, right: false, down: false, up: false, jumpHeld: false, jumpP: false, atkP: false, dashP: false, editP: false };
 
@@ -256,7 +259,6 @@
   const overlap = (ax, ay, aw, ah, bx, by, bw, bh) => ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 
   // ===== プレイヤー =====
-  const RUN = 105, ACC = 1000, AIR = 720, FRIC = 1400, GRAV = 1100, FALLM = 1.45, JUMP = 300, MAXFALL = 420, BOUNCE = 440, DASH_V = 235;
   function spawnParts(x, y, n, col, sp) {
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = (sp || 60) * (.3 + Math.random()); G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, life: .35 + Math.random() * .3, col: col || '#fff' }); }
   }
@@ -285,31 +287,31 @@
     // 接地判定
     p.wasGround = p.ground;
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
-    if (p.ground) { p.coyote = .1; p.dashAvail = true; p.hover = HOVER_T; } else p.coyote -= dt;
-    if (input.jumpP) p.jbuf = .11; else p.jbuf -= dt;
+    if (p.ground) { p.coyote = TU.COYOTE; p.dashAvail = true; p.hover = TU.HOVER_T; } else p.coyote -= dt;
+    if (input.jumpP) p.jbuf = TU.JBUF; else p.jbuf -= dt;
     // 足もとのいろ(あお=こおり)
     let onIce = false;
     for (const L of G.lifts) if (L.col === 2 && onLift(L)) onIce = true;
     if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (colorAt(tx, fy) === 2) onIce = true; }
     // ダッシュ
-    if (input.dashP && p.dashAvail && p.dashT <= 0 && p.stun <= 0) { p.dashT = .17; p.dashAvail = false; p.vx = p.face * DASH_V; p.vy = 0; SFX.dash(); spawnParts(p.x + 5, p.y + 12, 5, '#fff', 30); }
+    if (input.dashP && p.dashAvail && p.dashT <= 0 && p.stun <= 0) { p.dashT = TU.DASH_T; p.dashAvail = false; p.vx = p.face * TU.DASH_V; p.vy = 0; SFX.dash(); spawnParts(p.x + 5, p.y + 12, 5, '#fff', 30); }
     if (p.dashT > 0) {
-      p.dashT -= dt; p.vx = p.face * DASH_V; p.vy = 0;
+      p.dashT -= dt; p.vx = p.face * TU.DASH_V; p.vy = 0;
       const px = Math.floor((p.x + (p.face > 0 ? p.w + 2 : -2)) / T), py = Math.floor((p.y + 7) / T); if (isFragile(px, py)) breakCrack(px, py); // もろいブロックはダッシュでこわれる
     } else if (p.stun <= 0) {
-      const target = dir * RUN; const a = dir ? (p.ground ? (onIce ? 260 : ACC) : AIR) : (p.ground ? (onIce ? 70 : FRIC) : 200);
+      const target = dir * TU.RUN; const a = dir ? (p.ground ? (onIce ? TU.ICE_ACC : TU.ACC) : TU.AIR) : (p.ground ? (onIce ? TU.ICE_FRIC : TU.FRIC) : TU.AIRF);
       const dv = target - p.vx; p.vx += clamp(dv, -a * dt, a * dt);
     }
     // ジャンプ
-    if (p.jbuf > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -JUMP; p.jbuf = 0; p.coyote = 0; p.ground = false; p.squash = -.25; SFX.jump(); spawnParts(p.x + 5, p.y + 14, 4, '#fff', 25); }
+    if (p.jbuf > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -TU.JUMP; p.jbuf = 0; p.coyote = 0; p.ground = false; p.squash = -.25; SFX.jump(); spawnParts(p.x + 5, p.y + 14, 4, '#fff', 25); }
     // おもさ(うえ昇なかにボタンを離すと低くなる)
     if (p.dashT <= 0) {
-      let g = GRAV; if (p.vy > 0) { g *= FALLM; p.free = false; } else if (!input.jumpHeld && p.vy < -80 && !p.free) g *= 2.6;
-      p.vy = Math.min(MAXFALL, p.vy + g * dt);
+      let g = TU.GRAV; if (p.vy > 0) { g *= TU.FALLM; p.free = false; } else if (!input.jumpHeld && p.vy < -80 && !p.free) g *= TU.CUT;
+      p.vy = Math.min(TU.MAXFALL, p.vy + g * dt);
     }
     // ふわり(エナー): くうちゅうでジャンプを押し続けると、すこしのあいだ、おちる速さがおさえられる
     p.hovering = false;
-    if (ENER && !window.__noHover && !p.ground && p.vy > 0 && input.jumpHeld && p.hover > 0 && p.stun <= 0) { p.hover -= dt; p.hovering = true; if (p.vy > HOVER_VY) p.vy = HOVER_VY; }
+    if (ENER && !window.__noHover && !p.ground && p.vy > 0 && input.jumpHeld && p.hover > 0 && p.stun <= 0) { p.hover -= dt; p.hovering = true; if (p.vy > TU.HOVER_VY) p.vy = TU.HOVER_VY; }
     // 攻撃
     if (input.atkP && p.atkCd <= 0 && p.stun <= 0) { p.atkT = .22; p.atkCd = .3; p.atkHit = new Set(); p.pogo = input.down && !p.ground; SFX.swing(); }
     if (p.atkT > 0) { p.atkT -= dt; if (p.atkT < .17 && p.atkT > .05) doAttack(); }
@@ -324,10 +326,10 @@
     }
     if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); spawnParts(p.x + 5, p.y + 14, 3, '#fff', 20); }
     // みどりのブロック=ばね
-    if (p.ground && p.vy >= 0 && G.lifts.some(L => L.col === 3 && onLift(L))) { p.vy = -BOUNCE; p.hover = HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); }
+    if (p.ground && p.vy >= 0 && G.lifts.some(L => L.col === 3 && onLift(L))) { p.vy = -TU.BOUNCE; p.hover = TU.HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); }
     if (p.ground && p.vy >= 0) {
       const ty = Math.floor((p.y + p.h + 1) / T), tx0 = Math.floor(p.x / T), tx1 = Math.floor((p.x + p.w - 1) / T);
-      for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -BOUNCE; p.hover = HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
+      for (let tx = tx0; tx <= tx1; tx++) if (colorAt(tx, ty) === 3) { p.vy = -TU.BOUNCE; p.hover = TU.HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); break; }
     }
     // あかいブロック=あつい(さわるとダメージ)
     for (const L of G.lifts) if (L.col === 1 && liftOn(L) && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, L.x, L.y, L.w, L.h)) hurtPlayer(null, false);
@@ -413,7 +415,7 @@
       // 接触ダメージ・ダッシュ攻撃
       if (!p.dead && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
         if (p.dashT > 0 && (e.type === 'guard' || e.type === 'walker' || e.type === 'flyer')) { if (e.type === 'guard') { e.stun = .8; } damageEnemy(e, 1); p.dashT = 0; p.vx = -p.face * 60; }
-        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret') { damageEnemy(e, 1); p.vy = -240; p.hover = HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
+        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret') { damageEnemy(e, 1); p.vy = -240; p.hover = TU.HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
         else hurtPlayer(e);
       }
     }
@@ -764,7 +766,7 @@
 
   // ---- じしゃく: いちばん近い はがね に、ひきよせられる(ちょくせんの上に ほかのブロックがあると、はたらかない) ----
   // じしゃくどうしも くっつく: となりあった じしゃくは「ひとかたまり」で、いっしょに うごき、1つでも はがねに くっついたら かたまり ぜんたいが とまる
-  const MAG_SPEED = RUN; // しゅじんこうがあるくのと、おなじはやさ
+  const magSpeed = () => TU.RUN; // しゅじんこうがあるくのと、おなじはやさ
   const MAG_DIRS = [[0, 1], [-1, 0], [1, 0], [0, -1]]; // した・ひだり・みぎ・うえ(おなじ距離なら、この順)
   const isGhost = (x, y) => { const t = G.front[y][x]; return isBlockT(t) && t !== TL.MAGNET && !blockVisible(x, y); };
   const mk = (x, y) => x + ',' + y;
@@ -829,7 +831,7 @@
     for (const m of G.mgs.slice()) {
       if (!m.cells.every(c => G.front[c[1]][c[0]] === TL.MAGNET)) { G.mgs.splice(G.mgs.indexOf(m), 1); continue; }
       if (m.off === 0 && !clusterFree(m.cells, m.dx, m.dy)) continue; // まつ
-      const step = MAG_SPEED * dt, p = G.p;
+      const step = magSpeed() * dt, p = G.p;
       const ride = !p.dead && p.ground && m.cells.some(c => p.x + p.w > c[0] * T + m.off * T * m.dx && p.x < (c[0] + 1) * T + m.off * T * m.dx && Math.abs(p.y + p.h - (c[1] * T + m.off * T * m.dy)) <= 2.5);
       m.off += step / T; if (ride) { p.x += m.dx * step; p.y += m.dy * step; }
       while (m.off >= 1) { // 1マスすすんだ
@@ -1421,6 +1423,85 @@
     document.body.classList.toggle('s3', s >= 2.7);
   }
   addEventListener('resize', fit); fit();
+
+  // ===== 操作感チューニングパネル: 数値をスライダーでかえて、そのまま あそんで たしかめる =====
+  // 値は TU(上の TUNE_DEF がもとの値)。「コピー」で、いまの値をクリップボードに出せる。
+  (function tunePanel() {
+    const GROUPS = [
+      ['はしる', [
+        ['RUN', 'さいだい速度', 40, 220, 1], ['ACC', '地上の加速', 200, 4000, 10], ['FRIC', '地上のブレーキ', 200, 4000, 10],
+        ['AIR', '空中の加速', 100, 3000, 10], ['AIRF', '空中のブレーキ', 0, 1500, 10]]],
+      ['ジャンプ・おちる', [
+        ['JUMP', 'ジャンプ力', 150, 500, 1], ['GRAV', '重力(のぼり)', 400, 2400, 10], ['FALLM', 'おちる時の重力倍率', 0.6, 3, 0.05],
+        ['MAXFALL', 'おちる最高速', 150, 800, 5], ['CUT', 'ボタンを離した時の重力倍率', 1, 5, 0.1],
+        ['COYOTE', 'コヨーテ時間(秒)', 0, 0.3, 0.01], ['JBUF', '先行入力(秒)', 0, 0.3, 0.01]]],
+      ['ふわり・ほか', [
+        ['HOVER_T', 'ふわりの時間(秒)', 0, 1.5, 0.01], ['HOVER_VY', 'ふわりのおちる速さ', 0, 150, 1], ['BOUNCE', 'ばねの強さ', 200, 800, 5],
+        ['DASH_V', 'ダッシュ速度', 100, 500, 5], ['DASH_T', 'ダッシュ時間(秒)', 0.05, 0.5, 0.01],
+        ['ICE_ACC', 'こおりの加速', 50, 1000, 10], ['ICE_FRIC', 'こおりのブレーキ', 10, 600, 5]]],
+    ];
+    const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+    const panel = el('aside', null); panel.id = 'tune';
+    const head = el('div', 'tune-head'); head.append(el('strong', null, '操作感チューニング'));
+    const btnReset = el('button', 'tiny ghost', 'もどす'), btnCopy = el('button', 'tiny ghost', 'コピー');
+    head.append(btnReset, btnCopy); panel.append(head);
+
+    const live = el('div', 'tune-live'); const cvs = el('canvas'); cvs.width = 216; cvs.height = 76; live.append(cvs);
+    const info = el('pre', 'tune-info'); live.append(info); panel.append(live);
+    const legend = el('div', 'tune-legend'); legend.innerHTML = '<span style="color:#4c9be8">■ よこ速度</span> <span style="color:#e8563f">■ たて速度</span>'; panel.append(legend);
+
+    const rows = {};
+    const fmt = (k, v) => String(Math.round(v * 100) / 100);
+    for (const [title, items] of GROUPS) {
+      const g = el('details'); g.open = true; g.append(el('summary', null, title));
+      for (const [k, label, min, max, step] of items) {
+        const row = el('label', 'tune-row'), name = el('span', 'tune-name', label), val = el('span', 'tune-val');
+        const inp = el('input'); inp.type = 'range'; inp.min = min; inp.max = max; inp.step = step; inp.value = TU[k];
+        const sync = () => { val.textContent = fmt(k, TU[k]); val.classList.toggle('chg', TU[k] !== TUNE_DEF[k]); };
+        inp.addEventListener('input', () => { TU[k] = +inp.value; sync(); });
+        // スライダーに フォーカスが のこると ← → が スライダーを うごかして ゲームが 操作できなくなるので、はなしたら外す
+        const drop = () => inp.blur(); inp.addEventListener('change', drop); inp.addEventListener('pointerup', drop);
+        row.append(name, val, inp); g.append(row); rows[k] = { inp, sync }; sync();
+      }
+      panel.append(g);
+    }
+    const toggle = el('button', 'ghost tiny', '調整パネル ▸'); toggle.id = 'tune-toggle';
+    document.body.append(panel, toggle);
+    const setOpen = (on) => { document.body.classList.toggle('tuning', on); toggle.textContent = on ? '調整パネル ◂' : '調整パネル ▸'; dispatchEvent(new Event('resize')); };
+    toggle.onclick = () => setOpen(!document.body.classList.contains('tuning'));
+    btnReset.onclick = () => { Object.assign(TU, TUNE_DEF); for (const k in rows) { rows[k].inp.value = TU[k]; rows[k].sync(); } };
+    btnCopy.onclick = () => {
+      const txt = JSON.stringify(TU).replace(/,/g, ', ');
+      const done = () => UI.toast('いまの値をコピーしました', 1500);
+      try { navigator.clipboard.writeText(txt).then(done, () => prompt('コピーしてください', txt)); } catch (e) { prompt('コピーしてください', txt); }
+    };
+    setOpen(true);
+
+    // 読みとり(計算した値)とグラフ
+    const ctx2 = cvs.getContext('2d'), N = 216, hx = new Float32Array(N), hy = new Float32Array(N); let hi = 0, acc2 = 0, last2 = performance.now(), infoT = 0;
+    function derived() {
+      const jh = TU.JUMP * TU.JUMP / (2 * TU.GRAV), tUp = TU.JUMP / TU.GRAV, tDn = Math.sqrt(2 * jh / (TU.GRAV * TU.FALLM)), air = tUp + tDn;
+      const short = (TU.JUMP * TU.JUMP) / (2 * TU.GRAV * TU.CUT);
+      return '最高ジャンプ ' + jh.toFixed(1) + 'px (' + (jh / T).toFixed(1) + 'マス)\n'
+        + 'ちょん押し   ' + short.toFixed(1) + 'px (' + (short / T).toFixed(1) + 'マス)\n'
+        + '滞空時間     ' + air.toFixed(2) + '秒 / とぶ距離 約' + Math.round(TU.RUN * air) + 'px\n'
+        + 'トップ速度まで ' + (TU.RUN / TU.ACC).toFixed(2) + '秒 / とまる距離 ' + Math.round(TU.RUN * TU.RUN / (2 * TU.FRIC)) + 'px';
+    }
+    function frame() {
+      requestAnimationFrame(frame);
+      const p = G.p, on = G.mode === 'play' && p && !G.paused;
+      // 画面の更新回数に関係なく、1秒=60サンプルで記録する(グラフの横軸は 約3.6秒)
+      const now = performance.now(); acc2 += Math.min(250, now - last2) / (1000 / 60); last2 = now;
+      for (; acc2 >= 1; acc2--) { hx[hi] = on ? p.vx : 0; hy[hi] = on ? p.vy : 0; hi = (hi + 1) % N; }
+      if (!document.body.classList.contains('tuning')) return;
+      const w = cvs.width, h = cvs.height; ctx2.clearRect(0, 0, w, h); ctx2.fillStyle = '#0006'; ctx2.fillRect(0, 0, w, h);
+      ctx2.strokeStyle = '#ffffff30'; ctx2.beginPath(); ctx2.moveTo(0, h / 2); ctx2.lineTo(w, h / 2); ctx2.stroke();
+      const line = (arr, col, sc) => { ctx2.strokeStyle = col; ctx2.beginPath(); for (let i = 0; i < N; i++) { const v = arr[(hi + i) % N], x = i, y = h / 2 - v * sc; i ? ctx2.lineTo(x, y) : ctx2.moveTo(x, y); } ctx2.stroke(); };
+      line(hx, '#4c9be8', (h / 2) / 260); line(hy, '#e8563f', (h / 2) / 520);
+      if (now - infoT > 100 && (infoT = now)) info.textContent = derived() + (on ? '\n\nvx ' + p.vx.toFixed(0) + '  vy ' + p.vy.toFixed(0) + '  ' + (p.ground ? '接地' : '空中') : '\n\n(ステージを あそぶと 速度が出ます)');
+    }
+    frame();
+  })();
 
   // ===== BGMの切りかえ: 画面・ステージ(ワールド)・「なおす」中かどうかで きめる =====
   const bgmFor = (w) => w <= 3 ? 'stageA' : w <= 7 ? 'stageB' : 'stageC';
