@@ -291,3 +291,27 @@ body.menu #lbtns{display:none}
 
 .legend{font-size:11px;color:#595959;margin:0 0 4px;width:100%}
 .credit{font-size:10px;color:#595959;max-width:560px;margin:8px 0 0;line-height:1.5}
+
+/* 操作感チューニングパネル(右側。画面が縦長のときは下) */
+#tune{position:fixed;z-index:50;top:0;right:0;bottom:0;width:244px;overflow-y:auto;padding:8px 10px 14px;background:#141c30f2;border-left:1px solid #ffffff22;font-size:12px;display:none;color:#e8ecf7}
+body.tuning #tune{display:block}
+body.tuning #stage{right:244px}
+#tune-toggle{position:fixed;z-index:51;right:6px;bottom:6px;background:#141c30dd;color:#e8ecf7;border:1px solid #ffffff33;min-height:26px;font-size:11px}
+body.tuning #tune-toggle{right:252px}
+.tune-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.tune-head strong{flex:1;font-size:13px}
+.tune-live canvas{display:block;width:100%;border-radius:6px;image-rendering:auto}
+.tune-info{margin:6px 0 2px;font:11px/1.45 ui-monospace,Consolas,monospace;color:#aeb8d0;white-space:pre-wrap}
+.tune-legend{font-size:11px;margin-bottom:6px}
+#tune details{border-top:1px solid #ffffff1a;padding:4px 0}
+#tune summary{cursor:pointer;color:#f5c842;font-weight:700;padding:2px 0}
+.tune-row{display:grid;grid-template-columns:1fr auto;gap:0 6px;margin:5px 0}
+.tune-row input{grid-column:1/-1;width:100%;margin:2px 0 0;accent-color:#f5c842}
+.tune-val{font-variant-numeric:tabular-nums;color:#aeb8d0}
+#tune .tiny{color:#e8ecf7;border:1px solid #ffffff44;background:#ffffff14}
+.tune-val.chg{color:#f5c842;font-weight:700}
+@media (orientation:portrait){
+  #tune{top:auto;left:0;width:auto;height:42vh;border-left:0;border-top:1px solid #ffffff22}
+  body.tuning #stage{right:0;bottom:42vh}
+  body.tuning #tune-toggle{right:6px;bottom:calc(42vh + 6px)}
+}
