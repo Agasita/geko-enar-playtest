@@ -164,7 +164,7 @@
   }
   window.GFXX = {
     HW, HH,
-    block(t, c) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
+    block(t, c) { const cr = t === 3 || c === 4; const key = (cr ? 'c' : 'b') + (cr ? 0 : c); return cache[key] || (cache[key] = cr ? makeCrack() : makeBlock(c)); }, // 黄色=ひび割れ(おなじ ブロック)
     steel() { return window.GFX.metal(); },
     hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.heroFrame(name, HCX), flip, OUTX)); },
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(BIRD.map(r => [...r].map(ch => (ch === '.' ? null : BCX[ch]))), flip, OUTX)); },

@@ -10,7 +10,7 @@
     { n: '赤', hex: '#E8563F', hi: '#F7A08F', lo: '#A8403F', fx: '熱い。触れるとダメージ' },
     { n: '青', hex: '#6FD6E8', hi: '#D5F6FC', lo: '#3F9DB5', fx: '滑る床（氷）' },
     { n: '緑', hex: '#58B368', hi: '#8FD18A', lo: '#3F8F52', fx: '跳ねる床（バネ）' },
-    { n: '黄色', hex: '#F5C842', hi: '#FFE27A', lo: '#C99A1E', fx: '乗ると約0.5秒で崩れる' },
+    { n: 'ひび割れ', hex: '#8C6A3A', hi: '#C9A15E', lo: '#4A3318', fx: '乗ると約0.5秒で崩れる（旧・黄色ブロックと同じもの）' },
     { n: 'ガラス', hex: '#DCEBF3', hi: '#FFFFFF', lo: '#9DB9C8', fx: '色のないセル。色コピーで性質をつけられる' },
   ];
   const GLASS = 5;
@@ -111,7 +111,7 @@
   }
   const SFX = {
     jump() { tone(280, 520, .12, 'square', .04); }, land() { tone(120, 70, .06, 'triangle', .05); },
-    swing() { noise(.08, .04); }, hit() { tone(200, 60, .12, 'sawtooth', .06); noise(.06, .05); },
+    swing() { noise(.08, .04); }, melt() { noise(.35, .05); tone(900, 300, .3, 'triangle', .03); }, hit() { tone(200, 60, .12, 'sawtooth', .06); noise(.06, .05); },
     gem() { tone(660, 990, .1, 'square', .05); setTimeout(() => tone(990, 1320, .12, 'square', .05), 70); },
     spark() { tone(880, 1200, .07, 'triangle', .04); },
     editOn() { tone(500, 200, .18, 'sine', .06); }, editOff() { tone(200, 500, .18, 'sine', .06); },
@@ -845,6 +845,22 @@
       c[0] = nx; c[1] = ny;
     }
   }
+  // ===== ギミック: マグマ(赤)と氷(青)が たて・よこに となりあうと、どちらも ふつうの(茶色の)ブロックに なる =====
+  function meltCheck() {
+    const lv = G.level; if (!lv || G.edit.on) return;
+    const kind = (tx, ty) => { if (!inb(tx, ty)) return -1; const t = G.front[ty][tx]; if ((t !== TL.STONE && t !== TL.GLASSED) || !blockVisible(tx, ty)) return -1; const c = G.col[ty][tx]; return c === 1 || c === 2 ? c : -1; };
+    const hit = new Set();
+    for (let ty = 0; ty < lv.h; ty++) for (let tx = 0; tx < lv.w; tx++) {
+      if (kind(tx, ty) !== 1) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (kind(tx + dx, ty + dy) === 2) { hit.add(tx + ',' + ty); hit.add((tx + dx) + ',' + (ty + dy)); }
+    }
+    if (!hit.size) return;
+    for (const key of hit) {
+      const [tx, ty] = key.split(',').map(Number); G.front[ty][tx] = TL.STONE; G.col[ty][tx] = 0;
+      for (let i = 0; i < 5; i++) G.parts.push({ x: tx * T + 3 + Math.random() * 10, y: ty * T + 4 + Math.random() * 6, vx: (Math.random() - .5) * 14, vy: -26 - Math.random() * 22, g: -14, s: 2 + (i % 2), life: .5 + Math.random() * .4, col: i % 2 ? '#FFFFFF' : '#DDE7F0' });
+    }
+    SFX.melt(); G.shake = Math.max(G.shake, 1);
+  }
   function updateMagnets(dt) {
     for (const k of Object.keys(G.under)) { const [ux, uy] = k.split(',').map(Number); if (G.front[uy][ux] !== TL.MAGNET) { if (G.front[uy][ux] === 0) { const u = G.under[k]; G.front[uy][ux] = u.t; G.col[uy][ux] = u.c; G.lock[uy][ux] = u.l; } delete G.under[k]; } }
     // うごいていない かたまりは、ひきよせられるか しらべる
@@ -908,7 +924,7 @@
     if (G.hitstop > 0) { G.hitstop -= dt; return; }
     G.frame++; G.t += dt;
     if (!G.cleared) G.time += dt;
-    updateDoors(dt); updateLifts(dt); updateMagnets(dt); updatePlayer(dt); updateEnemies(dt); updatePickups();
+    updateDoors(dt); updateLifts(dt); updateMagnets(dt); meltCheck(); updatePlayer(dt); updateEnemies(dt); updatePickups();
     if (!G.cleared) G.energy = Math.min(100, G.energy + dt * G.regen);
     for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.g === undefined ? 200 : q.g) * dt; q.life -= dt; }
     if (G.cleared && G.confT < .6) { const before = Math.floor(G.confT / .2); G.confT += dt; if (Math.floor(G.confT / .2) !== before) spawnConfetti(G.flag.x + G.flag.w / 2, G.flag.y + 4, 14); }
@@ -1495,10 +1511,10 @@
     const blk = (c, alpha) => tileSample(() => drawBlock(TL.STONE, c, 0, 0, true, true, alpha, 0));
     const items = [['h', '色つきブロック（色ごとに性質が違う）']];
     COLORS.forEach((k, i) => items.push([blk(i), k.n + 'ブロック', k.fx]));
+    items.push([tileSample(() => drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0)), '赤と青がとなりあうと', '熱い赤（マグマ）と、冷たい青（氷）が、たて・よこにとなりあうと、おたがいを打ち消して、ふつうの茶色ブロックになる（ジュッと湯気が出る）']);
     items.push([tileSample(() => drawBlock(TL.GLASSED, 3, 0, 0, true, true, undefined, 0)), '色つきガラス', 'いろコピーで色をつけたガラス。色の性質を持ち、白い枠が残る。一度色をつけると変更できない']);
     items.push(['h', 'その他の地形']);
     items.push([tileSample(() => ctx.drawImage(GFX.metal(), 0, 0)), '鋼', '編集できない鋼の壁・床・天井。どの道具も効かない']);
-    items.push([tileSample(() => drawBlock(TL.CRACK, 0, 0, 0, true, true, undefined, 0)), 'ひび割れ壁', '黄色ブロックと同じく、乗ると崩れる。編集できる']);
     items.push(['h', '磁石・スイッチ・扉']);
     items.push([tileSample(() => drawMagnet(0, 0)), '磁石ブロック', '最も近い鋼へ一直線に移動する（エナーの歩く速さ）。途中にブロックがあると動かない（フィルターで薄くなったブロックは通り抜ける）。磁石自体にはフィルターが効かない。となりあった磁石はくっついてひとかたまりになり、いっしょに動く。どれか1つでも鋼にくっつくと、かたまり全体が止まる']);
     items.push(['h', '判定セル（扉などと連動）']);
