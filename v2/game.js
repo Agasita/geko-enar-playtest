@@ -205,7 +205,7 @@
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
     if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
-    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, awake: false, wake: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので、なおす(へんしゅう)が きかない
+    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
     return base;
   }
@@ -436,11 +436,12 @@
       e.t += dt; if (e.flash > 0) e.flash -= dt;
       if (e.hidden) continue;
       if (e.stun > 0) { e.stun -= dt; continue; }
-      if (e.type === 'fake' && !e.awake) { // にせブロック: ブロックの ふり。ちかづくと しょうたいを あらわす(それまでは ぬけられる)
-        if (!p.dead && Math.abs(p.x + 5 - (e.x + 7)) < 24 && Math.abs(p.y + 7 - (e.y + 7)) < 20) { e.awake = true; e.wake = .45; e.t = 0; SFX.bad(); spawnParts(e.x + 7, e.y + 7, 10, '#fff', 70); G.shake = Math.max(G.shake, 2); }
-        continue;
+      if (e.type === 'fake') { // にせブロック: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
+        const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
+        const look = p.dead ? 0 : d < 30 ? 2 : d < 64 ? 1 : 0;
+        if (look === 2 && e.look < 2) { SFX.bad(); spawnParts(e.x + 7, e.y + 7, 6, '#fff', 50); }
+        e.look = look; e.ex = dx; e.ey = dy;
       }
-      if (e.type === 'fake' && e.wake > 0) { e.wake -= dt; continue; } // しょうたいを あらわした ちょくご: すこしの あいだ ふるえて うごかない
       if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
         if (Math.abs(p.x + 5 - (e.x + 6)) < 46 && Math.abs(p.y - e.y) < 30 && !p.dead) { e.awake = true; e.t = 0; SFX.bad(); spawnParts(e.x + 6, e.y + 4, 8, '#fff', 60); G.shake = Math.max(G.shake, 2); }
         continue;
@@ -453,13 +454,13 @@
       }
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake') {
         // おもさとあるぎょう(縁やかべで折り返す)
-        e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0;
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : e.type === 'fake' ? 32 : 28;
-        if (e.type === 'moji' || e.type === 'fake') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
+        if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // にせブロックは その場に ある
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
+        if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
-        if (!floorAhead || wall) { if (e.type !== 'moji' && e.type !== 'fake') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
+        if (e.type === 'fake') { /* あるかない */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
       } else if (e.type === 'flyer') {
         const px = e.x;
         e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
@@ -1155,16 +1156,18 @@
     ctx.fillStyle = 'rgba(165,190,230,' + (a * .85) + ')'; ctx.fillText('あ', x + 1, y + 1);
     ctx.fillStyle = 'rgba(250,251,255,' + a + ')'; ctx.fillText('あ', x, y); ctx.restore();
   }
-  // にせブロック: ふつうの ブロックと おなじ えで ぎたい。ときどき まばたきを して、「なおす」(じかんていし)中は ずっと 目が みえる
+  // にせブロック: とおくでは ふつうの ブロック。ちかづくと とじた目、かなり ちかづくと 目が あいて こちらを おう。へんしゅう中は しょうたいが わからない
   function drawFake(e, cx, cy) {
-    const sh = (e.awake && e.wake > 0) ? (Math.floor(e.t * 40) % 2 ? 1 : -1) : 0, hop = (e.awake && !(e.wake > 0) && Math.floor(e.t * 6) % 2) ? -1 : 0;
-    const x = Math.round(e.x - 1 - cx) + sh, y = Math.round(e.y - 2 - cy) + hop;
+    const x = Math.round(e.x - 1 - cx), y = Math.round(e.y - 2 - cy);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0); ctx.globalAlpha = 1;
-    if (e.awake || G.edit.on || (e.t % 2.6) < .2) {
+    const look = G.edit.on ? 0 : (e.look || 0);
+    if (look === 1) { ctx.fillStyle = '#262626'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
+    else if (look === 2) {
       ctx.fillStyle = '#fff'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
-      ctx.fillStyle = '#262626'; const dx = e.dir > 0 ? 2 : 0; ctx.fillRect(x + 3 + dx, y + 6, 2, 3); ctx.fillRect(x + 9 + dx, y + 6, 2, 3);
-      if (e.awake) { ctx.fillRect(x + 3, y + 4, 4, 1); ctx.fillRect(x + 9, y + 4, 4, 1); if (!(e.wake > 0)) { const f = Math.floor(e.t * 6) % 2; ctx.fillRect(f ? x + 3 : x + 4, y + 14, 3, 2); ctx.fillRect(f ? x + 10 : x + 9, y + 14, 3, 2); } }
+      const px = (e.ex || 0) > 6 ? 2 : (e.ex || 0) < -6 ? 0 : 1, py = (e.ey || 0) > 6 ? 2 : (e.ey || 0) < -6 ? 0 : 1;
+      ctx.fillStyle = '#262626'; ctx.fillRect(x + 3 + Math.min(px, 2), y + 5 + Math.min(py, 2), 2, 2); ctx.fillRect(x + 9 + Math.min(px, 2), y + 5 + Math.min(py, 2), 2, 2);
+      ctx.fillRect(x + 3, y + 4, 4, 1); ctx.fillRect(x + 9, y + 4, 4, 1);
     }
   }
   function drawWorld() {
