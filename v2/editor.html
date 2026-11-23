@@ -124,7 +124,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const T = 20, KEY = 'geko-enar-v2-custom';
   const COLORS = [['茶色', '#C9A15E', '#E8CFA0', '#735630'], ['赤', '#E8563F', '#F7A08F', '#A8403F'], ['青', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['緑', '#58B368', '#8FD18A', '#3F8F52'], ['ひび割れ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
   const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
-  const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8'], ['condfmt', '条件つき書式', '#E8A33F'], ['shuffler', '並べ替え', '#8497B0'], ['circ', '循環参照', '#2E9C8A'], ['ref', '#REF!', '#E88FA0'], ['dup', '重複データ', '#5B9BD5']];
+  const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8'], ['condfmt', '条件つき書式', '#7030A0'], ['shuffler', '並べ替え', '#ED7D31'], ['circ', '循環参照', '#2F3E6B']];
   const THEMES = [['青緑', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['青空', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
   const $ = (s) => document.querySelector(s);
   // 本編と おなじ ゲームの え(GFXX)を つかって えがく
@@ -132,7 +132,9 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const SP = (im, px, py, off) => ctx.drawImage(im, px - (off || 0) * KS, py - (off || 0) * KS, im.width * KS, im.height * KS);
   const iconOf = (fn) => { const c = document.createElement('canvas'); c.width = c.height = 20; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; fn(g); return '<img class="ic" src="' + c.toDataURL() + '">'; };
   const spIcon = (im, off) => iconOf(g => { const k = 20 / 16; g.drawImage(im, -(off || 0) * k, -(off || 0) * k, im.width * k, im.height * k); });
-  const entIm = (t) => GFXX.enemy(t === 'condfmt' ? 'condfmt0' : t, 0, false);
+  const entIm = (t) => GFXX.enemy(t, 0, false);
+  const rangesOf = (e) => (e.ranges && e.ranges.length) ? e.ranges : (e.type === 'condfmt' ? [[e.x - 2, e.y + 1, e.x + 2, e.y + 2]] : e.type === 'shuffler' ? [[e.x - 3, e.y + 1, e.x + 3, e.y + 1]] : e.type === 'circ' ? [[e.x, e.y, e.x + 3, e.y + 2]] : []);
+  let pend = null;
   const blockIm = (c) => GFXX.block(0, c), crackIm = () => GFXX.block(3, 0);
   const cv = $('#cv'), ctx = cv.getContext('2d');
   let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
@@ -169,7 +171,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     w = Math.max(20, Math.min(160, w | 0)); h = Math.max(12, Math.min(60, h | 0)); const dy = h - L.h, n = blank(w, h);
     for (let y = 0; y < L.h; y++) { const ny = y + dy; if (ny < 0) continue; for (let x = 0; x < Math.min(w, L.w); x++) { n.front[ny][x] = L.front[y][x]; n.color[ny][x] = L.color[y][x]; n.lock[ny][x] = L.lock[y][x]; } }
     const ok = (x, y) => x >= 0 && x < w && y + dy >= 0;
-    n.ents = L.ents.filter(e => ok(e.x, e.y)).map(e => Object.assign({}, e, { y: e.y + dy })); n.gems = L.gems.filter(g => ok(g[0], g[1])).map(g => [g[0], g[1] + dy]);
+    n.ents = L.ents.filter(e => ok(e.x, e.y)).map(e => Object.assign({}, e, { y: e.y + dy }, e.ranges ? { ranges: e.ranges.map(r => [r[0], r[1] + dy, r[2], r[3] + dy]) } : {})); n.gems = L.gems.filter(g => ok(g[0], g[1])).map(g => [g[0], g[1] + dy]);
     n.checks = L.checks.filter(c => ok(c[0], c[1])).map(c => [c[0], c[1] + dy]); n.sparks = L.sparks.filter(c => ok(c[0], c[1])).map(c => [c[0], c[1] + dy]);
     n.switches = L.switches.filter(s => ok(s[0], s[1])).map(s => [s[0], s[1] + dy, s[2]]); n.doors = L.doors.filter(d => ok(d[0], d[1])).map(d => [d[0], d[1] + dy, d[2], d[3]]);
     n.judges = L.judges.filter(j => ok(j[0], j[1])).map(j => [j[0], j[1] + dy, j[2], j[3], j[4]]);
@@ -200,6 +202,13 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
       ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(j[4] + 1, x + 2, y + T - 3); });
     for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
     const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
+    for (const e of L.ents) { // はんい(条件つき書式・並べ替え・循環参照)
+      if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') continue;
+      ctx.strokeStyle = e.type === 'condfmt' ? '#7030A0' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      rangesOf(e).forEach(r => { const x0 = Math.min(r[0], r[2]), y0 = Math.min(r[1], r[3]), x1 = Math.max(r[0], r[2]), y1 = Math.max(r[1], r[3]);
+        if (e.type === 'circ') ctx.strokeRect(x0 * T + T / 2, y0 * T + T / 2, Math.max(1, x1 - x0) * T, Math.max(1, y1 - y0) * T); else ctx.strokeRect(x0 * T + 1, y0 * T + 1, (x1 - x0 + 1) * T - 2, (y1 - y0 + 1) * T - 2); });
+      ctx.setLineDash([]); ctx.lineWidth = 1;
+    }
     for (const e of L.ents) {
       const px = e.x * T, py = e.y * T;
       if (e.type === 'fake') { // にせブロック: ゲームでは ふつうの ブロックに みえる。ここでは めじるし(目と てんせん)を つける
@@ -207,8 +216,6 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
         ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3); ctx.setLineDash([]); continue;
       }
       SP(entIm(e.type), px, py, 1);
-      if (e.type === 'shuffler') { const g = e.gap || 2; ctx.strokeStyle = 'rgba(68,84,106,.6)'; ctx.setLineDash([3, 2]); [[e.x - g, e.y + 1], [e.x + g, e.y + 1]].forEach(c => ctx.strokeRect(c[0] * T + 1.5, c[1] * T + 1.5, T - 3, T - 3)); ctx.setLineDash([]); }
-      if (e.type === 'dup') { const g = e.gap || 4; ctx.globalAlpha = .5; SP(entIm('dup'), (e.x + g) * T, py, 1); ctx.globalAlpha = 1; }
       if (e.type === 'autofill') { ctx.fillStyle = '#217346'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((e.d || 1) < 0 ? '◀' : '▶', px + T / 2, py - 1); }
     }
     for (const g of L.gems) { const im = GFXX.shard(); SP(im, g[0] * T + (T - im.width * KS) / 2, g[1] * T + (T - im.height * KS) / 2); }
@@ -263,6 +270,14 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('かけらは5個までです（ゲームの枠も5個まで）'); return; } L.gems.push([x, y]); } return; }
     if (k === 'spark') { if (free && !L.sparks.some(g => g[0] === x && g[1] === y)) L.sparks.push([x, y]); return; }
     if (k === 'check') { if (free && !L.checks.some(c => c[0] === x && c[1] === y)) L.checks.push([x, y]); return; }
+    if (k === 'range') {
+      if (!pend) { pend = [x, y]; msg('はんいの もうひとつの角を おしてください'); return; }
+      const r = [pend[0], pend[1], x, y]; pend = null; const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2; let best = null, bd = 1e9;
+      L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
+      if (!best) return msg('条件つき書式・並べ替え・循環参照の敵が いません。先に敵を おいてください');
+      if (best.type === 'circ') best.ranges = [r]; else best.ranges = (best.ranges && best.ranges.length ? best.ranges : []).concat([r]);
+      msg('はんいを つけました（いちばん近い敵に）。まちがえたら「戻す」'); return;
+    }
     if (k === 'start') { L.start = [x, y]; return; }
     if (k === 'flag') { L.flag = [x, y]; return; }
   }
@@ -308,7 +323,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     const c = cellOf(e); $('#cursor').textContent = inb(c[0], c[1]) ? '(' + c[0] + ', ' + c[1] + ')' : '';
     if (!down) return;
     if (down.what === 'door') { const y0 = Math.min(down.y0, c[1]), y1 = Math.max(down.y0, c[1]); down.d[1] = Math.max(0, y0); down.d[2] = Math.max(1, Math.min(L.h, y1) - down.d[1] + 1); draw(); return; }
-    if (down.what === 'paint') { if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } }
+    if (down.what === 'paint') { if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag' || cur.kind === 'range') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } }
     else if (down.what !== 'none') { liftDrag(c); draw(); }
   });
   const up = () => { down = null; last = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
@@ -349,8 +364,10 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => {
       if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
+      if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
       addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });
     });
+    addBtn(p2, '<span class="sw" style="background:none;border:1px dashed #7030A0"></span>はんい（2か所をクリック）', { kind: 'range' });
     COLORS.forEach((c, i) => { if (i === 5) return; addBtn(p2, spIcon(blockIm(i)) + 'にせブロック（' + c[0] + '）', { kind: 'ent', type: 'fake', opt: { c: i } }); });
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
     addBtn(p2, spIcon(GFXX.shard()) + 'データのかけら', { kind: 'gem' }); addBtn(p2, 'エナジーの玉', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, spIcon(GFXX.floppy(false)) + 'ゴール（フロッピー）', { kind: 'flag' });
