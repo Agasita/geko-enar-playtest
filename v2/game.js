@@ -1577,7 +1577,7 @@
   $('#e-pan').onclick = () => { G.edit.pan = !G.edit.pan; UI.refreshTools(); };
   // ===== オープニング: 絵本のように 5まいの え + 1文字ずつ でる 文。タップ/Space/Enterで つぎへ、Esc・スキップで とばす =====
   const OP = (function () {
-    const W = 192, H = 108, cv = $('#op-cv'), oc = cv.getContext('2d'); cv.width = W * 3; cv.height = H * 3; oc.imageSmoothingEnabled = false; // 3ばいの こまかさ: せなかの ドットえは そのまま、エナーの イラストは なめらかに
+    const W = 192, H = 108, cv = $('#op-cv'), oc = cv.getContext('2d'); oc.imageSmoothingEnabled = false;
     const SCENES = [
       'ここは、データの せかい。\nエナーは ひだまりの シートで、のんびり くらしている。',
       'ところが ある日、そらが ちらちら…。\nあつい日と さむい日が、ごちゃまぜに なってしまった。',
@@ -1589,7 +1589,6 @@
     const R = (x, y, w, h, c) => { oc.fillStyle = c; oc.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
     const disc = (cx, cy, r, c) => { oc.fillStyle = c; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r + r * .6) oc.fillRect(cx + x, cy + y, 1, 1); };
     const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
-    const ener = (x, y, s, emo, t, o) => GFXX.enerArt(oc, x, y, s, emo, t, o);
     const bird = (x, y, sc, flip) => { const im = GFXX.bird(!!flip); oc.drawImage(im, Math.round(x - im.width * sc / 2), Math.round(y - im.height * sc / 2), im.width * sc, im.height * sc); };
     const grid = (a) => { oc.fillStyle = 'rgba(255,255,255,' + a + ')'; for (let x = 0; x < W; x += 16) oc.fillRect(x, 0, 1, H); for (let y = 0; y < H; y += 16) oc.fillRect(0, y, W, 1); };
     const hills = (far, near, ground) => { disc(40, 112, 52, far); disc(150, 118, 58, far); disc(100, 128, 62, near); R(0, 92, W, 16, ground); R(0, 92, W, 1, 'rgba(0,0,0,.12)'); };
@@ -1602,7 +1601,8 @@
         const cx = (t * 4) % 220 - 20; R(cx, 22, 26, 6, '#fff'); R(cx + 5, 17, 16, 6, '#fff'); const c2 = (t * 3 + 90) % 220 - 20; R(c2, 40, 22, 5, '#fff');
         hills('#A9D18E', '#8CC269', '#70AD47');
         for (let k = 0; k < 7; k++) { const fx = 14 + k * 27, fy = 98 + (k % 3) * 3; R(fx, fy, 2, 2, k % 2 ? '#FFC000' : '#fff'); R(fx, fy + 2, 1, 3, '#548235'); }
-        ener(96, 60, .6, 'fun', t);
+        bird(84, 76 + Math.sin(t * 1.5) * 1.5, 3, false);
+        const z = (t * 1.2) % 3; txt('z', 108 + z * 4, 62 - z * 8, 8 + z * 2, 'rgba(60,80,120,' + (1 - z / 3) + ')', true);
       } else if (i === 1) { // そらが ちらちら: あつい/さむい が ごちゃまぜ
         const f = Math.floor(t * 7);
         R(0, 0, W, H, '#9DB7E8'); R(0, 0, 96, H, '#FFD27F');
@@ -1612,7 +1612,7 @@
         hills('#A9D18E', '#8CC269', '#70AD47');
         R(0, 92, 96, 16, '#C9B84A'); R(96, 92, 96, 16, '#CFE3F2');
         for (let k = 0; k < 4; k++) { const gx = 20 + k * 22; R(gx, 86, 1, 6, '#8C6A3A'); R(gx - 1, 85, 3, 2, '#C0504D'); } // かれた はたけ
-        ener(96, 58, .6, 'anger', t);
+        bird(96, 78 + Math.sin(t * 2) * 1, 3, false);
         if (hash(f * 3.3) < .25) R(0, Math.floor(hash(f) * H), W, 2, 'rgba(255,255,255,.7)');
       } else if (i === 2) { // 「ぴかぴかクリーナー」の インストール つうち
         R(0, 0, W, H, '#1F2A44'); grid(.05);
@@ -1624,7 +1624,8 @@
         txt('せかいを ぴかぴかに します', bx + bw / 2, by + 41, 7, '#595959', false);
         R(bx + bw / 2 - 14, by + 48, 28, 10, '#70AD47'); R(bx + bw / 2 - 14, by + 57, 28, 1, '#548235'); txt('OK', bx + bw / 2, by + 53, 7, '#fff', true);
         for (let k = 0; k < 6; k++) { const a = hash(k * 9) * 6.28, r = 74 + Math.sin(t * 2 + k) * 4, sx = 96 + Math.cos(a) * r * 1.1, sy = 46 + Math.sin(a) * r * .55; if (Math.sin(t * 3 + k * 2) > 0) { R(sx - 2, sy, 5, 1, '#FFE699'); R(sx, sy - 2, 1, 5, '#FFE699'); } }
-        ener(24, 80, .36, 'joy', t);
+        bird(28, 92 + Math.sin(t * 2) * 1, 3, false);
+        txt('?', 40, 76, 12, '#FFD966', true);
       } else if (i === 3) { // こわれた シート
         R(0, 0, W, H, '#F2F2F2'); grid(.0); oc.fillStyle = '#D9D9D9'; for (let x = 0; x < W; x += 24) oc.fillRect(x, 0, 1, H); for (let y = 0; y < H; y += 16) oc.fillRect(0, y, W, 1);
         for (let r = 0; r < 7; r++) for (let c = 0; c < 8; c++) {
@@ -1634,15 +1635,15 @@
           else if (k < .46) { oc.save(); oc.translate(x + 11, y + 8); oc.rotate(3.14159 + Math.sin(t * 2 + r) * .1); txt(String(Math.floor(k * 900)), 0, 0, 7, '#595959', true); oc.restore(); } // さかさまの すうじ
         }
         const jx = Math.floor(t * 5) % 2 ? 1 : 0; R(0, 0, W, 3, '#217346'); R(0, H - 3, W, 3, '#217346');
-        ener(96 + jx, 62, .6, 'sad', t);
-        txt('!?', 132, 40, 10, '#E8563F', true);
+        bird(96 + jx, 88 + Math.sin(t * 2) * 1, 3, false);
+        txt('!?', 112, 78, 10, '#E8563F', true);
       } else { // はばたく
         const k = Math.min(1, t / 2.2);
         R(0, 0, W, H, '#FFD9B0'); R(0, 0, W, 34, '#9DC3E6'); R(0, 34, W, 24, '#C5D9EE'); R(0, 58, W, 24, '#F8CFA6'); R(0, 82, W, 26, '#FFD9B0');
         disc(96, 82, 20, '#FFE699'); disc(96, 82, 15, '#FFD966');
         for (let q = 0; q < 14; q++) { const a = q / 14 * 6.28 + t * .4; R(96 + Math.cos(a) * 32, 82 + Math.sin(a) * 32, 2, 2, '#FFF2CC'); }
         hills('#A9D18E', '#8CC269', '#70AD47');
-        const by = 72 - k * 24 + Math.sin(t * 6) * 2; ener(96, by, .78, 'joy', t * 1.6, { ring: 1 - k });
+        const by = 80 - k * 34 + Math.sin(t * 6) * 2; bird(96, by, 5, false);
         for (let q = 0; q < 8; q++) { const px = 96 - 24 - q * 7, py = by + 8 + q * 2 + Math.sin(t * 5 + q) * 2; R(px, py, 3 - (q > 4 ? 1 : 0), 2, 'rgba(255,255,255,' + (0.9 - q * .1) + ')'); }
         const sh = GFXX.shard(); oc.drawImage(sh, 150, 16 + Math.round(Math.sin(t * 3) * 2), sh.width * 2, sh.height * 2);
         if (Math.sin(t * 4) > .6) { R(160, 14, 5, 1, '#fff'); R(162, 12, 1, 5, '#fff'); }
@@ -1651,7 +1652,7 @@
     function drawDots() { const d = $('#op-dots'); if (!d) return; d.innerHTML = ''; for (let i = 0; i < SCENES.length; i++) { const e = document.createElement('i'); if (i === idx) e.className = 'on'; d.append(e); } }
     function frame() {
       if (!running) return; raf = requestAnimationFrame(frame);
-      const t = (performance.now() - t0) / 1000; oc.setTransform(3, 0, 0, 3, 0, 0); oc.imageSmoothingEnabled = false; scene(idx, t);
+      const t = (performance.now() - t0) / 1000; scene(idx, t);
       const full = SCENES[idx], n = Math.min(full.length, Math.floor(t * 26)); if (n !== shown) { shown = n; $('#op-text').textContent = full.slice(0, n); }
       $('#op-hint').style.visibility = shown >= full.length && Math.floor(t * 2) % 2 ? 'hidden' : 'visible';
       $('#op-hint').textContent = shown >= full.length ? (idx === SCENES.length - 1 ? 'タップで はじめる ▶' : 'タップで つぎへ ▶') : '';
