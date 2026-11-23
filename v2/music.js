@@ -147,6 +147,7 @@
   window.BGM = {
     attach(ctxFn, mutedFn) { getCtx = ctxFn; isMuted = mutedFn; },
     want(name, delay) { wanted = name || null; if (delay !== undefined) wantedDelay = delay; },
+    restart() { if (cur) { stopTrack(cur, 0.1); cur = null; } }, // いまの曲を 止めて、つぎの tick で 頭から ならしなおす
     duck(on) { on = !!on; if (on !== duckOn) { duckOn = on; applyDuck(); } },
     jingle(name) {
       const ctx = getCtx(), tr = D.jingles[name]; if (!ctx || !tr || ctx.state !== 'running' || isMuted()) return;

@@ -278,18 +278,30 @@
     const p = G.p; if (p.inv > 0 || p.dead || G.cleared) return;
     p.hp--; G.hits++; p.inv = 1.3; G.shake = 6; G.hitstop = .08; SFX.hurt(); spawnParts(p.x + 5, p.y + 7, 10, '#E8563F');
     p.vx = -p.face * 110; p.vy = -190; p.stun = .15;
-    if (p.hp <= 0 || spike) killPlayer();
+    if (p.hp <= 0 || spike) killPlayer(spike ? 'spike' : 'hp');
   }
-  function killPlayer() {
+  // ミスの演出: ひとコマ止まって白く光る → しゅじんこうが くるくる まわりながら とびあがって おちていく → 「ミス…」と りゆうを 出す → BGMを 止めて、やりなおすときに BGMも 最初から
+  const DEAD_T = 1.8;
+  function killPlayer(why) {
     const p = G.p; if (p.dead) return;
-    p.dead = .7; G.deaths++; SFX.die(); spawnParts(p.x + 5, p.y + 7, 18, '#F5C842', 90); p.vx = 0; p.vy = 0; G.shake = 8;
+    p.dead = DEAD_T; p.deadT = 0; p.why = why || 'hp'; p.rot = 0; p.inv = 0; p.stun = 9; G.deaths++; SFX.die();
+    G.shake = 8; G.hitstop = .12; G.flash = .25;
+    spawnParts(p.x + 5, p.y + 7, 18, '#F5C842', 90); spawnRing(p.x + 5, p.y + 7, 14, 90, '#E8563F');
+    p.vx = (p.face ? -p.face : -1) * 30; p.vy = -230; // ここからは p.x / p.y を、そのまま「とんでいくしゅじんこう」の いちとして うごかす
   }
+  const MISS_TEXT = { hp: 'ライフが なくなった…', spike: 'とげに ささった…', fall: 'あなに おちちゃった…' };
   function respawnPlayer() {
     const hp = 3; G.p = newPlayer(G.respawn.x, G.respawn.y); G.p.hp = hp; G.p.inv = 1; G.cam.x = G.cam.x; G.flash = .3;
+    BGM.restart(); UI.wipe(null); snapCam(); G.hitstop = .25; // BGMを 頭から ならしなおす
   }
   function updatePlayer(dt) {
     const p = G.p;
-    if (p.dead) { p.dead -= dt; if (p.dead <= 0) respawnPlayer(); return; }
+    if (p.dead) {
+      p.dead -= dt; p.deadT += dt;
+      if (p.why !== 'fall') { p.vy += 620 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += (p.vx < 0 ? -1 : 1) * 10 * dt; }
+      if (p.dead <= 0) respawnPlayer();
+      return;
+    }
     if (p.inv > 0) p.inv -= dt;
     if (p.stun > 0) p.stun = Math.max(0, p.stun - dt);
     p.atkCd -= dt;
@@ -349,7 +361,7 @@
     for (let ty = Math.floor((p.y - 1) / T); ty <= Math.floor((p.y + p.h + 1) / T); ty++) for (let tx = Math.floor((p.x - 1) / T); tx <= Math.floor((p.x + p.w) / T); tx++)
       if (colorAt(tx, ty) === 1 && overlap(p.x - 1, p.y - 1, p.w + 2, p.h + 2, tx * T, ty * T, T, T)) hurtPlayer(null, false);
     // 落した
-    if (p.y > G.level.h * T + 40) { G.deaths++; G.p.dead = 0.01; SFX.die(); G.p.dead = .5; p.vy = 0; }
+    if (p.y > G.level.h * T + 40) { killPlayer('fall'); G.hitstop = 0; G.flash = 0; G.shake = 0; }
     p.anim += dt * (Math.abs(p.vx) > 20 ? 1 : 0.4); if (p.squash) p.squash *= .85; if (Math.abs(p.squash) < .01) p.squash = 0;
   }
   function moveX(e, dx) {
@@ -907,7 +919,7 @@
     for (const h of G.level.hints) if (!G.hintShown[h.x] && G.p.x / T >= h.x) { G.hintShown[h.x] = true; UI.toast(h.text, 4200); }
     // カメラ
     const tx = clamp(G.p.x - W / 2 + G.p.face * 22, 0, G.level.w * T - W), ty = clamp(G.p.y - H * .6, 0, Math.max(0, G.level.h * T - H));
-    G.cam.x += (tx - G.cam.x) * Math.min(1, dt * 7); G.cam.y += (ty - G.cam.y) * Math.min(1, dt * 5);
+    if (!G.p.dead) { G.cam.x += (tx - G.cam.x) * Math.min(1, dt * 7); G.cam.y += (ty - G.cam.y) * Math.min(1, dt * 5); } // ミスのあいだは カメラを とめる
     if (G.cleared) G.clearT += dt;
     input.jumpP = input.atkP = input.dashP = input.editP = false;
   }
@@ -1128,7 +1140,17 @@
     if (p.hovering) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(Math.round(p.x + 2 - cx), Math.round(p.y + p.h + 2 - cy), 6, 1); ctx.fillRect(Math.round(p.x + 4 - cx), Math.round(p.y + p.h + 4 - cy), 2, 1); }
   }
   function drawPlayer(cx, cy) {
-    const p = G.p; if (p.dead) return;
+    const p = G.p;
+    if (p.dead) { // とんでいく しゅじんこう(くるくる まわる)
+      if (p.why === 'fall') return;
+      const mx = p.x + 5 - cx, my = p.y + 7 - cy; ctx.save(); ctx.translate(Math.round(mx), Math.round(my)); ctx.rotate(p.rot); ctx.translate(-Math.round(mx), -Math.round(my));
+      drawPlayerBody(cx, cy);
+      ctx.restore(); return;
+    }
+    drawPlayerBody(cx, cy);
+  }
+  function drawPlayerBody(cx, cy) {
+    const p = G.p;
     if (p.inv > 0 && Math.floor(p.inv * 20) % 2) return;
     if (ENER) { drawEner(cx, cy); return; }
     let name = 'idle0';
@@ -1220,7 +1242,23 @@
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
     drawHUD();
-    if (G.p.dead) { ctx.fillStyle = 'rgba(31,42,68,' + Math.min(.6, (0.7 - G.p.dead)) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (G.p.dead) drawMiss();
+  }
+  // 「ミス…」の画面: くらくなって、よこからバンドが すべりこみ、文字が ぽんと はずむ
+  function drawMiss() {
+    const t = G.p.deadT || 0, e = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+    ctx.fillStyle = 'rgba(20,26,46,' + (.55 * e(t / .35)) + ')'; ctx.fillRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, H * .9); g.addColorStop(0, 'rgba(232,86,63,0)'); g.addColorStop(1, 'rgba(232,86,63,' + (.4 * e(t / .3)) + ')'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const k = e((t - .25) / .3), fade = Math.min(1, Math.max(0, (G.p.dead) / .25)); if (k <= 0) return;
+    ctx.save(); ctx.globalAlpha = fade;
+    const bh = 54, by = Math.round(H / 2 - bh / 2 - 6), bw = Math.round(W * k);
+    ctx.fillStyle = 'rgba(31,42,68,.92)'; ctx.fillRect(0, by, bw, bh); ctx.fillStyle = '#E8563F'; ctx.fillRect(0, by, bw, 2); ctx.fillRect(0, by + bh - 2, bw, 2);
+    const tt = Math.max(0, t - .45), pop = 1 + .35 * Math.max(0, 1 - tt * 5) * Math.cos(tt * 25); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (t > .45) {
+      ctx.save(); ctx.translate(W / 2, by + 20); ctx.scale(pop, pop); ctx.font = '700 24px system-ui, sans-serif'; ctx.fillStyle = '#E8563F'; ctx.fillText('ミス…', 1, 2); ctx.fillStyle = '#fff'; ctx.fillText('ミス…', 0, 0); ctx.restore();
+      ctx.font = '700 11px system-ui, sans-serif'; ctx.fillStyle = '#D5DBE6'; ctx.fillText(MISS_TEXT[G.p.why] || '', W / 2, by + 42);
+    }
+    ctx.restore();
   }
 
   // ===== い力 =====
@@ -1305,18 +1343,19 @@
     toastT: 0,
     toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); clearTimeout(UI.toastT); UI.toastT = setTimeout(() => t.classList.add('hide'), ms || 2200); },
     // がめんの きりかえ。きりかえた直後に、紙の「列」が ひとつずつ ひらくように めくれて、あたらしい がめんが あらわれる
-    transLabel: '', transInit: false,
-    wipe(label) {
+    transLabel: null, transInit: false,
+    // info = { world, id, name }(ステージのはじまり: 名前を 大きく 見せてから ひらく) / なし = すぐに ひらく
+    wipe(info) {
       let t = $('#trans');
-      if (!t) { t = document.createElement('div'); t.id = 'trans'; for (let i = 0; i < 14; i++) { const c = document.createElement('i'); c.style.setProperty('--i', i); t.append(c); } t.append(document.createElement('b')); document.body.append(t); }
-      t.querySelector('b').textContent = label || '';
-      t.classList.remove('go'); void t.offsetWidth; t.className = 'go' + (label ? ' lab' : ''); // ← 1フレーム目から ぜんぶ おおっているので、ちらつかない
-      clearTimeout(UI.wipeT); UI.wipeT = setTimeout(() => { t.className = ''; }, label ? 1250 : 800);
+      if (!t) { t = document.createElement('div'); t.id = 'trans'; for (let i = 0; i < 14; i++) { const c = document.createElement('i'); c.style.setProperty('--i', i); t.append(c); } const b = document.createElement('b'); for (const k of ['small', 'strong', 'span']) b.append(document.createElement(k)); t.append(b); document.body.append(t); }
+      if (info) { const [a, n, m] = t.querySelectorAll('b > *'); a.textContent = 'WORLD ' + info.world; n.textContent = info.id; m.textContent = info.name; }
+      t.classList.remove('go'); void t.offsetWidth; t.className = 'go' + (info ? ' lab' : ''); // ← 1フレーム目から ぜんぶ おおっているので、ちらつかない
+      clearTimeout(UI.wipeT); UI.wipeT = setTimeout(() => { t.className = ''; }, info ? 2300 : 800);
     },
     show(id) {
       const cur = document.querySelector('.screen:not(.hide)'), curId = cur ? '#' + cur.id : null, first = false;
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); fit();
-      if (!first && curId !== (id || null)) { UI.wipe(UI.transLabel); } UI.transLabel = '';
+      if (!first && curId !== (id || null)) { UI.wipe(UI.transLabel); } UI.transLabel = null;
     },
     refresh() {
       const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
@@ -1351,7 +1390,7 @@
     },
     restart() { if (G.mode !== 'play') return; const id = G.level.id; if (!practice && !G.cleared && !EDITOR_TEST) { save.fails = save.fails || {}; save.fails[id] = (save.fails[id] || 0) + 1; persist(); } loadLevel(G.levelIdx); UI.show(null); UI.assistNote(); },
     assistNote() { if (G.assisted) UI.toast('なんども ちょうせん している ね！ エナジーを 5わり ふやしたよ（クリアすると もとに もどる）', 4500); },
-    start(i) { G.mode = 'play'; loadLevel(i); UI.transLabel = G.level.id + '  ' + G.level.name; UI.show(null); G.hitstop = .5; /* ステージ名が出ている間は、うごき・タイムを とめる */ UI.assistNote(); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
+    start(i) { G.mode = 'play'; loadLevel(i); UI.transLabel = { world: G.level.world, id: G.level.id, name: G.level.name }; UI.show(null); G.hitstop = 1.45; /* ステージ名が出ている間は、うごき・タイムを とめる */ UI.assistNote(); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
     title() { G.mode = 'title'; UI.show('#screen-title'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); },
     select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
     unlocked(i) { return true; }, // ためしあそびよう: ステージはじゆうにえらべる
@@ -1537,7 +1576,7 @@
     if (G.mode === 'title') name = 'title';
     else if (G.mode === 'select') name = 'select';
     else if (G.mode === 'result') { name = 'select'; delay = 2.4; } // クリアのジングルが おわってから
-    else if (G.mode === 'play' && G.level && !G.cleared) name = bgmFor(G.level.world | 0);
+    else if (G.mode === 'play' && G.level && !G.cleared) name = (G.p && G.p.dead) ? null : bgmFor(G.level.world | 0); // ミスのあいだは BGMを 止める
     BGM.want(name, delay);
     BGM.duck(G.mode === 'play' && ((G.edit && G.edit.on) || (G.p && G.p.dead > 0)));
   }
