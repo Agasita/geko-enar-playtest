@@ -259,6 +259,18 @@
   const overlap = (ax, ay, aw, ah, bx, by, bw, bh) => ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 
   // ===== プレイヤー =====
+  // あそびごこちの演出用。ほこり(よこにひろがる)・きらめきのわ・ふきあがる紙ふぶき
+  function spawnDust(x, y, n, spd) {
+    for (let i = 0; i < n; i++) { const d = i % 2 ? 1 : -1, s = spd * (.4 + Math.random() * .6); G.parts.push({ x: x + d * 2, y, vx: d * s, vy: -6 - Math.random() * 14, g: 40, s: 2 + (Math.random() < .35 ? 1 : 0), life: .28 + Math.random() * .2, col: Math.random() < .5 ? '#fff' : '#E4ECF8' }); }
+  }
+  function spawnRing(x, y, n, spd, col) {
+    for (let i = 0; i < n; i++) { const a = i / n * 6.283; G.parts.push({ x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, g: 0, s: 2, life: .35, col }); }
+    for (let i = 0; i < 4; i++) G.parts.push({ x: x + (Math.random() - .5) * 10, y: y + (Math.random() - .5) * 6, vx: (Math.random() - .5) * 10, vy: -22 - Math.random() * 16, g: -10, s: 1, life: .6 + Math.random() * .3, col: '#fff' });
+  }
+  const CONFETTI = ['#F5C842', '#E8563F', '#4C9BE8', '#70AD47', '#F29B3A', '#fff'];
+  function spawnConfetti(x, y, n) {
+    for (let i = 0; i < n; i++) { const a = -1.57 + (Math.random() - .5) * 2.2, s = 70 + Math.random() * 110; G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: 220, s: 2 + (i % 3 === 0 ? 1 : 0), life: 1 + Math.random() * .7, col: CONFETTI[i % CONFETTI.length] }); }
+  }
   function spawnParts(x, y, n, col, sp) {
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = (sp || 60) * (.3 + Math.random()); G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, life: .35 + Math.random() * .3, col: col || '#fff' }); }
   }
@@ -316,6 +328,7 @@
     if (input.atkP && p.atkCd <= 0 && p.stun <= 0) { p.atkT = .22; p.atkCd = .3; p.atkHit = new Set(); p.pogo = input.down && !p.ground; SFX.swing(); }
     if (p.atkT > 0) { p.atkT -= dt; if (p.atkT < .17 && p.atkT > .05) doAttack(); }
     // いどうと衝突(x→y)
+    p.impact = p.vy; // ちゃくちの つよさ(ほこりの量)に つかう
     moveX(p, p.vx * dt); moveY(p, p.vy * dt);
     // ちゃくち
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
@@ -324,7 +337,7 @@
       if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (isFragile(tx, fy) && !G.lock[fy][tx]) { const k = tx + ',' + fy; stand.add(k); G.crumb[k] = (G.crumb[k] || 0) + dt; if (G.crumb[k] > .45) { breakCrack(tx, fy); delete G.crumb[k]; } } }
       for (const k of Object.keys(G.crumb)) if (!stand.has(k)) { G.crumb[k] -= dt; if (G.crumb[k] <= 0) delete G.crumb[k]; }
     }
-    if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); spawnParts(p.x + 5, p.y + 14, 3, '#fff', 20); }
+    if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); const hard = Math.min(1, Math.max(0, (p.impact || 0) - 120) / 280); spawnDust(p.x + 5, p.y + 14, 4 + Math.round(hard * 6), 28 + hard * 30); if (hard > .6) G.shake = Math.max(G.shake, 1.5); }
     // みどりのブロック=ばね
     if (p.ground && p.vy >= 0 && G.lifts.some(L => L.col === 3 && onLift(L))) { p.vy = -TU.BOUNCE; p.hover = TU.HOVER_T; p.free = true; p.ground = false; p.coyote = 0; p.squash = -.4; SFX.bounce(); spawnParts(p.x + 5, p.y + 14, 8, '#8FD18A', 40); }
     if (p.ground && p.vy >= 0) {
@@ -435,7 +448,7 @@
       if (hiddenAt(Math.floor((k.x + 4) / T), Math.floor((k.y + 4) / T))) continue;
       if (overlap(p.x, p.y, p.w, p.h, k.x, k.y, k.w, k.h)) {
         k.got = true;
-        if (k.type === 'gem') { G.gems++; SFX.gem(); spawnParts(k.x + 4, k.y + 4, 10, EXCEL ? '#70AD47' : '#7FA2F0', 70); }
+        if (k.type === 'gem') { G.gems++; SFX.gem(); spawnRing(k.x + 4, k.y + 4, 12, 75, EXCEL ? '#70AD47' : '#7FA2F0'); spawnParts(k.x + 4, k.y + 4, 6, '#fff', 50); G.hitstop = Math.max(G.hitstop, .04); }
         else { G.energy = Math.min(G.maxE, G.energy + 15); SFX.spark(); spawnParts(k.x + 4, k.y + 4, 5, '#F5C842', 40); }
       }
     }
@@ -454,7 +467,7 @@
   const rankOf = (goals, lv) => { const poss = parApplies(lv) ? 3 : 2, got = (goals[1] ? 1 : 0) + (goals[2] ? 1 : 0) + (parApplies(lv) && goals[3] ? 1 : 0); return ['S', 'A', 'B', 'C'][poss - got]; };
   const RANK_ORD = { S: 0, A: 1, B: 2, C: 3 };
   function winLevel() {
-    G.cleared = true; G.clearT = 0;
+    G.cleared = true; G.clearT = 0; G.confT = 0; spawnConfetti(G.flag.x + G.flag.w / 2, G.flag.y + 4, 36);
     if (EDITOR_TEST) { SFX.win(); UI.toast('クリア！ ステージ作成に戻ります', 1500); setTimeout(() => { if (G.cleared) backToEditor(); }, 1300); return; }
     // もくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない) ④ムダなし(コストが もくひょう いか)
     const lv = G.level, goals = [true, G.gems >= lv.gems.length, G.deaths === 0 && G.hits === 0, parApplies(lv) && G.spent <= lv.par];
@@ -884,7 +897,8 @@
     if (!G.cleared) G.time += dt;
     updateDoors(dt); updateLifts(dt); updateMagnets(dt); updatePlayer(dt); updateEnemies(dt); updatePickups();
     if (!G.cleared) G.energy = Math.min(100, G.energy + dt * G.regen);
-    for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 200 * dt; q.life -= dt; }
+    for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.g === undefined ? 200 : q.g) * dt; q.life -= dt; }
+    if (G.cleared && G.confT < .6) { const before = Math.floor(G.confT / .2); G.confT += dt; if (Math.floor(G.confT / .2) !== before) spawnConfetti(G.flag.x + G.flag.w / 2, G.flag.y + 4, 14); }
     G.parts = G.parts.filter(q => q.life > 0);
     G.pick = G.pick.filter(k => !k.got);
     if (G.shake > 0) G.shake = Math.max(0, G.shake - 30 * dt);
@@ -1093,7 +1107,7 @@
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
     // 主人公は丸めていないカメラ位置で描く(カメラと主人公を別々に丸めると、歩くたびに1pxずつ揺れてガクガクして見えるため)
     drawPlayer(G.cam.x + (G.sx || 0), G.cam.y);
-    for (const q of G.parts) dotRect(q.x - cx, q.y - cy, 2, 2, q.col);
+    for (const q of G.parts) dotRect(q.x - cx, q.y - cy, q.s || 2, q.s || 2, q.col);
     drawJudges(cx, cy); // はんていセルは、ブロックがあっても、しゅじんこうがいても、いちばん手前
     // 相棒エナー
     if (!ENER) { const p = G.p, bx = Math.round(p.x - cx - p.face * 14 + Math.sin(G.t * 3) * 1), by = Math.round(p.y - cy - 12 + Math.sin(G.t * 4) * 2); if (EXCEL) ctx.drawImage(GFXX.bird(p.face < 0), bx - 1, by - 1); else if (SOLID) ctx.drawImage(GFX.bird(p.face < 0), bx - 1, by - 1); else ctx.drawImage(sprite('bird', 0, p.face < 0), bx, by); }
