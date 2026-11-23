@@ -912,18 +912,18 @@
   }));
 
   L.push(make({
-    id: '13-11', name: 'ふえる橋', world: 13, w: 28, tools: ['sort'], energy: 20, bg: '#DCE9C9', bg2: '#CADBB4',
+    id: '13-11', name: 'ふえる橋', world: 13, w: 30, tools: ['sort'], energy: 20, bg: '#DCE9C9', bg2: '#CADBB4',
     hints: [
       { x: 2, text: '「オートフィル」は、足もとのマスを どんどん ふやす。でも 届くはんいには かぎりがある' },
       { x: 5, text: 'ふやしたブロックを「ならべかえ」で向こうへ寄せると、また ふやしてくれる' },
     ],
     build(m) {
-      m.floor(); m.ceil(3); m.pit(8, 23);
+      m.floor(); m.ceil(3); m.pit(8, 25);
       m.ent('autofill', 7, 9, { d: 1, reach: 12, rate: 0.9 });
-      m.gem(12, 8); m.gem(18, 8); m.gem(24, 8);
-      m.flag = [26, 9];
+      m.gem(12, 8); m.gem(20, 8); m.gem(27, 8);
+      m.flag = [28, 9];
     },
-    solution: [{ x: 7, edits: [{ tool: 'sort', rect: { x0: 8, y0: 10, x1: 23, y1: 10 }, opts: { sort: 'R' } }] }],
+    solution: [{ x: 7, edits: [{ tool: 'sort', rect: { x0: 8, y0: 10, x1: 25, y1: 10 }, opts: { sort: 'R' } }] }],
   }));
 
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
