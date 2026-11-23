@@ -23,6 +23,8 @@
     { id: 'filter', tab: 'data', name: 'フィルター', mode: 'instant', cost: 8, help: '残す色を選ぶ。ほかの色は通り抜けられる' },
     { id: 'protect', tab: 'view', name: 'シートをまもる', mode: 'rect', cost: 4, help: '範囲内のブロックを保護する。保護したブロックは編集できない' },
     { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: '選んだ範囲の保護を解除する' },
+    { id: 'printarea', tab: 'view', name: '印刷範囲の設定', mode: 'rect', cost: 6, help: '範囲を選ぶと、そこが青い枠のまま、ずっと見えるようになる（いまの見える範囲に、重ねて選ぶ。40マスまで・3か所まで）' },
+    { id: 'zoom', tab: 'view', name: 'ズーム', mode: 'instant', cost: 4, help: '「ズームする」を押すと、数秒だけ、見える範囲が2倍に広がる（その間は、なおせない）' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   function newEdit(lv) {
@@ -171,6 +173,7 @@
     G.front = lv.front.map(r => Array.from(r).map(c => CH2TILE[c] || 0));
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
+    G.fog = lv.fog || null; G.areas = []; G.zoomT = 0;
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = []; G.under = {};
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
@@ -806,9 +809,35 @@
       shiftEntities(x, -1, true); shiftSets(x, -1, true);
     } };
   }
+  // 改ページプレビュー(見える範囲の せいげん): あおい枠(エナーのまわり)と、印刷範囲の設定で ひろげた ところが 「見える」
+  function fogFrame() {
+    const f = G.fog, k = G.zoomT > 0 ? 2 : 1, px = Math.floor((G.p.x + 5) / T), py = Math.floor((G.p.y + 7) / T), hw = Math.floor(f.w * k / 2), hh = Math.floor(f.h * k / 2);
+    return { x0: px - hw, y0: py - hh, x1: px + hw, y1: py + hh };
+  }
+  function fogRects() { return G.fog ? [fogFrame()].concat(G.areas || []) : null; }
+  function cellVisible(x, y) { if (!G.fog) return true; return fogRects().some(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1); }
+  function rectAllVisible(r) { for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) if (inb(x, y) && !cellVisible(x, y)) return false; return true; }
   function planFor(tool, a) {
     const o = a.opts || G.edit.opts;
+    if (G.fog && tool !== 'zoom' && tool !== 'filter') {
+      if (G.zoomT > 0) return fail('ズーム中は、なおせません');
+      const outMsg = 'あおい枠の外は、なおせません（「印刷範囲の設定」で、見える所を ひろげられます）';
+      if (tool === 'printarea') {
+        let any = false; rectEach(a.rect, (x, y) => { if (cellVisible(x, y)) any = true; });
+        if (!any) return fail('いまの見える範囲と、重ねて選んでください', { rects: [a.rect] });
+      } else {
+        if (a.rect && !rectAllVisible(a.rect)) return fail(outMsg, { rects: [a.rect] });
+        if (a.srcCell && !cellVisible(a.srcCell[0], a.srcCell[1])) return fail(outMsg);
+        if (a.dst && !cellVisible(a.dst[0], a.dst[1])) return fail(outMsg);
+      }
+    }
     switch (tool) {
+      case 'printarea': { const r = a.rect, n = (r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1);
+        if (!G.fog) return fail('このステージでは、使えません');
+        if (n > 40) return fail('ひろすぎます（40マスまで）', { rects: [r] });
+        if ((G.areas || []).length >= 3) return fail('これ以上は、設定できません（3か所まで）');
+        return { ok: true, cost: costOf('printarea'), rects: [r], run() { G.areas.push({ x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }); SFX.place(); } }; }
+      case 'zoom': if (!G.fog) return fail('このステージでは、使えません'); return { ok: true, cost: costOf('zoom'), run() { G.zoomT = 5; } };
       case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.front[sy][sx] === TL.MAGNET) return fail('磁石はコピーできません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
       case 'sort': return planSort(a.rect, o.sort);
@@ -827,6 +856,7 @@
       hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, lc: G.lifts.map(L => L.col), lm: G.lifts.map(L => !!L.mark),
       en: G.enemies.map(e => ({ e, x: e.x, y: e.y, bx: e.bx, dead: e.dead })), pick: G.pick.map(k => ({ k, x: k.x, gone: !!k.gone })),
       checks: G.checks.map(c => ({ c, x: c.x, gone: !!c.gone })), flagX: G.flag.x, resp: { x: G.respawn.x, y: G.respawn.y }, px: G.p.x,
+      areas: (G.areas || []).map(r => Object.assign({}, r)), zt: G.zoomT || 0,
     };
   }
   function restoreSnap(s) {
@@ -837,6 +867,7 @@
     for (const o of s.pick) { o.k.x = o.x; o.k.gone = o.gone; }
     for (const o of s.checks) { o.c.x = o.x; o.c.gone = o.gone; }
     G.flag.x = s.flagX; G.respawn = { x: s.resp.x, y: s.resp.y }; G.p.x = s.px;
+    G.areas = (s.areas || []).map(r => Object.assign({}, r)); G.zoomT = s.zt || 0;
   }
   function runPlan(plan) {
     const E = G.edit;
@@ -859,6 +890,7 @@
   function setEdit(on) {
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
     if (!G.level.tools.length) { UI.toast('このステージでは「なおす」を使えません'); return; }
+    if (on && G.fog && G.zoomT > 0) { UI.toast('ズーム中は、なおせません'); return; }
     E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
@@ -1037,7 +1069,7 @@
     if (G.mode !== 'play') return;
     if (G.edit.on) { G.frame++; G.shake = 0; updateDoors(dt); return; }
     if (G.hitstop > 0) { G.hitstop -= dt; return; }
-    G.frame++; G.t += dt;
+    G.frame++; G.t += dt; if (G.zoomT > 0) G.zoomT = Math.max(0, G.zoomT - dt);
     if (!G.cleared) G.time += dt;
     updateDoors(dt); updateLifts(dt); updateMagnets(dt); meltCheck(); updatePlayer(dt); updateEnemies(dt); updatePickups();
     if (!G.cleared) G.energy = Math.min(100, G.energy + dt * G.regen);
@@ -1324,6 +1356,38 @@
     ctx.drawImage(enerImg(name, p.face < 0), Math.round(p.x - 3 - cx), Math.round(p.y - 1 - cy) + bob);
     if (p.hovering) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(Math.round(p.x + 2 - cx), Math.round(p.y + p.h + 2 - cy), 6, 1); ctx.fillRect(Math.round(p.x + 4 - cx), Math.round(p.y + p.h + 4 - cy), 2, 1); }
   }
+  // 改ページプレビュー: 見える所は あおい枠。そのほかは グレーのセル。ゴール・かけらは うっすら ひかり、近い てきは ふちに ちかちか
+  let fogCv = null;
+  function drawFog() {
+    const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), rs = fogRects();
+    if (!fogCv) { fogCv = document.createElement('canvas'); fogCv.width = W; fogCv.height = H; }
+    const g = fogCv.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+    g.fillStyle = '#BDBDBD'; g.fillRect(0, 0, W, H); g.fillStyle = '#AFAFAF';
+    for (let x = -(((cx % T) + T) % T); x < W; x += T) g.fillRect(x, 0, 1, H);
+    for (let y = -(((cy % T) + T) % T); y < H; y += T) g.fillRect(0, y, W, 1);
+    g.fillStyle = 'rgba(120,120,120,.35)'; g.font = '700 22px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ページ 1', W / 2, H / 2 + 4);
+    g.globalCompositeOperation = 'destination-out';
+    for (const r of rs) g.fillRect(r.x0 * T - cx, r.y0 * T - cy, (r.x1 - r.x0 + 1) * T, (r.y1 - r.y0 + 1) * T);
+    ctx.drawImage(fogCv, 0, 0);
+    ctx.strokeStyle = G.zoomT > 0 ? '#5B9BD5' : '#1F5BB5'; ctx.lineWidth = 2;
+    for (const r of rs) ctx.strokeRect(r.x0 * T - cx + 1, r.y0 * T - cy + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2);
+    // うっすら ひかる ゴールと かけら(見えない所だけ)
+    const hid = (px, py) => !cellVisible(Math.floor(px / T), Math.floor(py / T));
+    ctx.save(); ctx.globalAlpha = .35 + .2 * Math.sin(G.t * 3);
+    if (EXCEL && hid(G.flag.x + 8, G.flag.y + 8)) { const im = GFXX.floppy(false); ctx.drawImage(im, Math.round(G.flag.x + 8 - im.width / 2 - cx), Math.round(G.flag.y + 8 - im.height / 2 - cy)); }
+    for (const k of G.pick) { if (k.type !== 'gem' || k.got || k.gone || !hid(k.x + 4, k.y + 4)) continue; if (EXCEL) { const im = GFXX.shard(); ctx.drawImage(im, Math.round(k.x + 4 - im.width / 2 - cx), Math.round(k.y + 4 - im.height / 2 - cy)); } else { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(k.x - cx), Math.round(k.y - cy), 8, 8); } }
+    ctx.restore();
+    // ふちの ちかちか: 見えない ところの てきが ちかいとき、あおい枠のふちに あかい しるし
+    const fr = fogFrame(), fx0 = fr.x0 * T - cx, fy0 = fr.y0 * T - cy, fx1 = (fr.x1 + 1) * T - cx, fy1 = (fr.y1 + 1) * T - cy;
+    if (Math.sin(G.t * 10) > -.2) for (const e of G.enemies) {
+      if (e.dead || e.hidden || e.type === 'fake' || (e.type === 'moji' && !e.awake)) continue;
+      const ex = e.x + e.w / 2, ey = e.y + e.h / 2; if (cellVisible(Math.floor(ex / T), Math.floor(ey / T))) continue;
+      const sx = ex - cx, sy = ey - cy; if (sx > fx0 - 6 * T && sx < fx1 + 6 * T && sy > fy0 - 5 * T && sy < fy1 + 5 * T) {
+        const mx = Math.min(fx1 - 7, Math.max(fx0 + 7, sx)), my = Math.min(fy1 - 7, Math.max(fy0 + 7, sy));
+        ctx.fillStyle = '#E8563F'; ctx.beginPath(); ctx.moveTo(mx, my - 5); ctx.lineTo(mx + 5, my + 4); ctx.lineTo(mx - 5, my + 4); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(mx - .5, my - 2, 1, 4); ctx.fillRect(mx - .5, my + 3, 1, 1);
+      }
+    }
+  }
   function drawPlayer(cx, cy) {
     const p = G.p;
     if (p.dead) { // とんでいく しゅじんこう(くるくる まわる)
@@ -1423,6 +1487,7 @@
     updateRibbon();
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
     drawBackground(); drawWorld();
+    if (G.fog) drawFog();
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
@@ -1616,6 +1681,7 @@
       if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '90°回転' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '外す' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
+      else if (id === 'zoom') chips('', [{ v: 1, label: 'ズームする' }], null, v => { runPlan(planFor('zoom', {})); UI.refreshTools(); });
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
