@@ -67,9 +67,9 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <!-- 1 表紙 -->
 <section class="page cover">
   <h1>エナー<i>と</i>ふしぎのシート</h1>
-  <p class="sub">ゲームガイド（v2・13ワールド48ステージ）</p>
+  <p class="sub">ゲームガイド（v2・14ワールド51ステージ）</p>
   <p class="lead">世界は「表計算シート」、ブロックは「色つきのセル」。<br>Excelの機能を、遊びに使うと？ エナーが、こわれたシートを直しに行きます。</p>
-  <p class="toc">しくみ／世界観／編集道具／使い方／ブロック／敵キャラ／組み合わせ／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
+  <p class="toc">しくみ／世界観／編集道具／使い方／ブロック／敵キャラ／組み合わせ／改ページプレビュー／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
 </section>
 
 <!-- 2 しくみ -->
@@ -84,7 +84,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       <h2>ステージごとの「道具」と「コスト上限」</h2>
       <p>各ステージで、使える道具と、使えるコストの上限が決まっています。回復はしません（実験シートと、エナジーの玉をとった時だけ回復）。持っている能力で、どう解くかを考えるパズルです。</p>
       <h2>ふれると痛いもの</h2>
-      <p>ライフは3つ。敵や赤（熱い）ブロックにふれるとダメージ、そのあと約1.3秒は無敵。穴・トゲ・ライフ0はミスで、ステージの最初からやり直し（BGMも最初から）。</p>
+      <p>ライフは3つ。敵や赤（熱い）ブロックにふれるとダメージ、そのあと約1.3秒は無敵。穴・トゲ・ライフ0、リフトにはさまれる（逃げ場があっても）はミスで、ステージの最初からやり直し（BGMも最初から）。</p>
     </div>
     <div>
       <h2>基本操作</h2>
@@ -150,7 +150,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 
 <!-- 4 道具一覧 -->
 <section class="page">
-  <h1>編集機能の一覧（6種）</h1>
+  <h1>編集機能の一覧（8種）</h1>
   <table>
     <tr><th style="width:9%">タブ</th><th style="width:17%">道具</th><th style="width:20%">Excelでは</th><th style="width:8%">コスト</th><th>はたらき</th></tr>
     <tr><td>ホーム</td><td><b>いろコピー</b></td><td>書式のコピー／貼り付け</td><td>2</td><td>色をまねるブロックを選び、ガラスの範囲をドラッグする。ガラスにだけ色がつく（一度ついた色は変えられない）。</td></tr>
@@ -159,6 +159,8 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     <tr><td>データ</td><td><b>フィルター</b></td><td>フィルター</td><td>8</td><td>残す色を選ぶ。ほかの色のブロックは薄くなり、通りぬけられる（磁石には効かない）。</td></tr>
     <tr><td>表示</td><td><b>シートをまもる</b></td><td>シートの保護</td><td>4</td><td>範囲のブロックを保護（カギのマーク）。編集もフィルターも効かず、寄せるときの仕切りになる。</td></tr>
     <tr><td>表示</td><td><b>まもりをはずす</b></td><td>保護の解除</td><td>6</td><td>範囲の保護を外す。外してから、ほかの編集ができる。</td></tr>
+    <tr><td>表示</td><td><b>印刷範囲の設定</b></td><td>印刷範囲の設定</td><td>6</td><td>「改ページプレビュー」のステージで、見える範囲を青い枠で広げる（いまの見える範囲に重ねて、40マスまで・3か所まで）。</td></tr>
+    <tr><td>表示</td><td><b>ズーム</b></td><td>ズーム</td><td>4</td><td>数秒だけ、見える範囲が2倍に広がる。その間は、なおせない。</td></tr>
   </table>
   <p class="muted" style="margin-top:3mm">コストは、ステージごとの上限の中でやりくりします。ステージごとに、使える道具と上限が決まっています（実験シートは全部使えて、コストも回復）。次のページから、それぞれの使い方を実際の画面で紹介します。</p>
 </section>
@@ -267,7 +269,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <tr><td>磁石ブロック</td><td>いちばん近い鋼へ、一直線に動く。となりあった磁石はくっついて動く。どれか1つでも鋼にくっつくと、かたまり全体が止まる。</td></tr>
         <tr><td>判定セル</td><td>存在セル（実体があるとON）・空きセル（何もないとON）・色セル（指定色があるとON）。ONの間、同じ番号の扉が開き、リフトが動く。</td></tr>
         <tr><td>スイッチと扉</td><td>磁石がスイッチに重なるとONになり、同じ色の扉が開く。</td></tr>
-        <tr><td>リフト</td><td>決まった道を往復する足場。色の性質やフィルターが効く。ガラス製は「いろコピー」が使える。</td></tr>
+        <tr><td>リフト</td><td>決まった道を往復する足場。色の性質やフィルターが効く。ガラス製は「いろコピー」が使える。リフトと地面などにはさまれると、逃げ場があっても1ミス。</td></tr>
         <tr><td>溶ける</td><td>赤（マグマ）と青（氷）が縦横に隣り合うと、お互いを打ち消して茶色になる（湯気が出る）。</td></tr>
         <tr><td>ひび割れ</td><td>乗ると約0.5秒で崩れる。編集の対象で、ふつうのブロックのように動かせる。</td></tr>
       </table>
@@ -330,6 +332,27 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     </div>
     <figure><img class="shot" data-shot="c11-b"><figcaption>12個作ったところ</figcaption></figure>
     <figure><img class="shot" data-shot="c11-a"><figcaption>寄せて、作り足したあと</figcaption></figure>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
+</section>
+
+<!-- 12b 改ページプレビュー -->
+<section class="page">
+  <h1>改ページプレビュー（ワールド14）</h1>
+  <p>Excelの「改ページプレビュー」のように、青い枠の中（エナーのまわり）だけが見えて、外はグレーになります。見えない所は、なおせません。ゴールとかけらは、うっすら光り、近づく敵は、枠のふちに赤い三角で知らせます。</p>
+  <div class="cols c3" style="margin-bottom:4mm">
+    <figure><img class="shot" data-shot="fg-1"><figcaption>14-1：青い枠の中だけ見える</figcaption></figure>
+    <figure><img class="shot" data-shot="fg-2"><figcaption>14-2：穴の向こうは見えない</figcaption></figure>
+    <figure><img class="shot" data-shot="fg-3"><figcaption>14-2：「印刷範囲の設定」で、見える所を広げた</figcaption></figure>
+  </div>
+  <div class="cols c3">
+    <figure><img class="shot" data-shot="fg-4"><figcaption>広げた範囲を、「ならべかえ」で穴へ寄せた</figcaption></figure>
+    <figure><img class="shot" data-shot="fg-5"><figcaption>14-3：「ズーム」で、数秒だけ2倍に</figcaption></figure>
+    <div class="card"><h2>編集のしかた</h2><ul>
+      <li>見える所だけ、なおせる。まず範囲を広げてから、寄せる</li>
+      <li>印刷範囲：いまの見える範囲に重ねて選ぶ（40マスまで、3か所まで）</li>
+      <li>ズーム：5秒間。その間は、なおせない</li>
+      <li>ステージ 14-1〜14-3</li></ul></div>
   </div>
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
 </section>
@@ -451,7 +474,8 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <li>並べ替えの敵と、エナーの道具を組み合わせたステージ</li>
         <li>オートフィルのペースを、個体ごとにするか、3段階に揃えるか</li>
         <li>以前からいる敵（てくてく、#DIV/0!など）の絵の見直し</li>
-        <li>ステージ作成から、窓・セルの色を指定できるように</li>
+        <li>ステージ作成から、窓・セルの色・改ページプレビューを指定できるように</li>
+        <li>ワールド14（改ページプレビュー）の、難しさの確認と、ステージ追加</li>
       </ul>
     </div>
   </div>
@@ -461,7 +485,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <script>
 (function () {
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-  const TN = { painter: 'いろコピー', transform: 'かたち', sort: 'ならべかえ', filter: 'フィルター', protect: 'シートをまもる', unprotect: 'まもりをはずす' };
+  const TN = { painter: 'いろコピー', transform: 'かたち', sort: 'ならべかえ', printarea: '印刷範囲の設定', zoom: 'ズーム', filter: 'フィルター', protect: 'シートをまもる', unprotect: 'まもりをはずす' };
   const frame = document.createElement('iframe');
   frame.src = '/v2/index.html?gfx=excel'; frame.style.cssText = 'position:fixed;left:-3000px;top:0;width:1024px;height:768px;border:0';
   document.body.appendChild(frame);
@@ -502,14 +526,22 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     await pair('protect', '13-9', 0, { cell: [12, 8] }); await pair('unprotect', '5-2', 0);
     // 組み合わせ
     await pair('c8', '13-8', 0, { wait: 16, cell: [13, 8] }); await pair('c10', '13-10', 0, { wait: 12, cell: [13, 8], after: 30 }); await pair('c11', '13-11', 0, { wait: 16, cell: [17, 8] });
+    // 改ページプレビュー
+    { const x = await begin('14-1'); wait(x, 1); setShot('fg-1', snap(x, [x.level.start[0] + 3, 8])); }
+    { const x = await begin('14-2'), ed = x.level.solution[0].edits;
+      const place = () => { for (let k = 0; k < 40; k++) { x.p.x = 112; x.p.vx = 0; x.hitstop = 0; g.update(1 / 60); } };
+      place(); setShot('fg-2', snap(x, [11, 8]));
+      g.runTool(ed[0]); setShot('fg-3', snap(x, [13, 8]));
+      g.runTool(ed[1]); for (let k = 0; k < 20; k++) { x.hitstop = 0; g.update(1 / 60); } setShot('fg-4', snap(x, [13, 8])); }
+    { const x = await begin('14-3'); wait(x, 1); g.runTool({ tool: 'zoom' }); for (let k = 0; k < 20; k++) { x.hitstop = 0; g.update(1 / 60); } setShot('fg-5', snap(x, [x.level.start[0] + 3, 8])); }
     // 仕掛け
     { const x = await begin('8-1'); setShot('g-magnet', snap(x, [x.level.w / 2 | 0, 6])); }
     { const x = await begin('7-1'); setShot('g-lift', snap(x, [x.level.w / 2 | 0, 6])); }
     // ワールドの窓
-    const names = { 1: '草原', 2: '森', 3: '湖', 4: '夕焼け', 5: '洞窟', 6: '春', 7: '夏', 8: '秋', 9: '冬', 10: '夜', 11: '空', 12: '火山', 13: 'こわれたシート' };
+    const names = { 1: '草原', 2: '森', 3: '湖', 4: '夕焼け', 5: '洞窟', 6: '春', 7: '夏', 8: '秋', 9: '冬', 10: '夜', 11: '空', 12: '火山', 13: 'こわれたシート', 14: '改ページプレビュー' };
     const grid = document.getElementById('worldGrid');
-    for (let w = 1; w <= 13; w++) {
-      const i = g.LEVELS.findIndex(l => l.world === w); const id = g.LEVELS[i].id; const x = await begin(id); const per = { 4: 16, 5: 15, 6: 14, 7: 10, 8: 9.5, 9: 9, 10: 6.5, 11: 6, 12: 6, 13: 4.5 }[w]; x.t = per ? (w === 7 ? 5.4 : per * 0.12) : 3 + w * 0.7; x.cam.x = 0;
+    for (let w = 1; w <= 14; w++) {
+      const i = g.LEVELS.findIndex(l => l.world === w); const id = g.LEVELS[i].id; const x = await begin(id); const per = { 4: 16, 5: 15, 6: 14, 7: 10, 8: 9.5, 9: 9, 10: 6.5, 11: 6, 12: 6, 13: 4.5, 14: 4.5 }[w]; x.t = per ? (w === 7 ? 5.4 : per * 0.12) : 3 + w * 0.7; x.cam.x = 0;
       const f = document.createElement('figure'); const im = document.createElement('img'); im.className = 'shot'; im.src = snap(x, [9, 6]); const cp = document.createElement('figcaption'); cp.textContent = 'W' + w + '：' + names[w] + (w === 7 ? '（よろい戸が閉まる途中）' : ''); f.append(im, cp); grid.appendChild(f);
     }
     // ブロックの絵
@@ -549,7 +581,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       const label = lv.id === 'LAB' ? '実験' : lv.id;
       const cost = lv.id === 'LAB' ? '回復あり' : (lv.tools && lv.tools.length ? lv.energy : '―');
       const tr = document.createElement('tr'); tr.innerHTML = '<td>' + label + '</td><td>' + lv.name + '</td><td>' + (lv.id === 'LAB' ? '全部' : tools) + '</td><td>' + cost + '</td><td>' + lv.w + '×' + lv.h + '</td>';
-      document.getElementById(n < 25 ? 'stg1' : 'stg2').appendChild(tr);
+      document.getElementById(n < 26 ? 'stg1' : 'stg2').appendChild(tr);
     });
     // ページ番号
     document.querySelectorAll('.page').forEach((p, i) => {
