@@ -132,6 +132,25 @@
     return g;
   }
 
+
+  // ---- データのかけら(宝石)と、ゴールの フロッピーディスク: ほかのキャラと おなじ、ドットのえ+こい灰いろのふち ----
+  const SHARD = ['..LLLLLL..', '.LWWLLMMD.', 'LWLLLMMMDD', 'LLLLMMMMDD', '.LLLMMMDD.', '..LLMMDD..', '...LMMD...', '....MD....'];
+  const SHCX = { W: '#FFFFFF', L: '#9DC3E6', M: '#5B9BD5', D: '#2F5597' };
+  // フロッピー: 14x14のディスクを、かどを したにした(ひしがた)15x15のドット。まえ=シャッターとラベル、うら=まんなかの わ
+  function floppyGrid(back) {
+    const N = 15, c = 7, g = [];
+    for (let y = 0; y < N; y++) { const row = []; for (let x = 0; x < N; x++) {
+      if (Math.abs(x - c) + Math.abs(y - c) > c) { row.push(null); continue; }
+      const s = x + y; let col = s >= 14 ? '#2F5597' : '#4472C4'; // ひだりうえは ひかり、みぎしたは かげ
+      if (!back) {
+        if (y >= 2 && y <= 6 && s >= 7 && s <= 10) col = (s === 9 && y >= 3 && y <= 5) ? '#7F7F7F' : '#D9D9D9'; // シャッター(ぎんいろ)
+        else if (y >= 8 && y <= 12 && s >= 17 && s <= 21) col = (s === 19 && y >= 9 && y <= 11) ? '#C00000' : '#FFFFFF'; // ラベル
+      } else {
+        const dx = x - c, dy = y - c; if (dx * dx + dy * dy <= 7) col = (dx * dx + dy * dy <= 1) ? '#404040' : '#D9D9D9'; // まんなかの わ
+      }
+      row.push(col); } g.push(row); }
+    return g;
+  }
   window.GFXX = {
     HW, HH,
     block(t, c) { const key = (t === 3 ? 'c' : 'b') + c; return cache[key] || (cache[key] = t === 3 ? makeCrack() : makeBlock(c)); },
@@ -140,6 +159,8 @@
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(BIRD.map(r => [...r].map(ch => (ch === '.' ? null : BCX[ch]))), flip, OUTX)); },
     ener(name, flip) { const k = 'en' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.enerGrid(name, BCX), flip, OUTX)); },
     enemy(name, fr, flip) { const k = 'e' + name + fr + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr), flip, OUTX)); },
+    shard() { return cache.shard || (cache.shard = GFX.gridSprite(SHARD.map(r => [...r].map(ch => (ch === '.' ? null : SHCX[ch]))), false, OUTX)); },
+    floppy(back) { const k = 'fl' + (back ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(floppyGrid(back), false, OUTX)); },
     bg: drawBg, frame: drawFrame,
   };
 })();
