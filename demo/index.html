@@ -86,8 +86,17 @@
       <div class="demo-badge">体験版</div>
       <button id="btn-play" class="big">遊ぶ</button>
       <button id="btn-guide" class="ghost">ブロック図鑑</button>
+      <button id="btn-opening" class="ghost">オープニング</button>
       <p class="keys">PC：← → 移動／Z・Space はばたき（長押しでふわり）／E「なおす」（時間を止めてブロックを動かす）／R 最初から<br>「なおす」中：ドラッグで範囲を選ぶ／1〜9 道具／Z 戻す／Y やり直す　　スマホ：画面の ◀ ▶ とボタン</p>
       <p class="credit">© 2026 Agasita</p>
+    </section>
+
+    <section id="screen-opening" class="screen hide">
+      <button id="op-skip" class="ghost tiny">スキップ ▸</button>
+      <canvas id="op-cv" width="192" height="108"></canvas>
+      <div id="op-dots"></div>
+      <p id="op-text"></p>
+      <p id="op-hint"></p>
     </section>
 
     <section id="screen-select" class="screen hide">
