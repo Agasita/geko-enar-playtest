@@ -1085,32 +1085,21 @@
     const ox = x + ((s - 5) >> 1), oy = y + ((s - 7) >> 1); ctx.fillStyle = on ? '#FFFFFF' : '#A6A6A6';
     for (let j = 0; j < 7; j++) for (let i = 0; i < 5; i++) if (SIGMA[j][i] === '1') ctx.fillRect(ox + i, oy + j, 1, 1);
   }
-  // ===== データのかけら(宝石のかたち)と、ゴールの フロッピーディスク =====
-  // かけら: ひし形の宝石。ゆらゆら うごいて、ときどき きらっと ひかる。on=false は HUDの「まだ」の わく
+  // ===== データのかけら(宝石)と、ゴールの フロッピーディスク: ほかの えと おなじ ドットの スプライト =====
+  // かけら: ゆらゆら うごいて、ときどき ぴかっと ひかる(1ドットの 十字)。on=false は HUDの「まだ」の わく
   function drawShard(cx, cy, s, on) {
-    const h = s / 2, w = s * .5, top = cy - h, bot = cy + h + 1, ty = cy - h * .35;
-    if (on) { const a = .18 + .1 * Math.sin(G.t * 4 + cx * .3), g2 = ctx.createRadialGradient(cx, cy, 1, cx, cy, s * 1.1); g2.addColorStop(0, 'rgba(160,245,255,' + a * 2 + ')'); g2.addColorStop(1, 'rgba(160,245,255,0)'); ctx.fillStyle = g2; ctx.fillRect(cx - s * 1.2, cy - s * 1.2, s * 2.4, s * 2.4); }
-    const P = (pts, col) => { ctx.fillStyle = col; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); };
-    const L = [cx - w, ty], R = [cx + w, ty], TL = [cx - w * .55, top], TR = [cx + w * .55, top], B = [cx, bot];
-    if (on) { P([TL, TR, R, L], '#BFF6F8'); P([L, [cx, ty], B], '#43B3D8'); P([R, [cx, ty], B], '#2A8DBA'); P([TL, [cx, ty], L], '#7FDDEB'); P([TR, [cx, ty], R], '#5BC6E2'); }
-    else { P([TL, TR, R, L, B], '#D9D9D9'); ctx.strokeStyle = '#A6A6A6'; ctx.lineWidth = 1; ctx.stroke(); }
-    if (on) { const k = Math.sin(G.t * 3 + cx * .7); if (k > .93) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx - w * .5) - 1, Math.round(top + 1), 3, 1); ctx.fillRect(Math.round(cx - w * .5), Math.round(top), 1, 3); } }
+    if (!on) return;
+    const im = GFXX.shard(); ctx.drawImage(im, Math.round(cx - im.width / 2), Math.round(cy - im.height / 2));
+    if (Math.sin(G.t * 3 + cx * .7) > .93) { const x = Math.round(cx - 3), y = Math.round(cy - 4); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3); }
   }
-  // ゴール: 角を下にした フロッピーディスクが、ゆっくり くるくる まわる。とると クリア
+  // ゴール: 角を下にした フロッピーディスクが、ゆっくり くるくる まわる(よこはばが ちぢんで、うらがえる)。とると クリア
   function drawGoal(x, y) {
-    const cx = x + 8, cyBase = y + 16; let a = 1, sc = 1, spin = G.t * 1.5;
-    if (G.cleared) { const c = G.clearT || 0; a = Math.max(0, 1 - c * 1.8); sc = 1 + c * 2.2; spin = G.t * 1.5 + c * 12; if (a <= 0) return; }
-    const cy = cyBase + Math.sin(G.t * 2.4) * 1.5, k = Math.cos(spin), back = k < 0, sx = Math.max(.12, Math.abs(k));
-    ctx.save(); ctx.globalAlpha = a;
-    const gl = ctx.createRadialGradient(cx, cy, 2, cx, cy, 20); gl.addColorStop(0, 'rgba(255,240,150,' + (.35 + .15 * Math.sin(G.t * 3)) + ')'); gl.addColorStop(1, 'rgba(255,240,150,0)'); ctx.fillStyle = gl; ctx.fillRect(cx - 22, cy - 22, 44, 44);
-    ctx.translate(cx, cy); ctx.scale(sx * sc, sc); ctx.rotate(Math.PI / 4);
-    const S = 7; // 14x14 の ディスク
-    ctx.fillStyle = '#1B2A57'; ctx.fillRect(-S - 1, -S - 1, S * 2 + 2, S * 2 + 2); // ふち
-    ctx.fillStyle = back ? '#3A5BB5' : '#2F4DA3'; ctx.beginPath(); ctx.moveTo(-S, -S); ctx.lineTo(S - 3, -S); ctx.lineTo(S, -S + 3); ctx.lineTo(S, S); ctx.lineTo(-S, S); ctx.closePath(); ctx.fill(); // かどが ななめに かけた ほんたい
-    if (!back) { ctx.fillStyle = '#CDD3DE'; ctx.fillRect(-4, -S, 9, 5); ctx.fillStyle = '#6B7488'; ctx.fillRect(1, -S + 1, 2, 3); ctx.fillStyle = '#F5F7FB'; ctx.fillRect(-5, 0, 11, S); ctx.fillStyle = '#E8563F'; ctx.fillRect(-5, 1, 11, 2); ctx.fillStyle = '#B5BDCF'; ctx.fillRect(-3, 4, 7, 1); ctx.fillRect(-3, 6, 5, 1); }
-    else { ctx.fillStyle = '#CDD3DE'; ctx.beginPath(); ctx.arc(0, -1, 4.5, 0, 6.3); ctx.fill(); ctx.fillStyle = '#6B7488'; ctx.fillRect(-1.5, -2.5, 3, 3); ctx.fillStyle = '#1B2A57'; ctx.fillRect(-6, 4, 12, 3); }
-    ctx.restore();
-    if (!G.cleared && Math.sin(G.t * 2 + 1) > .94) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + 6), Math.round(cy - 9), 3, 1); ctx.fillRect(Math.round(cx + 7), Math.round(cy - 10), 1, 3); }
+    const cx = x + 8; let a = 1, spin = G.t * 1.6, grow = 1;
+    if (G.cleared) { const c = G.clearT || 0; a = Math.max(0, 1 - c * 1.8); grow = 1 + c * 1.6; spin = G.t * 1.6 + c * 14; if (a <= 0) return; }
+    const k = Math.cos(spin), back = k < 0, im = GFXX.floppy(back), w = Math.max(3, Math.round(im.width * Math.abs(k) * grow)), h = Math.round(im.height * grow);
+    const bob = Math.round(Math.sin(G.t * 2.4) * 1.5), dx = Math.round(cx - w / 2), dy = Math.round(y + 16 - h / 2) + bob;
+    ctx.globalAlpha = a; ctx.drawImage(im, dx, dy, w, h); ctx.globalAlpha = 1;
+    if (!G.cleared && Math.sin(G.t * 2 + 1) > .94) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + 6), dy + 1, 3, 1); ctx.fillRect(Math.round(cx + 7), dy, 1, 3); }
   }
   function drawWorld() {
     const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
