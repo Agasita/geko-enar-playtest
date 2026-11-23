@@ -759,6 +759,48 @@
     solution: [{ x: 7, edits: [{ tool: 'sort', rect: { x0: 10, y0: 3, x1: 15, y1: 10 }, opts: { sort: 'D' } }, { tool: 'painter', srcCell: [4, 6], rect: { x0: 10, y0: 10, x1: 15, y1: 10 } }] }],
   }));
 
+  // ---- ワールド13: Excelの こまった きどう(あたらしい てきを ためす) ----
+  L.push(make({
+    id: '13-1', name: '#DIV/0! の通り道', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '赤い「#DIV/0!」は、踏めないしたおせない。タイミングを見て、飛び越えよう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.rect(7, 3, 17, 7, 'S');
+      m.ent('div0', 11, 9); m.ent('div0', 15, 9);
+      m.gem(9, 8); m.gem(16, 8); m.gem(21, 8);
+      m.flag = [23, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '13-2', name: 'オートフィルの橋', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「オートフィル」は、数秒ごとに足もとの床を右へ増やす。緑の枠が次に増えるマス' },
+      { x: 5, text: '倒してしまうと床が増えなくなる。上手に飛び越えて、橋の先へ進もう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(9, 18);
+      m.ent('autofill', 8, 9, { d: 1 });
+      m.gem(13, 8); m.gem(18, 8); m.gem(4, 7);
+      m.flag = [23, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '13-3', name: '白い文字', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '白いシートに、うっすら文字が見える所がある。近づくと…？' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.ent('moji', 9, 9); m.ent('moji', 15, 9); m.ent('moji', 20, 9);
+      m.gem(8, 7); m.gem(16, 7); m.gem(22, 8);
+      m.flag = [24, 9];
+    },
+  }));
+
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',

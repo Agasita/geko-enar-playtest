@@ -202,6 +202,10 @@
     if (e.type === 'guard') return Object.assign(base, { w: 12, h: 13, ox: 2, oy: 3, vx: -22, hp: 2, dir: -1, x: base.x + 2, y: base.y + 3 });
     if (e.type === 'flyer') return Object.assign(base, { w: 12, h: 10, ox: 2, oy: 5, hp: 1, bx: base.x + 2, by: base.y + 5, range: e.range || 30, x: base.x + 2, y: base.y + 5 });
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
+    // ---- Excelの こまった きどう ----
+    if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
+    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
+    if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
     return base;
   }
   function snapCam() {
@@ -413,6 +417,16 @@
 
   // ===== てき =====
   const hiddenAt = (cx, cy) => G.hideRow.has(cy) || G.hideCol.has(cx);
+  // オートフィルの「つぎに ふえる セル」: じぶんの足もと(ゆか)の たかさで、むきの さきの、さいしょの あきマス
+  function fillTarget(e) {
+    const tx0 = Math.floor((e.x + e.w / 2) / T), ty = Math.floor((e.y + e.h / 2) / T) + 1, d = e.d || 1;
+    for (let k = 1; k <= 12; k++) {
+      const x = tx0 + d * k; if (!inb(x, ty)) return null; const f = G.front[ty][x];
+      if (f === 0) return [x, ty];
+      if (!isBlockT(f)) return null;
+    }
+    return null;
+  }
   function updateEnemies(dt) {
     const p = G.p;
     for (const e of G.enemies) {
@@ -421,14 +435,25 @@
       e.t += dt; if (e.flash > 0) e.flash -= dt;
       if (e.hidden) continue;
       if (e.stun > 0) { e.stun -= dt; continue; }
-      if (e.type === 'walker' || e.type === 'guard') {
+      if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
+        if (Math.abs(p.x + 5 - (e.x + 6)) < 46 && Math.abs(p.y - e.y) < 30 && !p.dead) { e.awake = true; e.t = 0; SFX.bad(); spawnParts(e.x + 6, e.y + 4, 8, '#fff', 60); G.shake = Math.max(G.shake, 2); }
+        continue;
+      }
+      if (e.type === 'autofill') {
+        e.dir = e.d; e.cd -= dt;
+        if (e.cd <= 0) { const tg = fillTarget(e); e.cd = 2.2; if (tg && e.made < 10 && !cellBlocked(tg[0], tg[1])) {
+          const below = G.front[tg[1]][Math.floor((e.x + e.w / 2) / T)], sc = isBlockT(below) ? G.col[tg[1]][Math.floor((e.x + e.w / 2) / T)] : 0;
+          G.front[tg[1]][tg[0]] = TL.STONE; G.col[tg[1]][tg[0]] = sc === GLASS ? 0 : sc; G.lock[tg[1]][tg[0]] = 0; e.made++; SFX.place(); spawnParts(tg[0] * T + 8, tg[1] * T + 8, 6, '#70AD47', 40); } }
+      }
+      if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji') {
         // おもさとあるぎょう(縁やかべで折り返す)
         e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0;
-        const spd = e.type === 'guard' ? 22 : 28;
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
+        if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
-        if (!floorAhead || wall) e.dir = -e.dir; else moveX(e, e.dir * spd * dt);
+        if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
       } else if (e.type === 'flyer') {
         const px = e.x;
         e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
@@ -439,8 +464,8 @@
       }
       // 接触ダメージ・ダッシュ攻撃
       if (!p.dead && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
-        if (p.dashT > 0 && (e.type === 'guard' || e.type === 'walker' || e.type === 'flyer')) { if (e.type === 'guard') { e.stun = .8; } damageEnemy(e, 1); p.dashT = 0; p.vx = -p.face * 60; }
-        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret') { damageEnemy(e, 1); p.vy = -240; p.hover = TU.HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
+        if (p.dashT > 0 && (e.type === 'guard' || e.type === 'walker' || e.type === 'flyer' || e.type === 'moji')) { if (e.type === 'guard') { e.stun = .8; } damageEnemy(e, 1); p.dashT = 0; p.vx = -p.face * 60; }
+        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret' && e.type !== 'div0') { damageEnemy(e, 1); p.vy = -240; p.hover = TU.HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
         else hurtPlayer(e);
       }
     }
@@ -1117,6 +1142,13 @@
     ctx.globalAlpha = a; ctx.drawImage(im, dx, dy, w, h); ctx.globalAlpha = 1;
     if (!G.cleared && Math.sin(G.t * 2 + 1) > .94) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + 6), dy + 1, 3, 1); ctx.fillRect(Math.round(cx + 7), dy, 1, 3); }
   }
+  // しろい文字(ぎたい): しろい シートに とけこむ、ほとんど みえない 文字。ほんの すこし、ゆらぐ
+  function drawMojiHint(e, cx, cy) {
+    const x = Math.round(e.x + 6 - cx), y = Math.round(e.y + 7 - cy), a = .8 + .2 * Math.sin(e.t * 2.2);
+    ctx.save(); ctx.font = '700 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(165,190,230,' + (a * .85) + ')'; ctx.fillText('あ', x + 1, y + 1);
+    ctx.fillStyle = 'rgba(250,251,255,' + a + ')'; ctx.fillText('あ', x, y); ctx.restore();
+  }
   function drawWorld() {
     const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
     const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
@@ -1141,12 +1173,14 @@
     for (const e of G.enemies) {
       if (e.dead || e.hidden) continue;
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
-      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : 'turret';
+      if (e.type === 'moji' && !e.awake) { drawMojiHint(e, cx, cy); continue; }
+      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji') ? (EXCEL ? e.type : 'walker') : 'turret';
       const fi = name === 'guard' || name === 'turret' ? 0 : fr;
       const s = EXCEL ? GFXX.enemy(name, fi, e.dir < 0) : sprite(name, fi, flip);
       const x = Math.round(e.x - (e.ox || 0) - cx) - (EXCEL ? 1 : 0), y = Math.round(e.y - (e.oy || 0) - cy) - (EXCEL ? 1 : 0);
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
+      if (e.type === 'autofill' && e.cd < .8 && e.made < 10) { const tg = fillTarget(e); if (tg) { ctx.fillStyle = 'rgba(112,173,71,' + (.35 + .3 * Math.sin(e.t * 18)) + ')'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.strokeStyle = '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
@@ -1413,6 +1447,9 @@
     '12-1': 'あつい ブロックと つめたい ブロックが ぶつかると、ジュッと ぬるくなる。おそうじソフトも、ここは きれいに できなかった。',
     '12-2': 'ガラスに いろを うつすと、となりの ブロックの せいしつも かわる。ちいさな ふれあいが、せかいを かえる。',
     '12-3': 'あつさと つめたさを、つりあわせる。バランスが、こわれた シートを なおす カギらしい。',
+    '13-1': '「#DIV/0!」は、ゼロで わられて こまっている。さわると あぶないから、そっと よけて あげよう。',
+    '13-2': 'オートフィルは、ゆかを ひろげたいだけ。おせっかいだけど、わるいこだとは かぎらない。',
+    '13-3': 'しろい文字は、みえないふりが とくい。でも、よく みると ちょっとだけ ゆれている。',
   };
   const UI = {
     toastT: 0,
