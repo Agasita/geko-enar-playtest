@@ -101,7 +101,7 @@
     if (lv.windows) return lv.windows;
     if (lv._wins) return lv._wins;
     const out = []; let k = 0;
-    for (let x0 = 3; x0 + 5 <= lv.w - 2; x0 += 17, k++) { if (k % 2 === 0) out.push([x0, 3, Math.min(lv.w - 2, x0 + 6), 6]); else out.push([x0, 4, Math.min(lv.w - 2, x0 + 4), 6]); }
+    for (let x0 = 2; x0 + 7 <= lv.w - 2; x0 += 15, k++) { if (k % 2 === 0) out.push([x0, 3, Math.min(lv.w - 2, x0 + 9), 7]); else out.push([x0, 4, Math.min(lv.w - 2, x0 + 7), 7]); }
     return (lv._wins = out);
   }
   function shutterOpen(sh, t, idx) { // 1=あいている 0=しまっている (パタパタ)
@@ -115,7 +115,7 @@
   const cloud = (ctx, x, y, s, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, 14 * s, 3 * s); ctx.fillRect(x + 3 * s, y - 2 * s, 8 * s, 3 * s); };
   function hillsRow(ctx, w, h, base, amp, step, col, off) { ctx.fillStyle = col; for (let x = -step; x < w + step; x += step) { const px = x - (((off % step) + step) % step), k = Math.floor((x + off) / step); ctx.beginPath(); ctx.ellipse(px + step / 2, base + 2, step * .75, amp * (.6 + hash(k) * .6), 0, Math.PI, 0); ctx.fill(); } ctx.fillRect(0, base, w, h - base); }
   function scene(ctx, kind, w, h, t, cx) {
-    const s1 = cx * .12, s2 = cx * .25, s3 = cx * .45;
+    const s1 = cx * .05, s2 = cx * .1, s3 = cx * .17; // うしろの けしきは、ゆっくり ながれる
     if (kind === 'meadow') {
       sky(ctx, w, h, ['#BFE3F5', '#D6EEF9', '#EAF6FC']); disc(ctx, w * .78, h * .26, 7 + Math.sin(t * 2), 'rgba(255,230,153,.6)'); disc(ctx, w * .78, h * .26, 5, '#FFD966');
       cloud(ctx, ((t * 4 + 10 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .2, 1, '#fff'); cloud(ctx, ((t * 3 + 70 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .42, .8, '#fff');
@@ -182,27 +182,41 @@
     }
   }
   function drawWindow(ctx, win, idx, sh, G, cx, cy, W, H) {
-    const T = 16, x = win[0] * T - cx, y = win[1] * T - cy, w = (win[2] - win[0] + 1) * T, h = (win[3] - win[1] + 1) * T;
+    const T = 16, x = win[0] * T - cx, y = win[1] * T - cy, w = (win[2] - win[0] + 1) * T, h = (win[3] - win[1] + 1) * T, B = 4; // B=まどわくの あつさ
     if (x + w < HW - 2 || x > W || y + h < 0 || y > H) return;
-    const t = G.t || 0, o = shutterOpen(sh.shut, t, idx);
-    ctx.save(); ctx.beginPath(); ctx.rect(x + 2, y + 2, w - 4, h - 4); ctx.clip(); ctx.translate(x + 2, y + 2);
-    scene(ctx, sh.scene, w - 4, h - 4, t + idx * 3.1, cx + idx * 37);
-    ctx.restore();
-    // まどわく(Excelの「かこい」のような うす灰いろ)+ まんなかの さん
-    ctx.fillStyle = '#7F7F7F'; ctx.fillRect(x, y, w, 2); ctx.fillRect(x, y + h - 2, w, 2); ctx.fillRect(x, y, 2, h); ctx.fillRect(x + w - 2, y, 2, h);
-    ctx.fillStyle = '#F2F2F2'; ctx.fillRect(x + 2, y + 2, w - 4, 1); ctx.fillRect(x + 2, y + 2, 1, h - 4);
-    ctx.fillStyle = '#8F8F8F'; ctx.fillRect(x + Math.floor(w / 2) - 1, y + 2, 2, h - 4); ctx.fillRect(x + 2, y + Math.floor(h / 2) - 1, w - 4, 2);
+    const t = G.t || 0, o = shutterOpen(sh.shut, t, idx), ix = x + B, iy = y + B, iw = w - B * 2, ih = h - B * 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
+    scene(ctx, sh.scene, iw, ih, t + idx * 3.1, cx + idx * 37);
+    // ガラス: ほんのり ひんやりした いろ、うえ・ひだりの うす ひかり、ななめの はんしゃ、ときどき ひかりが さっと はしる
+    ctx.fillStyle = 'rgba(205,232,255,.13)'; ctx.fillRect(0, 0, iw, ih);
+    ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(0, 0, iw, 2); ctx.fillRect(0, 0, 2, ih);
+    ctx.fillStyle = 'rgba(0,30,60,.14)'; ctx.fillRect(0, ih - 2, iw, 2); ctx.fillRect(iw - 2, 0, 2, ih);
+    const stripe = (ox, wd, a) => { ctx.fillStyle = 'rgba(255,255,255,' + a + ')'; ctx.beginPath(); ctx.moveTo(ox + ih * .6, 0); ctx.lineTo(ox + ih * .6 + wd, 0); ctx.lineTo(ox + wd, ih); ctx.lineTo(ox, ih); ctx.closePath(); ctx.fill(); };
+    stripe(iw * .12, 7, .2); stripe(iw * .12 + 11, 3, .16); stripe(iw * .56, 12, .13); stripe(iw * .56 + 16, 2, .12);
+    const sweep = (((t + idx * 2.3) % 7) / 7) * 1.6 - .3; if (sweep > 0 && sweep < 1) { const gx = sweep * (iw + ih) - ih * .6; ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.beginPath(); ctx.moveTo(gx + ih * .6, 0); ctx.lineTo(gx + ih * .6 + 6, 0); ctx.lineTo(gx + 6, ih); ctx.lineTo(gx, ih); ctx.closePath(); ctx.fill(); }
     // よろい戸(パタパタ): ひだり・みぎの ふたが はばを ちぢめたり ひろげたり
     if (sh.shut) {
-      const full = (w - 4) / 2, pw = Math.max(3, Math.round(full * (1 - o) + 3 * o));
+      const full = iw / 2, pw = Math.max(3, Math.round(full * (1 - o) + 3 * o));
       for (const side of [0, 1]) {
-        const px = side ? x + w - 2 - pw : x + 2; ctx.fillStyle = '#C8A06B'; ctx.fillRect(px, y + 2, pw, h - 4);
-        ctx.fillStyle = '#A57C48'; for (let yy = y + 4; yy < y + h - 3; yy += 3) ctx.fillRect(px, yy, pw, 1);
-        ctx.fillStyle = '#7A5A33'; ctx.fillRect(side ? px : px + pw - 1, y + 2, 1, h - 4); ctx.fillStyle = '#E3C493'; ctx.fillRect(side ? px + pw - 1 : px, y + 2, 1, h - 4);
-        if (o < .15) { ctx.fillStyle = '#5C4426'; ctx.fillRect(side ? px + 1 : px + pw - 3, y + Math.floor(h / 2) - 1, 2, 3); }
+        const px = side ? iw - pw : 0; ctx.fillStyle = '#C8A06B'; ctx.fillRect(px, 0, pw, ih);
+        ctx.fillStyle = '#A57C48'; for (let yy = 2; yy < ih - 1; yy += 3) ctx.fillRect(px, yy, pw, 1);
+        ctx.fillStyle = '#7A5A33'; ctx.fillRect(side ? px : px + pw - 1, 0, 1, ih); ctx.fillStyle = '#E3C493'; ctx.fillRect(side ? px + pw - 1 : px, 0, 1, ih);
+        if (o < .15) { ctx.fillStyle = '#5C4426'; ctx.fillRect(side ? px + 1 : px + pw - 3, Math.floor(ih / 2) - 1, 2, 3); }
       }
     }
-    ctx.fillStyle = '#BFBFBF'; ctx.fillRect(x - 2, y + h, w + 4, 2); ctx.fillStyle = '#8F8F8F'; ctx.fillRect(x - 2, y + h + 2, w + 4, 1);
+    ctx.restore();
+    // まどわく: ブロックと おなじ かきかた(こい ふちどり + ひかり + かげ + びょう)。なかの さんは なし
+    ctx.fillStyle = '#A6A6A6'; ctx.fillRect(x, y, w, B); ctx.fillRect(x, y + h - B, w, B); ctx.fillRect(x, y + B, B, h - B * 2); ctx.fillRect(x + w - B, y + B, B, h - B * 2);
+    ctx.fillStyle = '#E0E0E0'; ctx.fillRect(x + 1, y + 1, w - 2, 1); ctx.fillRect(x + 1, y + 1, 1, h - 2);
+    ctx.fillStyle = '#C4C4C4'; ctx.fillRect(x + 2, y + 2, w - 4, 1); ctx.fillRect(x + 2, y + 2, 1, h - 4);
+    ctx.fillStyle = '#7F7F7F'; ctx.fillRect(x + 1, y + h - 2, w - 2, 1); ctx.fillRect(x + w - 2, y + 1, 1, h - 2);
+    ctx.fillStyle = '#404040'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h);
+    // くりぬいた ガラスの ふち(うちがわの かげ・ひかり)
+    ctx.fillStyle = '#404040'; ctx.fillRect(ix - 1, iy - 1, iw + 2, 1); ctx.fillRect(ix - 1, iy + ih, iw + 2, 1); ctx.fillRect(ix - 1, iy - 1, 1, ih + 2); ctx.fillRect(ix + iw, iy - 1, 1, ih + 2);
+    ctx.fillStyle = '#7F7F7F'; ctx.fillRect(ix - 2, iy - 2, iw + 4, 1); ctx.fillRect(ix - 2, iy - 2, 1, ih + 4);
+    ctx.fillStyle = '#E8E8E8'; ctx.fillRect(ix - 2, iy + ih + 1, iw + 4, 1); ctx.fillRect(ix + iw + 1, iy - 2, 1, ih + 4);
+    for (const [rx, ry] of [[x + 2, y + 2], [x + w - 4, y + 2], [x + 2, y + h - 4], [x + w - 4, y + h - 4]]) { ctx.fillStyle = '#595959'; ctx.fillRect(rx, ry, 2, 2); ctx.fillStyle = '#F2F2F2'; ctx.fillRect(rx, ry, 1, 1); }
+    ctx.fillStyle = '#8F8F8F'; ctx.fillRect(x - 2, y + h, w + 4, 2); ctx.fillStyle = '#404040'; ctx.fillRect(x - 2, y + h + 2, w + 4, 1);
   }
   function drawBg(ctx, G, lv, W, H) {
     const sh = sheetOf(lv);
