@@ -257,12 +257,9 @@
       L.x = n.x; L.y = n.y;
       if (ride && dy > 0) { moveY(p, dy); moveX(p, dx); }
       if (!ride && !p.dead && liftOn(L) && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // よこやしたからあたったら、おしだす
-        // あたった ひとを おしだす。おした さきが かべや ゆかの なかなら、よこへ にがす。どこも ふさがっていたら「はさまれた」(ミス)
-        const along = Math.abs(dy) >= Math.abs(dx) ? [p.x, dy < 0 ? L.y - p.h : L.y + L.h] : [dx > 0 ? L.x + L.w : L.x - p.w, p.y];
-        const cands = [along, [L.x - p.w, p.y], [L.x + L.w, p.y]];
-        if (Math.abs(dy) >= Math.abs(dx)) cands.splice(1, 2, p.x + p.w / 2 < L.x + L.w / 2 ? [L.x - p.w, p.y] : [L.x + L.w, p.y], p.x + p.w / 2 < L.x + L.w / 2 ? [L.x + L.w, p.y] : [L.x - p.w, p.y]);
-        const ok = cands.find(c => !boxHitsSolid(c[0], c[1], p.w, p.h));
-        if (ok) { p.x = ok[0]; p.y = ok[1]; } else { p.x = along[0]; p.y = along[1]; killPlayer('crush'); }
+        // あたった ひとを おしだす。おした さきが かべや ゆかの なかなら「はさまれた」: にげばが あっても ミス(1ミス)
+        const to = Math.abs(dy) >= Math.abs(dx) ? [p.x, dy < 0 ? L.y - p.h : L.y + L.h] : [dx > 0 ? L.x + L.w : L.x - p.w, p.y];
+        if (!boxHitsSolid(to[0], to[1], p.w, p.h)) { p.x = to[0]; p.y = to[1]; } else { p.x = to[0]; p.y = to[1]; killPlayer('crush'); }
       }
     }
   }
