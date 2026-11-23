@@ -864,6 +864,37 @@
     },
   }));
 
+  L.push(make({
+    id: '13-8', name: 'うまった かけら', world: 13, w: 26, tools: ['sort'], energy: 20, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「オートフィル」が、みぞを ブロックでうめていく。ぜんぶで6こ' },
+      { x: 6, text: 'かけらが うまってしまったら、「ならべかえ」でブロックを寄せて、掘り出そう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.rect(8, 10, 17, 10, '.');
+      m.ent('autofill', 7, 9, { d: 1, cap: 6 });
+      m.gem(9, 10); m.gem(16, 10); m.gem(22, 8);
+      m.flag = [24, 9];
+    },
+    solution: [{ x: 7, edits: [{ tool: 'sort', rect: { x0: 8, y0: 10, x1: 17, y1: 10 }, opts: { sort: 'R' } }] }],
+  }));
+
+  L.push(make({
+    id: '13-9', name: '色をまもる', world: 13, w: 26, tools: ['protect'], energy: 12, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「条件つき書式」が、橋の色を 赤と青に かえてしまう。赤はあつくてさわれない' },
+      { x: 5, text: '色がかわる前に、「シートをまもる」で橋をまもると、色を変えられなくなる' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(8, 15);
+      for (let x = 8; x <= 15; x++) m.blk(x, 10, 0);
+      m.ent('condfmt', 11, 6, { seq: [2, 1], ranges: [[8, 10, 11, 10], [12, 10, 15, 10]] });
+      m.gem(9, 8); m.gem(14, 8); m.gem(21, 8);
+      m.flag = [23, 9];
+    },
+    solution: [{ x: 4, edits: [{ tool: 'protect', rect: { x0: 8, y0: 10, x1: 15, y1: 10 } }] }],
+  }));
+
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
