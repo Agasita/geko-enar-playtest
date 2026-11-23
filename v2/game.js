@@ -204,7 +204,7 @@
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
-    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap || 10, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
+    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap === undefined ? 1e9 : e.cap, max: e.max === undefined ? 1e9 : e.max, reach: e.reach || 12, rate: e.rate || 2.2, c: e.c, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
     if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
@@ -426,13 +426,20 @@
   // オートフィルの「つぎに ふえる セル」: じぶんの足もと(ゆか)の たかさで、むきの さきの、さいしょの あきマス
   function fillTarget(e) {
     const tx0 = Math.floor((e.x + e.w / 2) / T), ty = Math.floor((e.y + e.h / 2) / T) + 1, d = e.d || 1;
-    for (let k = 1; k <= 12; k++) {
+    for (let k = 1; k <= (e.reach || 12); k++) {
       const x = tx0 + d * k; if (!inb(x, ty)) return null; const f = G.front[ty][x];
       if (f === 0) return [x, ty];
       if (!isBlockT(f)) return null;
     }
     return null;
   }
+  // オートフィル: ねらう ばんい(reach)の なかに、いま ある ブロックの かず。cap に たっしていると、つくらない(よせて ばんいの そとへ だすと、また つくる)
+  function fillWindowCount(e) {
+    const tx0 = Math.floor((e.x + e.w / 2) / T), ty = Math.floor((e.y + e.h / 2) / T) + 1, d = e.d || 1; let n = 0;
+    for (let k = 1; k <= (e.reach || 12); k++) { const x = tx0 + d * k; if (!inb(x, ty)) break; if (isBlockT(G.front[ty][x])) n++; }
+    return n;
+  }
+  const AF_COL = ['#C9A15E', '#E8563F', '#6FD6E8', '#58B368', '#F5C842'];
   // 条件つき書式: はんいの ブロックの いろを かえる(ガラス・鋼・カギは そのまま)
   function formatRange(r, col) {
     let n = 0;
@@ -481,7 +488,7 @@
     ['flyer', 'ふわふわ', 'くうちゅうを ゆらゆら ただよう。上から ふむと たおせる'],
     ['turret', 'たまうち', 'エナーの ほうを むいて、たまを うつ。うつ まえに 光る。ふめないし、たおせない。光った ときに、たまの みちから はずれよう'],
     ['div0', '#DIV/0!', 'エラーの かたまり。ふめないし、たおせない。ゆっくり おうふく するので、タイミングを みて よけよう'],
-    ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。ねらう マスが 光る。ふむと たおせる'],
+    ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。つくる ブロックの いろは、しゅるいで ちがう（赤や 氷も）。ねらう マスが 光る。ふむと たおせる'],
     ['moji', 'しろい文字', 'しろい シートに とけこむ、ほとんど みえない 文字。ちかづくと あらわれて、おいかけてくる。ふむと たおせる'],
     ['condfmt', '条件つき書式', 'ふわふわ ういて、はんいの ブロックの いろを、ときどき かってに かえる。かえる まえに、はんいが ちかちか する。はんいが ふたつ ある ときは、かわる いろが ずれる。ふむと たおせる'],
     ['shuffler', '並べ替え', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
@@ -514,9 +521,9 @@
       }
       if (e.type === 'autofill') {
         e.dir = e.d; e.cd -= dt;
-        if (e.cd <= 0) { const tg = fillTarget(e); e.cd = 2.2; if (tg && e.made < e.cap && !cellBlocked(tg[0], tg[1])) {
+        if (e.cd <= 0) { const tg = fillTarget(e); e.cd = e.rate; if (tg && e.made < e.max && fillWindowCount(e) < e.cap && !cellBlocked(tg[0], tg[1])) {
           const below = G.front[tg[1]][Math.floor((e.x + e.w / 2) / T)], sc = isBlockT(below) ? G.col[tg[1]][Math.floor((e.x + e.w / 2) / T)] : 0;
-          G.front[tg[1]][tg[0]] = TL.STONE; G.col[tg[1]][tg[0]] = sc === GLASS ? 0 : sc; G.lock[tg[1]][tg[0]] = 0; e.made++; SFX.place(); spawnParts(tg[0] * T + 8, tg[1] * T + 8, 6, '#70AD47', 40); } }
+          G.front[tg[1]][tg[0]] = TL.STONE; G.col[tg[1]][tg[0]] = e.c !== undefined ? e.c : (sc === GLASS ? 0 : sc); G.lock[tg[1]][tg[0]] = 0; e.made++; SFX.place(); spawnParts(tg[0] * T + 8, tg[1] * T + 8, 6, e.c !== undefined ? AF_COL[e.c] : '#70AD47', 40); } }
       }
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake') {
         // おもさとあるぎょう(縁やかべで折り返す)
@@ -1272,7 +1279,7 @@
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       if (e.type === 'moji' && !e.awake) { drawMojiHint(e, cx, cy); continue; }
       if (e.type === 'fake') { drawFake(e, cx, cy); continue; }
-      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'condfmt') ? (EXCEL ? e.type : 'walker') : 'turret';
+      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'condfmt') ? (EXCEL ? (e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type) : 'walker') : 'turret';
       const fi = name === 'guard' || name === 'turret' ? 0 : fr;
       if (e.type === 'circ') { // みちすじ(うすい てんせん)
         const lp = e.loop; ctx.strokeStyle = 'rgba(47,62,107,.32)'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.strokeRect(lp.x0 * T + 8 - cx + .5, lp.y0 * T + 8 - cy + .5, (lp.x1 - lp.x0) * T, (lp.y1 - lp.y0) * T); ctx.setLineDash([]);
@@ -1291,7 +1298,7 @@
       const x = Math.round(e.x - (e.ox || 0) - cx) - (EXCEL ? 1 : 0), y = Math.round(e.y - (e.oy || 0) - cy) - (EXCEL ? 1 : 0);
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
-      if (e.type === 'autofill' && e.cd < .8 && e.made < e.cap) { const tg = fillTarget(e); if (tg) { ctx.fillStyle = 'rgba(112,173,71,' + (.35 + .3 * Math.sin(e.t * 18)) + ')'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.strokeStyle = '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
+      if (e.type === 'autofill' && e.cd < .8 && e.made < e.max && fillWindowCount(e) < e.cap) { const tg = fillTarget(e); if (tg) { ctx.globalAlpha = .35 + .3 * Math.sin(e.t * 18); ctx.fillStyle = e.c !== undefined ? AF_COL[e.c] : '#70AD47'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.globalAlpha = 1; ctx.strokeStyle = e.c !== undefined ? AF_COL[e.c] : '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');

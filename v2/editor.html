@@ -215,7 +215,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
         SP(blockIm(e.c || 0), px, py); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px + 4, py + 6, 4, 4); ctx.fillRect(px + 12, py + 6, 4, 4); ctx.fillStyle = '#262626'; ctx.fillRect(px + 5, py + 7, 2, 3); ctx.fillRect(px + 13, py + 7, 2, 3);
         ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3); ctx.setLineDash([]); continue;
       }
-      SP(entIm(e.type), px, py, 1);
+      SP(entIm(e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type), px, py, 1);
       if (e.type === 'autofill') { ctx.fillStyle = '#217346'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((e.d || 1) < 0 ? '◀' : '▶', px + T / 2, py - 1); }
     }
     for (const g of L.gems) { const im = GFXX.shard(); SP(im, g[0] * T + (T - im.width * KS) / 2, g[1] * T + (T - im.height * KS) / 2); }
@@ -266,7 +266,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     if (k === 'steel') { eraseAt(x, y); L.front[y][x] = 'S'; return; }
     if (k === 'crack') { eraseAt(x, y); L.front[y][x] = 'c'; return; }
     const free = L.front[y][x] === '.';
-    if (k === 'ent') { if (!free) return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push(Object.assign({ type: cur.type, x, y }, cur.opt || {})); return; }
+    if (k === 'ent') { if (!free) return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push(Object.assign({ type: cur.type, x, y }, cur.opt || {}, (cur.type === 'autofill' && $('#f-afc') && $('#f-afc').value !== '') ? { c: +$('#f-afc').value } : {})); return; }
     if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('かけらは5個までです（ゲームの枠も5個まで）'); return; } L.gems.push([x, y]); } return; }
     if (k === 'spark') { if (free && !L.sparks.some(g => g[0] === x && g[1] === y)) L.sparks.push([x, y]); return; }
     if (k === 'check') { if (free && !L.checks.some(c => c[0] === x && c[1] === y)) L.checks.push([x, y]); return; }
@@ -362,6 +362,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     COLORS.forEach((c, i) => { const b = addBtn(p, spIcon(blockIm(i)) + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>道具</small>' + b.innerHTML + ' ▸'; } });
     addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); addBtn(p, spIcon(crackIm()) + 'ひび割れ壁', { kind: 'crack' }); addBtn(p, '消しゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
+    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">オートフィルが作る色：足もとをまねる</option>' + COLORS.slice(0, 5).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
     ENTS.forEach(e => {
       if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
       if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
