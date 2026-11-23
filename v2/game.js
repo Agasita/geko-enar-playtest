@@ -205,6 +205,7 @@
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
     if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
+    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, awake: false, wake: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので、なおす(へんしゅう)が きかない
     if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
     return base;
   }
@@ -435,6 +436,11 @@
       e.t += dt; if (e.flash > 0) e.flash -= dt;
       if (e.hidden) continue;
       if (e.stun > 0) { e.stun -= dt; continue; }
+      if (e.type === 'fake' && !e.awake) { // にせブロック: ブロックの ふり。ちかづくと しょうたいを あらわす(それまでは ぬけられる)
+        if (!p.dead && Math.abs(p.x + 5 - (e.x + 7)) < 24 && Math.abs(p.y + 7 - (e.y + 7)) < 20) { e.awake = true; e.wake = .45; e.t = 0; SFX.bad(); spawnParts(e.x + 7, e.y + 7, 10, '#fff', 70); G.shake = Math.max(G.shake, 2); }
+        continue;
+      }
+      if (e.type === 'fake' && e.wake > 0) { e.wake -= dt; continue; } // しょうたいを あらわした ちょくご: すこしの あいだ ふるえて うごかない
       if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
         if (Math.abs(p.x + 5 - (e.x + 6)) < 46 && Math.abs(p.y - e.y) < 30 && !p.dead) { e.awake = true; e.t = 0; SFX.bad(); spawnParts(e.x + 6, e.y + 4, 8, '#fff', 60); G.shake = Math.max(G.shake, 2); }
         continue;
@@ -445,15 +451,15 @@
           const below = G.front[tg[1]][Math.floor((e.x + e.w / 2) / T)], sc = isBlockT(below) ? G.col[tg[1]][Math.floor((e.x + e.w / 2) / T)] : 0;
           G.front[tg[1]][tg[0]] = TL.STONE; G.col[tg[1]][tg[0]] = sc === GLASS ? 0 : sc; G.lock[tg[1]][tg[0]] = 0; e.made++; SFX.place(); spawnParts(tg[0] * T + 8, tg[1] * T + 8, 6, '#70AD47', 40); } }
       }
-      if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji') {
+      if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake') {
         // おもさとあるぎょう(縁やかべで折り返す)
         e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0;
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
-        if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : e.type === 'fake' ? 32 : 28;
+        if (e.type === 'moji' || e.type === 'fake') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
-        if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
+        if (!floorAhead || wall) { if (e.type !== 'moji' && e.type !== 'fake') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
       } else if (e.type === 'flyer') {
         const px = e.x;
         e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
@@ -1149,6 +1155,18 @@
     ctx.fillStyle = 'rgba(165,190,230,' + (a * .85) + ')'; ctx.fillText('あ', x + 1, y + 1);
     ctx.fillStyle = 'rgba(250,251,255,' + a + ')'; ctx.fillText('あ', x, y); ctx.restore();
   }
+  // にせブロック: ふつうの ブロックと おなじ えで ぎたい。ときどき まばたきを して、「なおす」(じかんていし)中は ずっと 目が みえる
+  function drawFake(e, cx, cy) {
+    const sh = (e.awake && e.wake > 0) ? (Math.floor(e.t * 40) % 2 ? 1 : -1) : 0, hop = (e.awake && !(e.wake > 0) && Math.floor(e.t * 6) % 2) ? -1 : 0;
+    const x = Math.round(e.x - 1 - cx) + sh, y = Math.round(e.y - 2 - cy) + hop;
+    if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
+    drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0); ctx.globalAlpha = 1;
+    if (e.awake || G.edit.on || (e.t % 2.6) < .2) {
+      ctx.fillStyle = '#fff'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
+      ctx.fillStyle = '#262626'; const dx = e.dir > 0 ? 2 : 0; ctx.fillRect(x + 3 + dx, y + 6, 2, 3); ctx.fillRect(x + 9 + dx, y + 6, 2, 3);
+      if (e.awake) { ctx.fillRect(x + 3, y + 4, 4, 1); ctx.fillRect(x + 9, y + 4, 4, 1); if (!(e.wake > 0)) { const f = Math.floor(e.t * 6) % 2; ctx.fillRect(f ? x + 3 : x + 4, y + 14, 3, 2); ctx.fillRect(f ? x + 10 : x + 9, y + 14, 3, 2); } }
+    }
+  }
   function drawWorld() {
     const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
     const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
@@ -1174,6 +1192,7 @@
       if (e.dead || e.hidden) continue;
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       if (e.type === 'moji' && !e.awake) { drawMojiHint(e, cx, cy); continue; }
+      if (e.type === 'fake') { drawFake(e, cx, cy); continue; }
       const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji') ? (EXCEL ? e.type : 'walker') : 'turret';
       const fi = name === 'guard' || name === 'turret' ? 0 : fr;
       const s = EXCEL ? GFXX.enemy(name, fi, e.dir < 0) : sprite(name, fi, flip);
@@ -1450,6 +1469,7 @@
     '13-1': '「#DIV/0!」は、ゼロで わられて こまっている。さわると あぶないから、そっと よけて あげよう。',
     '13-2': 'オートフィルは、ゆかを ひろげたいだけ。おせっかいだけど、わるいこだとは かぎらない。',
     '13-3': 'しろい文字は、みえないふりが とくい。でも、よく みると ちょっとだけ ゆれている。',
+    '13-4': 'にせブロックは、ブロックの ふりが じょうず。なおす(じかんていし)の 中なら、目が みえるらしい。',
   };
   const UI = {
     toastT: 0,

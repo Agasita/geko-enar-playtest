@@ -801,6 +801,22 @@
     },
   }));
 
+  L.push(make({
+    id: '13-4', name: 'にせブロック', world: 13, w: 26, tools: ['sort'], energy: 20, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: 'ブロックに見えるけれど…？「なおす」（時間停止）の中で、よく見てみよう' },
+      { x: 9, text: 'にせブロックは、編集が効かない。踏めば倒せる' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(11, 15);
+      m.blk(7, 7, 0); m.blk(7, 8, 0); m.ent('fake', 7, 9, { c: 0 });
+      [11, 12, 14, 15].forEach(x => m.blk(x, 10, 0)); m.ent('fake', 13, 10, { c: 0 });
+      m.blk(20, 8, 0); m.blk(19, 7, 0); m.blk(18, 6, 0); m.blk(17, 5, 0);
+      m.gem(9, 8); m.gem(13, 7); m.gem(17, 4);
+      m.flag = [23, 9];
+    },
+  }));
+
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',
