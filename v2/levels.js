@@ -817,6 +817,75 @@
     },
   }));
 
+  L.push(make({
+    id: '13-5', name: '条件つき書式', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「条件つき書式」は、ときどき色が変わる。茶色は普通、赤は熱くて踏めない、青は凍って動かない（さわってもだいじょうぶ）' },
+      { x: 8, text: '色が変わる前に、ちかちかする。青のうちに通り抜けるか、茶色のうちに踏もう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.rect(6, 3, 19, 6, 'S');
+      m.ent('condfmt', 10, 9); m.ent('condfmt', 16, 9);
+      m.gem(8, 8); m.gem(13, 7); m.gem(22, 8);
+      m.flag = [23, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '13-6', name: '並べ替え', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「並べ替え」は、左右の足もとのマスを、ときどき入れ替える。入れ替える前に、マスが光る' },
+      { x: 5, text: '足もとのブロックが動く。2回踏めば倒せる' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.blk(9, 9, 0); m.ent('shuffler', 11, 8);
+      m.blk(19, 9, 0); m.ent('shuffler', 21, 8);
+      m.gem(9, 7); m.gem(15, 8); m.gem(22, 7);
+      m.flag = [24, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '13-7', name: '循環参照', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「循環参照」は、しっぽを追って、ぐるぐる回る。回る範囲を見て、タイミングよく通り抜けよう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.ent('circ', 10, 7, { r: 22 }); m.ent('circ', 18, 7, { r: 18 });
+      m.gem(7, 8); m.gem(14, 7); m.gem(22, 8);
+      m.flag = [24, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '13-8', name: '#REF!', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「#REF!」は、ついていく相手がいなくなると、いっしょに消える。相手を倒してしまおう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.ent('guard', 12, 9); m.ent('ref', 12, 7); m.ent('ref', 13, 7);
+      m.ent('walker', 20, 9); m.ent('ref', 20, 7);
+      m.gem(9, 8); m.gem(16, 7); m.gem(22, 8);
+      m.flag = [24, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '13-9', name: '重複データ', world: 13, w: 26, tools: [], energy: 0, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「重複データ」は、そっくりなふたご。片方を踏むと、「重複の削除」でもう片方も消える' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.ent('dup', 8, 9, { gap: 6 }); m.ent('dup', 17, 9, { gap: 5 });
+      m.gem(7, 8); m.gem(14, 7); m.gem(23, 8);
+      m.flag = [24, 9];
+    },
+  }));
+
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
   L.push(make({
     id: 'LAB', name: '実験シート（全機能）', world: 5, w: 64, regen: 10, energy: 100, bg: '#B7C6D9', bg2: '#A6B6CC',

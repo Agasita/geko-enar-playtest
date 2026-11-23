@@ -171,7 +171,12 @@
     G.front = lv.front.map(r => Array.from(r).map(c => CH2TILE[c] || 0));
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
-    G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
+    G.enemies = [];
+    lv.ents.forEach((e, k) => {
+      const a = makeEnemy(e, k); a.idx = G.enemies.length; G.enemies.push(a);
+      if (e.type === 'dup') { const b = makeEnemy(Object.assign({}, e, { x: e.x + (e.gap || 4), dir: -1 }), k); b.idx = G.enemies.length; a.twin = b.idx; b.twin = a.idx; G.enemies.push(b); }
+    });
+    G.enemies.forEach(e => { if (e.type !== 'ref') return; let best = -1, bd = 1e9; G.enemies.forEach(o => { if (o === e || o.type === 'ref') return; const d = Math.hypot(o.x - e.x, o.y - e.y); if (d < bd) { bd = d; best = o.idx; } }); e.lead = best; });
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = []; G.under = {};
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
     G.doors = (lv.doors || []).map(d => ({ x: d[0], y: d[1], h: d[2], id: d[3] || 0, open: false, anim: 0, latched: false }));
@@ -206,6 +211,12 @@
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
     if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
     if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
+    // ---- ざんりの Excel てき ----
+    if (e.type === 'condfmt') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, dir: -1, ph: 0, t: 0, x: base.x + 2, y: base.y + 4 }); // 条件つき書式: ちゃ→あか→あお と いろが かわる
+    if (e.type === 'shuffler') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 2, cd: 2.4, tele: 0, gap: e.gap || 2, dy: e.dy === undefined ? 1 : e.dy, x: base.x + 2, y: base.y + 2 }); // 並べ替え: 2つの マスを いれかえる
+    if (e.type === 'circ') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 1, cx: base.x + 8, cy: base.y + 8, r: e.r || 22, dir: 1, x: base.x + 2 + (e.r || 22), y: base.y + 2 }); // 循環参照: ぐるぐる まわる
+    if (e.type === 'ref') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 1, lead: -1, dir: 1, ph: Math.random() * 6, x: base.x + 2, y: base.y + 2 }); // #REF!: ついていく あいてが きえると いっしょに きえる
+    if (e.type === 'dup') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, dir: e.dir || 1, twin: -1, idx: -1, x: base.x + 2, y: base.y + 4 }); // 重複データ: ふたごの かたほうを たおすと、もう かたほうも きえる
     if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
     return base;
   }
@@ -413,6 +424,7 @@
   function breakCrack(tx, ty) { G.front[ty][tx] = 0; G.col[ty][tx] = 0; SFX.hit(); spawnParts(tx * T + 8, ty * T + 8, 8, '#B07A4F', 70); G.shake = 3; }
   function damageEnemy(e, n) {
     e.hp -= n; e.flash = .15; G.hitstop = .05; G.shake = 3; SFX.hit(); spawnParts(e.x + e.w / 2, e.y + e.h / 2, 7, '#fff', 60);
+    if (e.hp <= 0 && e.type === 'dup') { const tw = G.enemies[e.twin]; if (tw && !tw.dead) { tw.dead = true; spawnParts(tw.x + tw.w / 2, tw.y + tw.h / 2, 12, '#9DC3E6', 80); } } // 重複の さくじょ
     if (e.hp <= 0) { e.dead = true; spawnParts(e.x + e.w / 2, e.y + e.h / 2, 14, '#F5C842', 90); if (G.regen) G.pick.push({ type: 'spark', x: e.x + 2, y: e.y + 2, w: 8, h: 8, got: false, drop: true }); }
   }
 
@@ -428,15 +440,30 @@
     }
     return null;
   }
+  // 並べ替え: 2つの マスの ブロックを いれかえる(はがね・磁石・カギ・ひとや てきの いる マスは だめ)
+  function swapCells(a, b) {
+    const ax = a[0], ay = a[1], bx = b[0], by = b[1]; if (!inb(ax, ay) || !inb(bx, by)) return false;
+    const fa = G.front[ay][ax], fb = G.front[by][bx];
+    if (fa === fb && G.col[ay][ax] === G.col[by][bx]) return false;
+    if (fa === TL.STEEL || fb === TL.STEEL || fa === TL.MAGNET || fb === TL.MAGNET || G.lock[ay][ax] || G.lock[by][bx]) return false;
+    if (cellBlocked(ax, ay) || cellBlocked(bx, by)) return false;
+    const ca = G.col[ay][ax]; G.front[ay][ax] = fb; G.col[ay][ax] = G.col[by][bx]; G.front[by][bx] = fa; G.col[by][bx] = ca;
+    SFX.place(); spawnParts(ax * T + 8, ay * T + 8, 6, '#ADB9CA', 50); spawnParts(bx * T + 8, by * T + 8, 6, '#ADB9CA', 50); return true;
+  }
   // ===== てき図鑑 =====
   const DEX = [
     ['walker', 'てくてく', 'ゆかを まっすぐ あるく。ふちや かべに ぶつかると ひきかえす。上から ふむと たおせる'],
     ['guard', 'かたいこうら', 'かたい こうらを もつ。2かい ふまないと たおせない'],
     ['flyer', 'ふわふわ', 'くうちゅうを ゆらゆら ただよう。上から ふむと たおせる'],
-    ['turret', 'たまうち', 'エナーの ほうを むいて、たまを うつ。うつ まえに 光る。3かい ふむと たおせる'],
+    ['turret', 'たまうち', 'エナーの ほうを むいて、たまを うつ。うつ まえに 光る。ふめないし、たおせない。光った ときに、たまの みちから はずれよう'],
     ['div0', '#DIV/0!', 'エラーの かたまり。ふめないし、たおせない。ゆっくり おうふく するので、タイミングを みて よけよう'],
     ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。ねらう マスが 光る。ふむと たおせる'],
     ['moji', 'しろい文字', 'しろい シートに とけこむ、ほとんど みえない 文字。ちかづくと あらわれて、おいかけてくる。ふむと たおせる'],
+    ['condfmt', '条件つき書式', 'ときどき いろが かわる。茶色は ふつう（ふむと たおせる）、赤は あつくて ふめない、青は こおって うごかず、さわっても へいき。いろが かわる まえに、ちかちか する'],
+    ['shuffler', '並べ替え', 'ふわふわ ういて、左右の 足もとの マスを、ときどき いれかえる。いれかえる まえに、マスが 光る。2かい ふむと たおせる'],
+    ['circ', '循環参照', 'しっぽを おって、ぐるぐる まわり つづける。ふれると ダメージ。まわる はんいを みて、タイミングで とおりぬけよう。ふむと たおせる'],
+    ['ref', '#REF!', 'ついていく あいてを もつ。あいてが いなくなると、いっしょに きえる。あいてを たおそう。ふむと たおせる'],
+    ['dup', '重複データ', 'そっくりな ふたごが、むかいあって あるく。かたほうを ふむと、「重複の削除」で もう かたほうも きえる'],
     ['fake', 'にせブロック', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。うごかないけれど、ぶつかると ダメージ。上から ふむと たおせる。へんしゅう中は みわけが つかない'],
   ];
   function seeEnemy(type) {
@@ -453,6 +480,7 @@
       if (e.hidden) continue;
       if (!save.seenEnemies || !save.seenEnemies[e.type]) { if (e.type === 'moji' ? e.awake : e.type === 'fake' ? e.look === 2 : (Math.abs(p.x - e.x) < 150 && Math.abs(p.y - e.y) < 100)) seeEnemy(e.type); } // てき図鑑に のる
       if (e.stun > 0) { e.stun -= dt; continue; }
+      if (e.type === 'condfmt') e.ph = Math.floor((e.t % 6) / 2); // 0 ちゃ / 1 あか / 2 あお
       if (e.type === 'fake') { // にせブロック: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
         const look = p.dead ? 0 : d < 30 ? 2 : d < 64 ? 1 : 0;
@@ -469,15 +497,26 @@
           const below = G.front[tg[1]][Math.floor((e.x + e.w / 2) / T)], sc = isBlockT(below) ? G.col[tg[1]][Math.floor((e.x + e.w / 2) / T)] : 0;
           G.front[tg[1]][tg[0]] = TL.STONE; G.col[tg[1]][tg[0]] = sc === GLASS ? 0 : sc; G.lock[tg[1]][tg[0]] = 0; e.made++; SFX.place(); spawnParts(tg[0] * T + 8, tg[1] * T + 8, 6, '#70AD47', 40); } }
       }
-      if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake') {
+      if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake' || e.type === 'condfmt' || e.type === 'dup') {
         // おもさとあるぎょう(縁やかべで折り返す)
         if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // にせブロックは その場に ある
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : e.type === 'condfmt' ? (e.ph === 0 ? 24 : 0) : e.type === 'dup' ? 26 : 28;
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
-        if (e.type === 'fake') { /* あるかない */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
+        if (e.type === 'fake' || spd === 0) { /* あるかない */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
+      } else if (e.type === 'shuffler') {
+        e.cd -= dt; e.tele = e.cd < .9 ? 1 : 0;
+        const ex = Math.floor((e.x + 6) / T), ey = Math.floor((e.y + 6) / T); e.ta = [ex - e.gap, ey + e.dy]; e.tb = [ex + e.gap, ey + e.dy];
+        e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
+        if (e.cd <= 0) { e.cd = 3.6; swapCells(e.ta, e.tb); }
+      } else if (e.type === 'circ') {
+        const a = e.t * 1.6; e.x = e.cx + Math.cos(a) * e.r - 6; e.y = e.cy + Math.sin(a) * e.r - 6; e.dir = Math.sin(a) <= 0 ? 1 : -1;
+      } else if (e.type === 'ref') {
+        const Ld = G.enemies[e.lead];
+        if (!Ld || Ld.dead) { e.dead = true; spawnParts(e.x + 6, e.y + 6, 10, '#F4B6C2', 70); SFX.hit(); continue; } // いっしょに きえる
+        const a = e.t * 2 + e.ph; e.x = Ld.x + Ld.w / 2 + Math.cos(a) * 17 - 6; e.y = Ld.y + Ld.h / 2 - 15 + Math.sin(a * 1.3) * 5 - 6; e.dir = Math.cos(a) > 0 ? 1 : -1;
       } else if (e.type === 'flyer') {
         const px = e.x;
         e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
@@ -489,7 +528,8 @@
       // 接触ダメージ・ダッシュ攻撃
       if (!p.dead && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
         if (p.dashT > 0 && (e.type === 'guard' || e.type === 'walker' || e.type === 'flyer' || e.type === 'moji')) { if (e.type === 'guard') { e.stun = .8; } damageEnemy(e, 1); p.dashT = 0; p.vx = -p.face * 60; }
-        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret' && e.type !== 'div0') { damageEnemy(e, 1); p.vy = -240; p.hover = TU.HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
+        else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret' && e.type !== 'div0' && !(e.type === 'condfmt' && e.ph === 1)) { damageEnemy(e, 1); p.vy = -240; p.hover = TU.HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
+        else if (e.type === 'condfmt' && e.ph === 2) { /* こおって うごかない: さわっても へいき */ }
         else hurtPlayer(e);
       }
     }
@@ -1213,11 +1253,15 @@
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       if (e.type === 'moji' && !e.awake) { drawMojiHint(e, cx, cy); continue; }
       if (e.type === 'fake') { drawFake(e, cx, cy); continue; }
-      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji') ? (EXCEL ? e.type : 'walker') : 'turret';
+      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'ref' || e.type === 'dup') ? (EXCEL ? e.type : 'walker') : e.type === 'condfmt' ? (EXCEL ? 'condfmt' + e.ph : 'walker') : 'turret';
       const fi = name === 'guard' || name === 'turret' ? 0 : fr;
+      if (e.type === 'circ') { const a = e.t * 1.6; for (let q = 4; q >= 1; q--) { const aa = a - q * .34, tx = e.cx + Math.cos(aa) * e.r - cx, ty = e.cy + Math.sin(aa) * e.r - cy; ctx.fillStyle = q % 2 ? '#5BA89A' : '#9AD1C5'; ctx.beginPath(); ctx.arc(Math.round(tx), Math.round(ty), 5 - q * .6, 0, 6.3); ctx.fill(); } }
+      if (e.type === 'ref') { const Ld = G.enemies[e.lead]; if (Ld && !Ld.dead) { ctx.strokeStyle = 'rgba(192,0,0,.45)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(Math.round(e.x + 6 - cx) + .5, Math.round(e.y + 6 - cy) + .5); ctx.lineTo(Math.round(Ld.x + Ld.w / 2 - cx) + .5, Math.round(Ld.y + Ld.h / 2 - cy) + .5); ctx.stroke(); ctx.setLineDash([]); } }
+      if (e.type === 'dup' && e.twin > e.idx) { const tw = G.enemies[e.twin]; if (tw && !tw.dead) { ctx.strokeStyle = 'rgba(91,155,213,.5)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(Math.round(e.x + 6 - cx) + .5, Math.round(e.y + 4 - cy) + .5); ctx.lineTo(Math.round(tw.x + 6 - cx) + .5, Math.round(tw.y + 4 - cy) + .5); ctx.stroke(); ctx.setLineDash([]); } }
       const s = EXCEL ? GFXX.enemy(name, fi, e.dir < 0) : sprite(name, fi, flip);
       const x = Math.round(e.x - (e.ox || 0) - cx) - (EXCEL ? 1 : 0), y = Math.round(e.y - (e.oy || 0) - cy) - (EXCEL ? 1 : 0);
-      if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
+      let ga = 1; if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ga = .4; if (e.type === 'condfmt' && 2 - (e.t % 2) < .45 && Math.floor(e.t * 14) % 2) ga = Math.min(ga, .55); ctx.globalAlpha = ga; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
+      if (e.type === 'shuffler' && e.ta) { const pulse = e.tele ? (.45 + .35 * Math.sin(e.t * 22)) : .22; ctx.strokeStyle = 'rgba(68,84,106,' + pulse + ')'; ctx.lineWidth = 1; ctx.setLineDash(e.tele ? [] : [2, 2]); [e.ta, e.tb].forEach(c => ctx.strokeRect(c[0] * T - cx + .5, c[1] * T - cy + .5, T - 1, T - 1)); ctx.beginPath(); ctx.moveTo(e.ta[0] * T + 8 - cx, e.ta[1] * T + 8 - cy); ctx.lineTo(e.tb[0] * T + 8 - cx, e.tb[1] * T + 8 - cy); ctx.stroke(); ctx.setLineDash([]); if (e.tele) { ctx.fillStyle = 'rgba(173,185,202,' + (.25 + .2 * Math.sin(e.t * 22)) + ')'; [e.ta, e.tb].forEach(c => ctx.fillRect(c[0] * T - cx, c[1] * T - cy, T, T)); } }
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
       if (e.type === 'autofill' && e.cd < .8 && e.made < 10) { const tg = fillTarget(e); if (tg) { ctx.fillStyle = 'rgba(112,173,71,' + (.35 + .3 * Math.sin(e.t * 18)) + ')'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.strokeStyle = '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
@@ -1723,7 +1767,7 @@
       try {
         if (!ok) { g2.fillStyle = '#d9d9d9'; g2.fillRect(2, 2, 16, 16); g2.fillStyle = '#9a9a9a'; g2.font = '700 12px system-ui, sans-serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText('?', 10, 11); }
         else if (type === 'fake') drawFake({ x: 3, y: 4, c: 0, look: 2, ex: -10, ey: 0, flash: 0 }, 0, 0);
-        else { const nm = type === 'div0' || type === 'autofill' || type === 'moji' ? (EXCEL ? type : 'walker') : type; g2.drawImage(EXCEL ? GFXX.enemy(nm, 0, false) : sprite(nm, 0, false), 1, 1); }
+        else { const nm = !EXCEL && !['walker', 'guard', 'flyer', 'turret'].includes(type) ? 'walker' : type === 'condfmt' ? 'condfmt0' : type; g2.drawImage(EXCEL ? GFXX.enemy(nm, 0, false) : sprite(nm, 0, false), 1, 1); }
       } finally { ctx = mainCtx; }
       cv.className = 'gtile';
       const d = document.createElement('div'); d.className = 'gi' + (ok ? '' : ' lock'); d.innerHTML = '<div><b></b><span></span></div>'; d.insertBefore(cv, d.firstChild);
