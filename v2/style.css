@@ -315,3 +315,20 @@ body.tuning #tune-toggle{right:252px}
   body.tuning #stage{right:0;bottom:42vh}
   body.tuning #tune-toggle{right:6px;bottom:calc(42vh + 6px)}
 }
+
+/* ===== 画面のきりかえ演出: 紙の「列」がひとつずつめくれて、あたらしい画面があらわれる ===== */
+#trans { display: none; }
+#trans.go { display: flex; position: fixed; inset: 0; z-index: 9999; pointer-events: none; }
+#trans i { flex: 1; background: #1f2a44; box-shadow: 1px 0 0 #1f2a44; transform-origin: top; border-bottom: 3px solid #70AD47; animation: trwipe .34s cubic-bezier(.5, 0, .75, 1) both; animation-delay: calc(var(--i) * 24ms); }
+#trans.lab i { animation-delay: calc(var(--i) * 24ms + .45s); }
+#trans i:nth-child(even) { transform-origin: bottom; }
+#trans b { position: absolute; left: 0; right: 0; top: 42%; text-align: center; color: #fff; font: 700 22px/1.4 system-ui, sans-serif; letter-spacing: .08em; opacity: 0; }
+#trans.lab b { animation: trlabel 1s ease both; }
+@keyframes trwipe { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes trlabel { 0% { opacity: 0; transform: translateY(6px); } 15%, 60% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+/* 「動きをへらす」設定の人には、めくる動きではなく、ゆっくり消える だけにする */
+@media (prefers-reduced-motion: reduce) {
+  #trans i { animation-name: trfade; animation-delay: 0s !important; border-bottom: 0; }
+  #trans.lab i { animation-delay: .45s !important; }
+}
+@keyframes trfade { from { opacity: 1; } to { opacity: 0; } }

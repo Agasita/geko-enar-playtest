@@ -1304,7 +1304,20 @@
   const UI = {
     toastT: 0,
     toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); clearTimeout(UI.toastT); UI.toastT = setTimeout(() => t.classList.add('hide'), ms || 2200); },
-    show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); fit(); },
+    // がめんの きりかえ。きりかえた直後に、紙の「列」が ひとつずつ ひらくように めくれて、あたらしい がめんが あらわれる
+    transLabel: '', transInit: false,
+    wipe(label) {
+      let t = $('#trans');
+      if (!t) { t = document.createElement('div'); t.id = 'trans'; for (let i = 0; i < 14; i++) { const c = document.createElement('i'); c.style.setProperty('--i', i); t.append(c); } t.append(document.createElement('b')); document.body.append(t); }
+      t.querySelector('b').textContent = label || '';
+      t.classList.remove('go'); void t.offsetWidth; t.className = 'go' + (label ? ' lab' : ''); // ← 1フレーム目から ぜんぶ おおっているので、ちらつかない
+      clearTimeout(UI.wipeT); UI.wipeT = setTimeout(() => { t.className = ''; }, label ? 1250 : 800);
+    },
+    show(id) {
+      const cur = document.querySelector('.screen:not(.hide)'), curId = cur ? '#' + cur.id : null, first = false;
+      document.querySelectorAll('.screen').forEach(s => s.classList.add('hide')); if (id) $(id).classList.remove('hide'); document.body.classList.toggle('menu', !!id); fit();
+      if (!first && curId !== (id || null)) { UI.wipe(UI.transLabel); } UI.transLabel = '';
+    },
     refresh() {
       const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
       UI.refreshTools();
@@ -1338,7 +1351,7 @@
     },
     restart() { if (G.mode !== 'play') return; const id = G.level.id; if (!practice && !G.cleared && !EDITOR_TEST) { save.fails = save.fails || {}; save.fails[id] = (save.fails[id] || 0) + 1; persist(); } loadLevel(G.levelIdx); UI.show(null); UI.assistNote(); },
     assistNote() { if (G.assisted) UI.toast('なんども ちょうせん している ね！ エナジーを 5わり ふやしたよ（クリアすると もとに もどる）', 4500); },
-    start(i) { G.mode = 'play'; loadLevel(i); UI.show(null); UI.assistNote(); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
+    start(i) { G.mode = 'play'; loadLevel(i); UI.transLabel = G.level.id + '  ' + G.level.name; UI.show(null); G.hitstop = .5; /* ステージ名が出ている間は、うごき・タイムを とめる */ UI.assistNote(); $('#hud').classList.remove('hide'); $('#touch').classList.remove('hide'); const t = $('#toast'); t.classList.add('hide'); G.paused = false; },
     title() { G.mode = 'title'; UI.show('#screen-title'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); },
     select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
     unlocked(i) { return true; }, // ためしあそびよう: ステージはじゆうにえらべる
