@@ -26,35 +26,46 @@
     { fill: '#FFCC99', bd: '#7F7F7F', ic: '#3F3F76' }, { fill: '#FFC7CE', bd: '#D9959D', ic: '#9C0006' }, { fill: '#BDD7EE', bd: '#7FA8D0', ic: '#1F4E79' },
     { fill: '#C6EFCE', bd: '#7DBB8C', ic: '#00873C' }, { fill: '#FFEB9C', bd: '#BF9000', ic: '#7F5200' }, { fill: '#FFFFFF', bd: '#8FB4DC', ic: '#8FB4DC' },
   ];
+  // ブロックは「りったいてき」に: ふちどり + うえ・ひだりの ひかり + した・みぎの かげ + ざいしつの もよう。マークは つけない(はがね以外)
+  const MAGMA = ['KKKOOKKKKKKK', 'KKKOYOKKKKOO', 'KKOOYOKKKOYO', 'KOYOOKKKOYOK', 'KOYOKKKOOYOK', 'OOYOOOOOYOOK', 'KOOYYYYYOOKK', 'KKKOOOOYOKKK', 'KKKKKKOYOKKk', 'KkKKKOOYOOKK', 'KKKKOOYOOKKK', 'KKKKOYOKKKKK'];
+  const MAGMA_COL = { K: '#4A1812', k: '#5E2118', O: '#E8571B', Y: '#FFD43B' };
   function makeBlock(c) {
-    const st = STY[c], s = surface(16, 16), f = hex(st.fill), bd = hex(st.bd), ic = hex(st.ic), hi = mix(f, [255, 255, 255], .55);
-    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) s.set(x, y, f);
-    for (let i = 0; i < 16; i++) { if (c === 4 && (i % 4) >= 2) continue; s.set(i, 0, bd); s.set(i, 15, bd); s.set(0, i, bd); s.set(15, i, bd); }   // きいろはてんせんのふち(もろい)
-    if (c === 4) for (let i = 0; i < 16; i++) { if ((i % 4) < 2) continue; s.set(i, 0, mix(bd, f, .5)); s.set(i, 15, mix(bd, f, .5)); s.set(0, i, mix(bd, f, .5)); s.set(15, i, mix(bd, f, .5)); }
+    const st = STY[c], s = surface(16, 16), f = hex(st.fill), ic = hex(st.ic);
+    const edge = mix(f, [0, 0, 0], .42), hi = mix(f, [255, 255, 255], .6), lo = mix(f, [0, 0, 0], .22), up = mix(f, [255, 255, 255], .14);
     const P = (pts, col) => pts.forEach(([x, y]) => s.set(x, y, col));
     const R = (x0, y0, w, h, col) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) s.set(x0 + i, y0 + j, col); };
-    // 作ようが、ひと目でわかるアイコン
-    if (c === 1) { // あか＝ダメージ: ちゅういのさんかく(!)
-      for (let r = 0; r < 9; r++) { const y = 3 + r, half = Math.floor(r * .6); for (let xx = 8 - half - 1; xx <= 8 + half; xx++) s.set(xx, y, ic); }
-      for (let xx = 3; xx <= 12; xx++) s.set(xx, 12, ic);
-      R(7, 7, 2, 3, '#FFFFFF'); R(7, 11, 2, 1, '#FFFFFF');
-    } else if (c === 2) { // あお＝すべる(こおり): ゆきのけっしょう
-      const ic2 = ic;
-      R(8, 3, 1, 11, ic2); R(3, 8, 11, 1, ic2); for (let i = 0; i < 5; i++) { s.set(4 + i, 4 + i, ic2); s.set(12 - i, 4 + i, ic2); s.set(4 + i, 12 - i, ic2); s.set(12 - i, 12 - i, ic2); }
-      P([[7, 4], [9, 4], [7, 12], [9, 12], [4, 7], [4, 9], [12, 7], [12, 9]], ic2);
-    } else if (c === 3) { // みどり＝はずむ: ふとい うえむきの やじるし(↑)と、した の だい
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) s.set(x, y, y < 8 ? up : f);
+    if (c === 1) { // あか＝マグマ: こげた いわの すきまから、あつい ひかりが もれる
+      for (let y = 0; y < 12; y++) for (let x = 0; x < 12; x++) s.set(x + 2, y + 2, MAGMA_COL[MAGMA[y][x]]);
+    } else if (c === 2) { // あお＝こおり: すきとおらない みずいろ。ななめの ひかりの すじと、こおりの ひび
+      R(2, 2, 12, 12, '#A9E7F6'); R(2, 2, 12, 5, '#BDEFFA'); R(2, 10, 12, 4, '#8CD9EC');
+      for (let i = 0; i < 7; i++) { s.set(3 + i, 11 - i, '#FFFFFF'); s.set(4 + i, 11 - i, '#E6FAFF'); }
+      for (let i = 0; i < 4; i++) s.set(6 + i, 13 - i, '#FFFFFF');
+      P([[11, 8], [10, 9], [10, 10], [9, 11], [4, 4], [5, 5], [5, 6]], '#6CC3DC'); P([[12, 4], [11, 3], [12, 3], [13, 3]], '#FFFFFF');
+    } else if (c === 0) { // ちゃいろ＝つち: こいしの つぶつぶ
+      P([[4, 4], [10, 3], [6, 9], [11, 8], [3, 11], [9, 12], [12, 12], [7, 5]], mix(f, [0, 0, 0], .2)); P([[5, 5], [11, 4], [7, 10], [12, 9], [4, 12], [10, 13]], mix(f, [255, 255, 255], .35));
+    }
+    // ふちどり・ひかり・かげ(まんなかの がぞうを けさない よう、いちばん さいごに)
+    const hl = c === 1 ? '#8A3A22' : hi, sh = c === 1 ? '#2A0A07' : lo, ed = c === 1 ? '#1E0705' : (c === 2 ? '#3F9DB5' : edge);
+    if (c !== 4) { for (let i = 1; i < 15; i++) { s.set(i, 1, hl); s.set(1, i, hl); s.set(i, 14, sh); s.set(14, i, sh); } }
+    for (let i = 0; i < 16; i++) { if (c === 4 && (i % 4) >= 2) continue; s.set(i, 0, ed); s.set(i, 15, ed); s.set(0, i, ed); s.set(15, i, ed); }   // きいろは てんせんの ふち(もろい)
+    if (c === 4) { for (let i = 0; i < 16; i++) { if ((i % 4) < 2) continue; const m = mix(edge, f, .5); s.set(i, 0, m); s.set(i, 15, m); s.set(0, i, m); s.set(15, i, m); } for (let i = 2; i < 14; i++) { s.set(i, 2, hi); s.set(2, i, hi); s.set(i, 13, lo); s.set(13, i, lo); } }
+    if (c === 3) { // みどり＝はずむ: ふとい うえむきの やじるし(↑)と、した の だい
       for (let r = 0; r < 5; r++) R(7 - r, 2 + r, 2 + r * 2, 1, ic);
-      R(6, 7, 4, 5, ic);
-      R(3, 13, 10, 1, ic);
-    } else if (c === 4) { // きいろ＝もろい: ひびと、こぼれおちるかけら
-      P([[8, 2], [7, 3], [7, 4], [8, 5], [9, 6], [8, 7], [7, 8]], ic); P([[9, 7], [10, 8]], ic);
-      R(4, 11, 2, 2, ic); R(8, 12, 2, 2, ic); R(11, 10, 1, 1, ic); R(3, 9, 1, 1, ic);
-    } else if (c === 5) { for (let i = 1; i < 15; i++) { s.set(i, 1, '#EAF3FB'); s.set(1, i, '#EAF3FB'); s.set(i, 14, '#EAF3FB'); s.set(14, i, '#EAF3FB'); } }   // ガラス: いろなしのセル
+      R(6, 7, 4, 5, ic); R(3, 13, 10, 1, ic); for (let r = 0; r < 5; r++) s.set(7 - r, 2 + r, '#5FD58D');
+    } else if (c === 4) { // きいろ＝もろい: ひびと、こぼれおちる かけら
+      P([[8, 3], [7, 4], [7, 5], [8, 6], [9, 7], [8, 8], [7, 9]], ic); P([[9, 8], [10, 9]], ic); R(4, 11, 2, 2, ic); R(9, 11, 2, 2, ic); P([[12, 6], [4, 7]], ic);
+    } else if (c === 5) { for (let i = 2; i < 14; i++) { s.set(i, 2, '#EAF3FB'); s.set(2, i, '#EAF3FB'); s.set(i, 13, '#EAF3FB'); s.set(13, i, '#EAF3FB'); } for (let i = 0; i < 16; i++) { s.set(i, 0, '#8FB4DC'); s.set(i, 15, '#8FB4DC'); s.set(0, i, '#8FB4DC'); s.set(15, i, '#8FB4DC'); } P([[4, 4], [5, 4], [4, 5], [10, 10], [11, 10], [10, 11]], '#FFFFFF'); }
     return s.done();
   }
-  function makeCrack() {
+  function makeCrack() { // ひびわれ: ブロックを たてに さく、ふとい ひびと、えだわかれ。わきに ひかりの ふち
     const s = surface(16, 16); s.g.drawImage(makeBlock(0), 0, 0);
-    const g = s.g; g.fillStyle = '#7F4F1F'; for (const [x, y] of [[8, 2], [7, 3], [7, 4], [8, 5], [9, 6], [8, 7], [7, 8], [8, 9], [9, 11], [8, 12], [8, 13]]) g.fillRect(x, y, 2, 1);
+    const g = s.g, dk = '#2B1808', lt = '#F6E3BC';
+    const main = [[8, 0], [8, 1], [7, 2], [7, 3], [8, 4], [9, 5], [9, 6], [8, 7], [7, 8], [7, 9], [8, 10], [9, 11], [8, 12], [7, 13], [7, 14], [8, 15]];
+    const br = [[10, 5], [11, 4], [12, 3], [13, 3], [6, 9], [5, 10], [4, 10], [3, 11], [10, 12], [11, 12], [12, 13], [13, 13], [10, 7], [11, 8]];
+    g.fillStyle = lt; for (const [x, y] of main) g.fillRect(x - 2, y, 1, 1); for (const [x, y] of br) g.fillRect(x, y - 1, 1, 1);
+    g.fillStyle = dk; for (const [x, y] of main) g.fillRect(x - 1, y, 3, 1); for (const [x, y] of br) g.fillRect(x, y, 1, 1);
+    g.fillStyle = '#7B4B1E'; for (const [x, y] of [[8, 4], [7, 8], [8, 12]]) g.fillRect(x + 2, y, 1, 1);
     return s.c;
   }
   function makeSteel() { // はがね: なおせないセル(しゃせん)
