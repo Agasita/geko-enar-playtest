@@ -320,15 +320,19 @@ body.tuning #tune-toggle{right:252px}
 #trans { display: none; }
 #trans.go { display: flex; position: fixed; inset: 0; z-index: 9999; pointer-events: none; }
 #trans i { flex: 1; background: #1f2a44; box-shadow: 1px 0 0 #1f2a44; transform-origin: top; border-bottom: 3px solid #70AD47; animation: trwipe .34s cubic-bezier(.5, 0, .75, 1) both; animation-delay: calc(var(--i) * 24ms); }
-#trans.lab i { animation-delay: calc(var(--i) * 24ms + .45s); }
+#trans.lab i { animation-delay: calc(var(--i) * 24ms + 1.4s); }
 #trans i:nth-child(even) { transform-origin: bottom; }
-#trans b { position: absolute; left: 0; right: 0; top: 42%; text-align: center; color: #fff; font: 700 22px/1.4 system-ui, sans-serif; letter-spacing: .08em; opacity: 0; }
-#trans.lab b { animation: trlabel 1s ease both; }
 @keyframes trwipe { from { transform: scaleY(1); } to { transform: scaleY(0); } }
-@keyframes trlabel { 0% { opacity: 0; transform: translateY(6px); } 15%, 60% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 /* 「動きをへらす」設定の人には、めくる動きではなく、ゆっくり消える だけにする */
 @media (prefers-reduced-motion: reduce) {
   #trans i { animation-name: trfade; animation-delay: 0s !important; border-bottom: 0; }
-  #trans.lab i { animation-delay: .45s !important; }
+  #trans.lab i { animation-delay: 1.4s !important; }
 }
 @keyframes trfade { from { opacity: 1; } to { opacity: 0; } }
+#trans b { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 34px 12px; border: 3px solid #70AD47; background: rgba(255,255,255,.06); color: #fff; opacity: 0; font-family: system-ui, sans-serif; text-align: center; }
+#trans b::after { content: ''; position: absolute; right: -6px; bottom: -6px; width: 9px; height: 9px; background: #70AD47; border: 2px solid #1f2a44; }
+#trans b small { font: 700 12px/1.2 system-ui, sans-serif; letter-spacing: .3em; color: #9BD28A; }
+#trans b strong { font: 900 clamp(46px, 11vw, 84px)/1 system-ui, sans-serif; letter-spacing: .04em; text-shadow: 0 0 22px rgba(112,173,71,.7), 3px 3px 0 #70AD47; }
+#trans b span { font: 700 clamp(16px, 3.6vw, 26px)/1.4 system-ui, sans-serif; letter-spacing: .12em; }
+#trans.lab b { animation: trlabel 1.85s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes trlabel { 0% { opacity: 0; transform: scale(1.5); filter: blur(6px); } 12% { opacity: 1; transform: scale(1); filter: none; } 74% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(.97); } }
