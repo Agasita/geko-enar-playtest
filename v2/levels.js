@@ -33,6 +33,7 @@
       front: front.map(r => r.join('')), color, lock,
       ents: m.ents, lifts: m.lifts, switches: m.switches, doors: m.doors, judges: m.judges, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
       hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0,
+      scene: def.scene, sheet: def.sheet, windows: def.windows,
     };
   }
 

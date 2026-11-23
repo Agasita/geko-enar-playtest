@@ -78,12 +78,140 @@
 
   // ---- はいけい・見出し・選択わく ----
   const HW = 13, HH = 9; // ぎょうのばんごうのはば / れつのみだしのたかさ
+  // ---- ワールドごとの シートの いろと、まどの けしき ----
+  //  sheet=セルの いろ / ln=わくせん / scene=まどの けしき / shut=よろい戸(period=いちまわりの びょう, closed=しまっている わりあい)
+  const SHEETS = {
+    1: { bg: '#FFFFFF', ln: '#D4D4D4', scene: 'meadow' },
+    2: { bg: '#F6FBF3', ln: '#D2E2CB', scene: 'forest' },
+    3: { bg: '#F3F9FD', ln: '#CFDFEC', scene: 'lake' },
+    4: { bg: '#FFF8F0', ln: '#EBD9C4', scene: 'sunset', shut: { period: 16, closed: .22 } },
+    5: { bg: '#F4F1F9', ln: '#DAD3E6', scene: 'cave', shut: { period: 15, closed: .25 } },
+    6: { bg: '#FFF6F9', ln: '#F0D6DF', scene: 'spring', shut: { period: 14, closed: .28 } },
+    7: { bg: '#F2FBFF', ln: '#CBE4EE', scene: 'summer', shut: { period: 10, closed: .38 } },
+    8: { bg: '#FFF8EE', ln: '#EBD8BE', scene: 'autumn', shut: { period: 9.5, closed: .4 } },
+    9: { bg: '#F3F8FD', ln: '#CFDDEC', scene: 'winter', shut: { period: 9, closed: .42 } },
+    10: { bg: '#F2F3FB', ln: '#D3D6EA', scene: 'night', shut: { period: 6.5, closed: .5 } },
+    11: { bg: '#F2F9FF', ln: '#C9E0F0', scene: 'sky', shut: { period: 6, closed: .5 } },
+    12: { bg: '#FFF4EE', ln: '#EBD3C7', scene: 'volcano', shut: { period: 6, closed: .5 } },
+    13: { bg: '#F1F7EA', ln: '#D1DEC4', scene: 'glitch', shut: { period: 4.5, closed: .45 } },
+  };
+  const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+  function sheetOf(lv) { const base = SHEETS[lv.custom ? 1 : lv.world] || SHEETS[1]; return Object.assign({}, base, lv.sheet || {}, lv.scene ? { scene: lv.scene } : {}); }
+  function windowsFor(lv) { // [x0,y0,x1,y1] (マス)。レベルが決めていなければ、はばに あわせて ならべる
+    if (lv.windows) return lv.windows;
+    if (lv._wins) return lv._wins;
+    const out = []; let k = 0;
+    for (let x0 = 3; x0 + 5 <= lv.w - 2; x0 += 17, k++) { if (k % 2 === 0) out.push([x0, 3, Math.min(lv.w - 2, x0 + 6), 6]); else out.push([x0, 4, Math.min(lv.w - 2, x0 + 4), 6]); }
+    return (lv._wins = out);
+  }
+  function shutterOpen(sh, t, idx) { // 1=あいている 0=しまっている (パタパタ)
+    if (!sh) return 1;
+    const tr = .05, c = sh.closed, a = 1 - c - tr * 2, p = (((t / sh.period) + idx * .37) % 1 + 1) % 1;
+    if (p < a) return 1; if (p < a + tr) return 1 - (p - a) / tr; if (p < a + tr + c) return 0; if (p < a + tr * 2 + c) return (p - a - tr - c) / tr; return 1;
+  }
+  function sky(ctx, w, h, cols) { const n = cols.length; for (let i = 0; i < n; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(0, Math.floor(h * i / n), w, Math.ceil(h / n) + 1); } }
+  const disc = (ctx, x, y, r, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); };
+  const tri = (ctx, x, y, w, h, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x, y - h); ctx.lineTo(x + w / 2, y); ctx.closePath(); ctx.fill(); };
+  const cloud = (ctx, x, y, s, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, 14 * s, 3 * s); ctx.fillRect(x + 3 * s, y - 2 * s, 8 * s, 3 * s); };
+  function hillsRow(ctx, w, h, base, amp, step, col, off) { ctx.fillStyle = col; for (let x = -step; x < w + step; x += step) { const px = x - (((off % step) + step) % step), k = Math.floor((x + off) / step); ctx.beginPath(); ctx.ellipse(px + step / 2, base + 2, step * .75, amp * (.6 + hash(k) * .6), 0, Math.PI, 0); ctx.fill(); } ctx.fillRect(0, base, w, h - base); }
+  function scene(ctx, kind, w, h, t, cx) {
+    const s1 = cx * .12, s2 = cx * .25, s3 = cx * .45;
+    if (kind === 'meadow') {
+      sky(ctx, w, h, ['#BFE3F5', '#D6EEF9', '#EAF6FC']); disc(ctx, w * .78, h * .26, 7 + Math.sin(t * 2), 'rgba(255,230,153,.6)'); disc(ctx, w * .78, h * .26, 5, '#FFD966');
+      cloud(ctx, ((t * 4 + 10 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .2, 1, '#fff'); cloud(ctx, ((t * 3 + 70 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .42, .8, '#fff');
+      hillsRow(ctx, w, h, h * .62, h * .3, 34, '#A9D18E', s2); hillsRow(ctx, w, h, h * .78, h * .22, 26, '#8CC269', s3);
+      for (let k = 0; k < 10; k++) { const fx = ((k * 17 - s3) % (w + 10) + w + 10) % (w + 10); ctx.fillStyle = k % 2 ? '#FFC000' : '#fff'; ctx.fillRect(fx, h * .88 + (k % 3) * 2, 2, 2); }
+    } else if (kind === 'forest') {
+      sky(ctx, w, h, ['#CDE8D5', '#DDF0E0', '#EAF6EC']); hillsRow(ctx, w, h, h * .7, h * .25, 40, '#A9D1B0', s2);
+      for (let k = -1; k < w / 14 + 2; k++) { const ix = Math.floor((k * 14 + s3) / 14), px = k * 14 - (((s3 % 14) + 14) % 14), th = h * (.35 + hash(ix) * .3); tri(ctx, px + 7, h * .86, 11, th, ix % 2 ? '#3E7A4A' : '#548235'); tri(ctx, px + 7, h * .86 - th * .45, 9, th * .6, ix % 2 ? '#4A8A56' : '#63964A'); }
+      ctx.fillStyle = '#3F6B3A'; ctx.fillRect(0, h * .86, w, h);
+      for (let k = 0; k < 5; k++) { const fx = (k * 31 + t * 6) % w, fy = (k * 13 + t * 9) % h; ctx.fillStyle = 'rgba(255,248,170,.8)'; ctx.fillRect(fx, fy, 1, 1); }
+    } else if (kind === 'lake') {
+      sky(ctx, w, h, ['#BFE3F5', '#D6EEF9', '#EAF6FC']); hillsRow(ctx, w, h, h * .55, h * .28, 36, '#9DB7D0', s1); cloud(ctx, ((t * 3 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .2, 1, '#fff');
+      ctx.fillStyle = '#8FC1E3'; ctx.fillRect(0, h * .6, w, h); ctx.fillStyle = '#A7D2EC'; for (let y = h * .64; y < h; y += 5) { ctx.fillRect(((y * 3 + t * 8 - s2) % w + w) % w, y, 12, 1); ctx.fillRect(((y * 5 + t * 6 - s2 + 40) % w + w) % w, y + 2, 8, 1); }
+      for (let k = 0; k < 3; k++) { if (Math.sin(t * 3 + k * 2) > .6) { ctx.fillStyle = '#fff'; const sx = (k * 41 + 10) % w, sy = h * .68 + k * 6; ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillRect(sx, sy - 1, 1, 3); } }
+    } else if (kind === 'sunset') {
+      sky(ctx, w, h, ['#FF9E6B', '#FFBE86', '#FFD9A6', '#FFE9C8']); disc(ctx, w * .5 - ((s1) % 6), h * .62, 11, 'rgba(255,214,153,.5)'); disc(ctx, w * .5 - ((s1) % 6), h * .62, 8, '#FF8C42');
+      hillsRow(ctx, w, h, h * .7, h * .3, 38, '#8C5F7A', s2); hillsRow(ctx, w, h, h * .84, h * .2, 28, '#5E4256', s3);
+      for (let k = 0; k < 3; k++) { const bx = ((t * 8 + k * 30) % (w + 20)) - 10, by = h * .25 + k * 6 + Math.sin(t * 4 + k) * 1.5; ctx.fillStyle = '#5E4256'; ctx.fillRect(bx, by, 3, 1); ctx.fillRect(bx + 1, by - 1, 1, 1); ctx.fillRect(bx + 3, by - 1, 1, 1); }
+    } else if (kind === 'cave') {
+      sky(ctx, w, h, ['#2A2338', '#352C49', '#43385E', '#524673']);
+      for (let k = -1; k < w / 12 + 2; k++) { const ix = Math.floor((k * 12 + s3) / 12), px = k * 12 - (((s3 % 12) + 12) % 12); tri(ctx, px + 6, 0, 9, 0, '#171320'); ctx.fillStyle = '#171320'; ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px + 12, 0); ctx.lineTo(px + 6, 6 + hash(ix) * h * .38); ctx.closePath(); ctx.fill(); }
+      for (let k = 0; k < 4; k++) { const ix = Math.floor((k * 29 + s2 * 1.0) / 1), px = ((k * 33 - s2) % (w + 20) + w + 20) % (w + 20) - 10, py = h * (.62 + hash(k + 3) * .3), gl = .5 + .5 * Math.sin(t * 2.2 + k * 1.7);
+        ctx.fillStyle = 'rgba(127,214,255,' + (.18 + .22 * gl) + ')'; ctx.beginPath(); ctx.arc(px, py, 6, 0, 6.2832); ctx.fill(); tri(ctx, px, py + 4, 5, 9, '#7FD6FF'); tri(ctx, px + 3, py + 4, 4, 5, '#B8ECFF'); }
+      ctx.fillStyle = '#171320'; ctx.fillRect(0, h * .92, w, h);
+    } else if (kind === 'spring') {
+      sky(ctx, w, h, ['#FDE3EC', '#FFEFF4', '#FFF7FA']); hillsRow(ctx, w, h, h * .7, h * .22, 36, '#C8E6B0', s2);
+      for (let k = -1; k < w / 40 + 2; k++) { const ix = Math.floor((k * 40 + s3) / 40), px = k * 40 - (((s3 % 40) + 40) % 40) + 20; ctx.fillStyle = '#7B5B45'; ctx.fillRect(px - 1, h * .55, 3, h * .35); disc(ctx, px, h * .45, 9, '#FFC0D4'); disc(ctx, px - 6, h * .52, 6, '#FFB0C8'); disc(ctx, px + 6, h * .52, 6, '#FFD0DE'); }
+      ctx.fillStyle = '#9CCB7A'; ctx.fillRect(0, h * .9, w, h);
+      for (let k = 0; k < 14; k++) { const fx = ((k * 23 - t * 10 - s2) % w + w) % w, fy = ((k * 17 + t * (8 + k % 3 * 3)) % h); ctx.fillStyle = k % 2 ? '#FFC0D4' : '#fff'; ctx.fillRect(fx, fy, 2, 1); }
+    } else if (kind === 'summer') {
+      sky(ctx, w, h, ['#4DB6F0', '#7FCDF5', '#B2E4FA']); disc(ctx, w * .75, h * .26, 12, 'rgba(255,224,102,.35)'); disc(ctx, w * .75, h * .26, 7, '#FFE066');
+      cloud(ctx, ((t * 5 + 20 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .22, 1.2, '#fff'); cloud(ctx, ((t * 4 + 80 - s1) % (w + 30) + w + 30) % (w + 30) - 20, h * .4, .8, '#fff');
+      ctx.fillStyle = '#2F9BD9'; ctx.fillRect(0, h * .6, w, h); ctx.fillStyle = '#5BB8E8'; ctx.fillRect(0, h * .6, w, 2);
+      for (let y = h * .66; y < h; y += 4) { ctx.fillStyle = '#7CCBF0'; ctx.fillRect(((y * 7 + t * 12 - s2) % (w + 12) + w + 12) % (w + 12) - 12, y, 10, 1); }
+      ctx.fillStyle = '#F2D79A'; ctx.fillRect(0, h * .93, w, h);
+    } else if (kind === 'autumn') {
+      sky(ctx, w, h, ['#F3D3A0', '#F8E0B8', '#FCEED6']); hillsRow(ctx, w, h, h * .66, h * .28, 36, '#D9893B', s2); hillsRow(ctx, w, h, h * .8, h * .22, 28, '#B8662B', s3);
+      ctx.fillStyle = '#8A4A22'; ctx.fillRect(0, h * .92, w, h);
+      for (let k = 0; k < 14; k++) { const fx = ((k * 19 - t * 9 - s2) % (w + 10) + w + 10) % (w + 10), fy = ((k * 11 + t * (7 + k % 4 * 2)) % h); ctx.fillStyle = ['#E8571B', '#F5A623', '#C0392B', '#D4A017'][k % 4]; ctx.fillRect(fx, fy, 2, 2); }
+    } else if (kind === 'winter') {
+      sky(ctx, w, h, ['#C9D8EA', '#DCE6F2', '#EDF2F8']); hillsRow(ctx, w, h, h * .66, h * .26, 38, '#E4ECF6', s2);
+      for (let k = -1; k < w / 22 + 2; k++) { const ix = Math.floor((k * 22 + s3) / 22), px = k * 22 - (((s3 % 22) + 22) % 22) + 11, th = h * (.3 + hash(ix) * .2); tri(ctx, px, h * .86, 12, th, '#3E6B58'); tri(ctx, px, h * .86 - th * .5, 9, th * .55, '#F4F8FC'); }
+      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, h * .86, w, h);
+      for (let k = 0; k < 22; k++) { const fx = ((k * 13 + Math.sin(t + k) * 3 - s2) % w + w) % w, fy = ((k * 9 + t * (6 + k % 4 * 3)) % h); ctx.fillStyle = '#fff'; ctx.fillRect(fx, fy, 1 + k % 2, 1 + k % 2); }
+    } else if (kind === 'night') {
+      sky(ctx, w, h, ['#1D2B53', '#27386B', '#34478A', '#43579C']); disc(ctx, w * .72, h * .28, 7, '#FFF3B0'); disc(ctx, w * .72 + 3, h * .28 - 1, 6, '#2B3D74');
+      for (let k = 0; k < 18; k++) { const sx = ((k * 23 + 7 - s1) % w + w) % w, sy = hash(k) * h * .6; if (Math.sin(t * 3 + k * 2.3) > -.4) { ctx.fillStyle = '#fff'; ctx.fillRect(sx, sy, 1, 1); if (k % 5 === 0) { ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillRect(sx, sy - 1, 1, 3); } } }
+      hillsRow(ctx, w, h, h * .74, h * .26, 36, '#16213F', s2); ctx.fillStyle = '#FFD966'; for (let k = 0; k < 3; k++) { if (Math.sin(t * 1.3 + k * 4) > -.2) ctx.fillRect(((k * 41 + 14 - s3) % w + w) % w, h * .86, 1, 1); }
+    } else if (kind === 'sky') {
+      sky(ctx, w, h, ['#8FC7F0', '#A9D6F5', '#C4E3F8', '#DDF0FB']); disc(ctx, w * .2, h * .22, 8, 'rgba(255,240,170,.5)'); disc(ctx, w * .2, h * .22, 5, '#FFF2B0');
+      for (let k = 0; k < 5; k++) cloud(ctx, ((t * (3 + k) + k * 40 - s1 * (1 + k * .4)) % (w + 40) + w + 40) % (w + 40) - 25, h * (.15 + k * .17), 1 + (k % 3) * .4, k % 2 ? '#fff' : '#F2F8FD');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, h * .9, w, h); cloud(ctx, 0, h * .9, 6, '#fff');
+    } else if (kind === 'volcano') {
+      sky(ctx, w, h, ['#4A2024', '#7A2F27', '#B2492B', '#E27B33']); const mx = w * .55 - ((s2 * .5) % 10);
+      tri(ctx, mx, h * .95, w * .9, h * .8, '#2B1A1A'); ctx.fillStyle = '#FF7A1A'; ctx.fillRect(mx - 5, h * .95 - h * .8, 10, 2); ctx.fillStyle = '#FFD43B'; ctx.fillRect(mx - 2, h * .95 - h * .8, 4, 1);
+      ctx.fillStyle = '#FF7A1A'; ctx.fillRect(mx - 1, h * .95 - h * .75, 2, 12); ctx.fillRect(mx + 4, h * .95 - h * .6, 1, 14);
+      for (let k = 0; k < 12; k++) { const ex = mx + (hash(k) - .5) * 24, ey = h * .2 - ((t * (10 + k % 5 * 4) + k * 9) % (h * .9)) + h * .8; ctx.fillStyle = k % 2 ? '#FFB347' : '#FF6B2B'; ctx.fillRect(ex + Math.sin(t * 3 + k) * 3, ey, 1, 1); }
+      ctx.fillStyle = '#1A0F0F'; ctx.fillRect(0, h * .93, w, h);
+    } else { // glitch: シートが こわれて ちらつく
+      const f = Math.floor(t * 7); sky(ctx, w, h, ['#9DB7E8', '#BFD2F2', '#DCE8FF']);
+      for (let k = 0; k < 7; k++) { const y = hash(f * 7 + k) * h, bh = 2 + hash(f + k * 3) * 6, ox = (hash(f * 3 + k) - .5) * 24; ctx.fillStyle = ['#FF4D8D', '#00B7FF', '#222', '#FFD966', '#70AD47'][Math.floor(hash(f + k * 11) * 5)]; ctx.fillRect(ox + w * hash(k + f), y, 16 + hash(k * 5 + f) * 40, bh); }
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(0, Math.floor(hash(f * 5) * h), w, 1);
+      ctx.fillStyle = '#C00000'; ctx.font = '700 7px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(['#REF!', '#N/A', '#DIV/0!', '#VALUE!'][f % 4], w / 2, h / 2);
+    }
+  }
+  function drawWindow(ctx, win, idx, sh, G, cx, cy, W, H) {
+    const T = 16, x = win[0] * T - cx, y = win[1] * T - cy, w = (win[2] - win[0] + 1) * T, h = (win[3] - win[1] + 1) * T;
+    if (x + w < HW - 2 || x > W || y + h < 0 || y > H) return;
+    const t = G.t || 0, o = shutterOpen(sh.shut, t, idx);
+    ctx.save(); ctx.beginPath(); ctx.rect(x + 2, y + 2, w - 4, h - 4); ctx.clip(); ctx.translate(x + 2, y + 2);
+    scene(ctx, sh.scene, w - 4, h - 4, t + idx * 3.1, cx + idx * 37);
+    ctx.restore();
+    // まどわく(Excelの「かこい」のような うす灰いろ)+ まんなかの さん
+    ctx.fillStyle = '#7F7F7F'; ctx.fillRect(x, y, w, 2); ctx.fillRect(x, y + h - 2, w, 2); ctx.fillRect(x, y, 2, h); ctx.fillRect(x + w - 2, y, 2, h);
+    ctx.fillStyle = '#F2F2F2'; ctx.fillRect(x + 2, y + 2, w - 4, 1); ctx.fillRect(x + 2, y + 2, 1, h - 4);
+    ctx.fillStyle = '#8F8F8F'; ctx.fillRect(x + Math.floor(w / 2) - 1, y + 2, 2, h - 4); ctx.fillRect(x + 2, y + Math.floor(h / 2) - 1, w - 4, 2);
+    // よろい戸(パタパタ): ひだり・みぎの ふたが はばを ちぢめたり ひろげたり
+    if (sh.shut) {
+      const full = (w - 4) / 2, pw = Math.max(3, Math.round(full * (1 - o) + 3 * o));
+      for (const side of [0, 1]) {
+        const px = side ? x + w - 2 - pw : x + 2; ctx.fillStyle = '#C8A06B'; ctx.fillRect(px, y + 2, pw, h - 4);
+        ctx.fillStyle = '#A57C48'; for (let yy = y + 4; yy < y + h - 3; yy += 3) ctx.fillRect(px, yy, pw, 1);
+        ctx.fillStyle = '#7A5A33'; ctx.fillRect(side ? px : px + pw - 1, y + 2, 1, h - 4); ctx.fillStyle = '#E3C493'; ctx.fillRect(side ? px + pw - 1 : px, y + 2, 1, h - 4);
+        if (o < .15) { ctx.fillStyle = '#5C4426'; ctx.fillRect(side ? px + 1 : px + pw - 3, y + Math.floor(h / 2) - 1, 2, 3); }
+      }
+    }
+    ctx.fillStyle = '#BFBFBF'; ctx.fillRect(x - 2, y + h, w + 4, 2); ctx.fillStyle = '#8F8F8F'; ctx.fillRect(x - 2, y + h + 2, w + 4, 1);
+  }
   function drawBg(ctx, G, lv, W, H) {
-    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+    const sh = sheetOf(lv);
+    ctx.fillStyle = sh.bg; ctx.fillRect(0, 0, W, H);
     const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
-    ctx.fillStyle = '#D4D4D4';
+    ctx.fillStyle = sh.ln;
     for (let x = -(((cx % T) + T) % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(((cy % T) + T) % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
+    windowsFor(lv).forEach((win, i) => drawWindow(ctx, win, i, sh, G, cx, cy, W, H));
   }
   function drawFrame(ctx, G, lv, W, H) {
     const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
