@@ -94,6 +94,7 @@
     11: { bg: '#F2F9FF', ln: '#C9E0F0', scene: 'sky', shut: { period: 6, closed: .5 } },
     12: { bg: '#FFF4EE', ln: '#EBD3C7', scene: 'volcano', shut: { period: 6, closed: .5 } },
     13: { bg: '#F1F7EA', ln: '#D1DEC4', scene: 'glitch', shut: { period: 4.5, closed: .45 } },
+    14: { bg: '#F4F1F9', ln: '#DAD3E6', scene: 'cave', shut: { period: 15, closed: .25 } },
   };
   const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
   function sheetOf(lv) { const base = SHEETS[lv.custom ? 1 : lv.world] || SHEETS[1]; return Object.assign({}, base, lv.sheet || {}, lv.scene ? { scene: lv.scene } : {}); }

@@ -33,7 +33,7 @@
       front: front.map(r => r.join('')), color, lock,
       ents: m.ents, lifts: m.lifts, switches: m.switches, doors: m.doors, judges: m.judges, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
       hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0,
-      scene: def.scene, sheet: def.sheet, windows: def.windows,
+      scene: def.scene, sheet: def.sheet, windows: def.windows, fog: def.fog,
     };
   }
 
@@ -925,6 +925,51 @@
       m.flag = [28, 9];
     },
     solution: [{ x: 7, edits: [{ tool: 'sort', rect: { x0: 8, y0: 10, x1: 25, y1: 10 }, opts: { sort: 'R' } }] }],
+  }));
+
+  // ---- ワールド14: 改ページプレビュー(見えるのは、エナーのまわりだけ。青い枠の外はグレー) ----
+  L.push(make({
+    id: '14-1', name: '見えるのは まわりだけ', world: 14, w: 34, tools: [], energy: 0, bg: '#D9D2E6', bg2: '#C9C0DA', fog: { w: 11, h: 7 },
+    hints: [
+      { x: 2, text: '「改ページプレビュー」。青い枠の中だけ見えて、外はグレー。ゴールとかけらは、うっすら光る' },
+      { x: 10, text: '見えない所から敵が近づくと、青い枠のふちに、赤いしるしがちかちかする' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3);
+      m.ent('walker', 14, 9); m.ent('div0', 22, 9); m.ent('walker', 27, 9);
+      m.gem(11, 8); m.gem(24, 7); m.gem(31, 8);
+      m.flag = [32, 9];
+    },
+  }));
+
+  L.push(make({
+    id: '14-2', name: '印刷範囲の設定', world: 14, w: 30, tools: ['printarea', 'sort'], energy: 18, bg: '#D9D2E6', bg2: '#C9C0DA', fog: { w: 11, h: 7 },
+    hints: [
+      { x: 2, text: '穴は広くて、飛び越せない。むこうにあるブロックを、穴へ寄せたい。でも、青い枠は せまい' },
+      { x: 4, text: '「印刷範囲の設定」で見える所を広げてから、「ならべかえ」で寄せよう（青い枠の外は、なおせない）' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(8, 13);
+      for (let x = 14; x <= 19; x++) m.blk(x, 10, 0);
+      m.gem(11, 8); m.gem(17, 8); m.gem(25, 8);
+      m.flag = [27, 9];
+    },
+    solution: [{ x: 7, edits: [{ tool: 'printarea', rect: { x0: 8, y0: 10, x1: 19, y1: 10 } }, { tool: 'sort', rect: { x0: 8, y0: 10, x1: 19, y1: 10 }, opts: { sort: 'L' } }] }],
+  }));
+
+  L.push(make({
+    id: '14-3', name: 'ズームで下見', world: 14, w: 36, tools: ['zoom'], energy: 12, bg: '#D9D2E6', bg2: '#C9C0DA', fog: { w: 11, h: 7 },
+    hints: [
+      { x: 2, text: '「ズーム」を使うと、数秒だけ見える範囲が2倍に広がる。その間は、なおせない' },
+      { x: 12, text: '先に敵のようすを見ておいてから、タイミングよく通りぬけよう' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.rect(10, 3, 30, 5, 'S');
+      m.ent('div0', 15, 9); m.ent('div0', 21, 9); m.ent('circ', 25, 6, { ranges: [[25, 6, 28, 9]] });
+      m.gem(12, 8); m.gem(18, 8); m.gem(33, 8);
+      m.flag = [34, 9];
+    },
+    solution: [{ x: 4, edits: [{ tool: 'zoom' }] }],
   }));
 
   // ---- じっけんシート: すべてのどうぐを、すきにためす場所 ----
