@@ -336,3 +336,16 @@ body.tuning #tune-toggle{right:252px}
 #trans b span { font: 700 clamp(16px, 3.6vw, 26px)/1.4 system-ui, sans-serif; letter-spacing: .12em; }
 #trans.lab b { animation: trlabel 1.85s cubic-bezier(.2, .8, .3, 1) both; }
 @keyframes trlabel { 0% { opacity: 0; transform: scale(1.5); filter: blur(6px); } 12% { opacity: 1; transform: scale(1); filter: none; } 74% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(.97); } }
+
+/* ===== データのかけら(宝石のかたち)・メモ・かけらノート ===== */
+.sg{border:0 !important;font-size:0 !important;background:#D9D9D9 !important;clip-path:polygon(24% 0,76% 0,100% 36%,50% 100%,0 36%)}
+.sg.on{background:linear-gradient(135deg,#BFF6F8 0%,#43B3D8 55%,#2A8DBA 100%) !important}
+#r-note{max-width:min(520px,92%);margin:6px auto 0;padding:10px 14px;border-left:4px solid #43B3D8;background:rgba(67,179,216,.14);border-radius:4px;text-align:left;line-height:1.7;color:inherit}
+#r-note b{display:block;color:#2A8DBA;font-size:.85em;margin-bottom:2px}
+#screen-notes{justify-content:flex-start}
+#screen-notes header{display:flex;align-items:center;gap:12px;width:100%}
+#screen-notes header button{white-space:nowrap}
+#notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;width:100%;text-align:left}
+.note{padding:8px 12px;border-left:4px solid #43B3D8;background:rgba(67,179,216,.12);border-radius:4px}
+.note b{font-size:.85em;color:#2A8DBA}.note p{margin:2px 0 0;line-height:1.6}
+.note.lock{border-left-color:#A6A6A6;background:rgba(128,128,128,.1);opacity:.7}

@@ -482,8 +482,9 @@
     G.cleared = true; G.clearT = 0; G.confT = 0; spawnConfetti(G.flag.x + G.flag.w / 2, G.flag.y + 4, 36);
     if (EDITOR_TEST) { SFX.win(); UI.toast('クリア！ ステージ作成に戻ります', 1500); setTimeout(() => { if (G.cleared) backToEditor(); }, 1300); return; }
     // もくひょう(バッジ)。それぞれ別に記録する: ①クリア ②Σ(ほうせき)を全部 ③ノーミス(ダメージをうけない) ④ムダなし(コストが もくひょう いか)
-    const lv = G.level, goals = [true, G.gems >= lv.gems.length, G.deaths === 0 && G.hits === 0, parApplies(lv) && G.spent <= lv.par];
-    const rank = rankOf(goals, lv); G.lastRank = rank; G.lastGoals = goals;
+    const lv = G.level; const hadAll = lv.gems.length > 0 && gemsOf(lv, save.levels[lv.id]) >= lv.gems.length; // はじめて ぜんぶ あつめたか
+    const goals = [true, G.gems >= lv.gems.length, G.deaths === 0 && G.hits === 0, parApplies(lv) && G.spent <= lv.par];
+    const rank = rankOf(goals, lv); G.lastRank = rank; G.lastGoals = goals; G.newNote = !practice && lv.gems.length > 0 && goals[1] && !hadAll && !!FRAG_NOTES[lv.id];
     if (rank === 'S') SFX.perfect(); else SFX.win();
     if (practice) { setTimeout(() => { if (G.cleared) UI.showResult(goals); }, 800); return; } // れんしゅうモードは、きろくを のこさない
     const prev = save.levels[lv.id] || { goals: [false, false, false, false] };
@@ -497,7 +498,7 @@
   // 3つのもくひょうのバッジ: ✓クリア / Σが3つそろう / ノーミス（ダメージをうけない）
   function badgesHTML(goals, gemsGot, total, big, par) {
     const n = (total === undefined ? 3 : total); let sg = '';
-    for (let i = 0; i < Math.min(n, 5); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '">Σ</i>';
+    for (let i = 0; i < Math.min(n, 5); i++) sg += '<i class="sg' + (i < gemsGot ? ' on' : '') + '"></i>';
     return '<span class="bds' + (big ? ' big' : '') + '"><span class="bd ck' + (goals[0] ? ' on' : '') + '">✓</span>' + (n ? '<span class="bd sgs' + (goals[1] ? ' all' : '') + '">' + sg + '</span>' : '') + '<span class="bd pf' + (goals[2] ? ' on' : '') + '">ノーミス</span>' + (par ? '<span class="bd pf' + (goals[3] ? ' on' : '') + '">ムダなし</span>' : '') + '</span>';
   }
   const gemsOf = (lv, s) => (s ? (s.gemsBest !== undefined ? s.gemsBest : (s.goals && s.goals[1] ? lv.gems.length : 0)) : 0);
@@ -1084,6 +1085,33 @@
     const ox = x + ((s - 5) >> 1), oy = y + ((s - 7) >> 1); ctx.fillStyle = on ? '#FFFFFF' : '#A6A6A6';
     for (let j = 0; j < 7; j++) for (let i = 0; i < 5; i++) if (SIGMA[j][i] === '1') ctx.fillRect(ox + i, oy + j, 1, 1);
   }
+  // ===== データのかけら(宝石のかたち)と、ゴールの フロッピーディスク =====
+  // かけら: ひし形の宝石。ゆらゆら うごいて、ときどき きらっと ひかる。on=false は HUDの「まだ」の わく
+  function drawShard(cx, cy, s, on) {
+    const h = s / 2, w = s * .5, top = cy - h, bot = cy + h + 1, ty = cy - h * .35;
+    if (on) { const a = .18 + .1 * Math.sin(G.t * 4 + cx * .3), g2 = ctx.createRadialGradient(cx, cy, 1, cx, cy, s * 1.1); g2.addColorStop(0, 'rgba(160,245,255,' + a * 2 + ')'); g2.addColorStop(1, 'rgba(160,245,255,0)'); ctx.fillStyle = g2; ctx.fillRect(cx - s * 1.2, cy - s * 1.2, s * 2.4, s * 2.4); }
+    const P = (pts, col) => { ctx.fillStyle = col; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); };
+    const L = [cx - w, ty], R = [cx + w, ty], TL = [cx - w * .55, top], TR = [cx + w * .55, top], B = [cx, bot];
+    if (on) { P([TL, TR, R, L], '#BFF6F8'); P([L, [cx, ty], B], '#43B3D8'); P([R, [cx, ty], B], '#2A8DBA'); P([TL, [cx, ty], L], '#7FDDEB'); P([TR, [cx, ty], R], '#5BC6E2'); }
+    else { P([TL, TR, R, L, B], '#D9D9D9'); ctx.strokeStyle = '#A6A6A6'; ctx.lineWidth = 1; ctx.stroke(); }
+    if (on) { const k = Math.sin(G.t * 3 + cx * .7); if (k > .93) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx - w * .5) - 1, Math.round(top + 1), 3, 1); ctx.fillRect(Math.round(cx - w * .5), Math.round(top), 1, 3); } }
+  }
+  // ゴール: 角を下にした フロッピーディスクが、ゆっくり くるくる まわる。とると クリア
+  function drawGoal(x, y) {
+    const cx = x + 8, cyBase = y + 16; let a = 1, sc = 1, spin = G.t * 1.5;
+    if (G.cleared) { const c = G.clearT || 0; a = Math.max(0, 1 - c * 1.8); sc = 1 + c * 2.2; spin = G.t * 1.5 + c * 12; if (a <= 0) return; }
+    const cy = cyBase + Math.sin(G.t * 2.4) * 1.5, k = Math.cos(spin), back = k < 0, sx = Math.max(.12, Math.abs(k));
+    ctx.save(); ctx.globalAlpha = a;
+    const gl = ctx.createRadialGradient(cx, cy, 2, cx, cy, 20); gl.addColorStop(0, 'rgba(255,240,150,' + (.35 + .15 * Math.sin(G.t * 3)) + ')'); gl.addColorStop(1, 'rgba(255,240,150,0)'); ctx.fillStyle = gl; ctx.fillRect(cx - 22, cy - 22, 44, 44);
+    ctx.translate(cx, cy); ctx.scale(sx * sc, sc); ctx.rotate(Math.PI / 4);
+    const S = 7; // 14x14 の ディスク
+    ctx.fillStyle = '#1B2A57'; ctx.fillRect(-S - 1, -S - 1, S * 2 + 2, S * 2 + 2); // ふち
+    ctx.fillStyle = back ? '#3A5BB5' : '#2F4DA3'; ctx.beginPath(); ctx.moveTo(-S, -S); ctx.lineTo(S - 3, -S); ctx.lineTo(S, -S + 3); ctx.lineTo(S, S); ctx.lineTo(-S, S); ctx.closePath(); ctx.fill(); // かどが ななめに かけた ほんたい
+    if (!back) { ctx.fillStyle = '#CDD3DE'; ctx.fillRect(-4, -S, 9, 5); ctx.fillStyle = '#6B7488'; ctx.fillRect(1, -S + 1, 2, 3); ctx.fillStyle = '#F5F7FB'; ctx.fillRect(-5, 0, 11, S); ctx.fillStyle = '#E8563F'; ctx.fillRect(-5, 1, 11, 2); ctx.fillStyle = '#B5BDCF'; ctx.fillRect(-3, 4, 7, 1); ctx.fillRect(-3, 6, 5, 1); }
+    else { ctx.fillStyle = '#CDD3DE'; ctx.beginPath(); ctx.arc(0, -1, 4.5, 0, 6.3); ctx.fill(); ctx.fillStyle = '#6B7488'; ctx.fillRect(-1.5, -2.5, 3, 3); ctx.fillStyle = '#1B2A57'; ctx.fillRect(-6, 4, 12, 3); }
+    ctx.restore();
+    if (!G.cleared && Math.sin(G.t * 2 + 1) > .94) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + 6), Math.round(cy - 9), 3, 1); ctx.fillRect(Math.round(cx + 7), Math.round(cy - 10), 1, 3); }
+  }
   function drawWorld() {
     const lv = G.level, cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y);
     const x0 = Math.max(0, Math.floor(cx / T)), x1 = Math.min(lv.w - 1, Math.floor((cx + W) / T)), y0 = Math.max(0, Math.floor(cy / T)), y1 = Math.min(lv.h - 1, Math.floor((cy + H) / T));
@@ -1097,12 +1125,12 @@
     for (const tx of G.hideCol) for (let y = 0; y < H; y += 4) ctx.fillRect(tx * T - cx + 7, y, 2, 2);
     // チェックポイントとゴール
     for (const c of G.checks) { if (c.gone) continue; const x = c.x - cx, y = c.y - cy; ctx.fillStyle = '#5B6785'; ctx.fillRect(x + 7, y + 2, 2, 14); ctx.fillStyle = c.on ? '#F5C842' : '#93A0B8'; ctx.fillRect(x + 9, y + 2, 6, 4); }
-    { const f = G.flag, x = f.x - cx, y = f.y - cy; ctx.fillStyle = '#5B6785'; ctx.fillRect(x + 6, y, 3, 32); ctx.fillStyle = '#E8563F'; ctx.fillRect(x + 9, y + 1, 12, 9); ctx.fillStyle = '#fff'; ctx.fillRect(x + 12, y + 3, 3, 3); }
+    drawGoal(G.flag.x - cx, G.flag.y - cy);
     // 取得物
     for (const k of G.pick) {
       if (k.gone || hiddenAt(Math.floor((k.x + 4) / T), Math.floor((k.y + 4) / T))) continue;
       const x = k.x - cx, y = k.y - cy + Math.round(Math.sin(G.t * 4 + k.x) * 1.5);
-      if (k.type === 'gem') { if (EXCEL) sigmaTile(x - 1, y - 1, 10, true); else icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); } else icon(BOLT, x + 1, y + 1, '#F5C842');
+      if (k.type === 'gem') { if (EXCEL) drawShard(x + 4, y + 4, 10, true); else icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); } else icon(BOLT, x + 1, y + 1, '#F5C842');
     }
     // てき
     for (const e of G.enemies) {
@@ -1228,7 +1256,7 @@
     const e = practice ? '∞' : Math.floor(G.energy);
     if (has && (RB.cost !== e || RB.max !== G.maxE)) { RB.cost = e; RB.max = G.maxE; $('#rb-bar').firstElementChild.style.width = practice ? '100%' : (100 * G.energy / Math.max(1, G.maxE)) + '%'; $('#rb-bar').classList.toggle('low', !practice && G.energy < minCost()); $('#rb-cost').textContent = e; }
     const ng = G.level.gems.length; $('#rb-g-sigma').style.display = ng ? '' : 'none';
-    if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 5) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '">Σ</i>'; else h = '<i class="sg on">Σ</i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
+    if (RB.gems !== G.gems || RB.ng !== ng) { RB.gems = G.gems; RB.ng = ng; let h = ''; if (ng <= 5) for (let i = 0; i < ng; i++) h += '<i class="sg' + (i < G.gems ? ' on' : '') + '"></i>'; else h = '<i class="sg on"></i><b>' + G.gems + '/' + ng + '</b>'; $('#rb-sigma').innerHTML = h; }
     const t = Math.floor(G.time / 60) + ':' + String(Math.floor(G.time % 60)).padStart(2, '0'); if (RB.time !== t) { RB.time = t; $('#rb-time').textContent = t; }
     const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; $('#lb-edit').style.display = hasEdit ? '' : 'none'; }
     const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').innerHTML = mu + '<span class="lbl"> 音</span>'; $('#lb-mute').textContent = mu + ' 音'; }
@@ -1339,6 +1367,44 @@
   cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', () => { dragging = false; G.edit.sel = null; panLast = null; });
 
   // ===== UI(DOM) =====
+  // ===== データのかけら: ぜんぶ あつめると、ステージごとの「メモ」が よめる(せかいの なぞを すこしずつ とく) =====
+  // ※ ものがたりの たたき台。あとから ぜんぶ かきかえられる
+  const FRAG_NOTES = {
+    '1-1': 'かけらは、こわれる まえの シートの きおく。ひろうと、ほんのり あたたかい。',
+    '1-2': 'さいきん、だれかが あたらしい ソフトを いれたらしい。なまえは まだ わからない。',
+    '1-3': 'くうちゅうで ボタンを ながおしすると、ふわり。たかい ところも ゆっくり こえられるよ。',
+    '2-1': 'こわれた シートは、どれも「きれいに そろえられて」いた。まちがった ばしょに。',
+    '2-2': 'ソフトは、せかいを おそうじ しようとしている…? わるぎは ないのかも しれない。',
+    '3-1': 'ガラスは いろを つけると、その いろの せいしつに なる。おぼえておくと やくに たつ。',
+    '3-2': 'こわれた しゅんかんの きろくに、おなじ ことばが のこっていた。「ぴかぴか」。',
+    '4-1': 'ひだりと みぎが ひっくりかえった シート。まるで かがみの せかい。',
+    '4-2': 'たおして、はしに する。ブロックは うごかしかた しだいで、たよれる なかまに なる。',
+    '5-1': 'まもられた ブロックは、おそうじから のがれた。「ほご」は だいじな ちから。',
+    '5-2': 'ほごを はずすのは、よく かんがえてから。いちど はずすと、もどせない ことも。',
+    '5-3': 'よせてから ひっくりかえす。じゅんばんを かえるだけで、あたらしい みちが みえる。',
+    '6-1': 'たかい ところの かけらほど、きおくが のこっている。あきらめずに のぼろう。',
+    '6-2': 'とうの いちばん うえに、ソフトの ほんたいが ある…そんな うわさが ある。',
+    '7-1': 'リフトは、むかし ひとが のるために つくった どうぐ。いまも まじめに うごいている。',
+    '7-2': 'たかい ところへ いくには、リフトの うごきを よく みて、のるタイミングを はかる。',
+    '7-3': 'ガラスの リフトは、いろを つけると はたらきが かわる。ためして みよう。',
+    '7-4': 'リフトと フィルター。ふたつを あわせると、とおれなかった みちが ひらく。',
+    '7-5': 'つるつる すべる リフト。あせらず、ゆっくり とまるのを まとう。',
+    '7-6': 'みどりに したリフトは、ぴょんと はねる。さきに いろを かえて、あとから とおす。',
+    '8-1': 'じしゃくは、かならず いちばん ちかい はがねに むかう。まっすぐ、まじめに。',
+    '8-2': 'ふたつの とびら。どちらも ひらけた とき、ソフトの ひみつの ひとつが みえた。',
+    '8-3': 'よこむきの じしゃく。ひっぱられる ほうこうを まず かくにんしよう。',
+    '9-1': 'たおして、おとして、はしにする。ブロックの いちを かえると、みちが うまれる。',
+    '9-2': 'はんてんして とおりぬける。うらがわにも、シートの ひろがりが ある。',
+    '9-3': 'つくって、まもって、とおる。ソフトは、まもられた ばしょには てを だせなかった。',
+    '9-4': 'ほごを はずして、はんてん。ひとつの そうさで、せかいが ひっくりかえる。',
+    '10-1': 'そんざいセルは、ブロックの「いる」「いない」を しっている。みはりばんの ようだ。',
+    '10-2': 'からっぽの セルと、そんざいセル。ふたつの めが そろうと、とびらが ひらく。',
+    '10-3': 'いろセルは、いろを みわける。おなじ いろの ブロックだけを うけいれる。',
+    '10-4': 'ブロックで リフトを うごかす。いつもと ぎゃくの はっそうが ひつよう。',
+    '11-1': 'ふたつの リフトを つかいこなせたら、もう たいていの シートは こわくない。',
+    '11-2': 'のぼる リフトと からっぽの セル。じゅんばんを まちがえない ことが だいじ。',
+    '11-3': 'ソフトの なまえは「ぴかぴかクリーナー」。いちばん おくの シートで、まっている。',
+  };
   const UI = {
     toastT: 0,
     toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); clearTimeout(UI.toastT); UI.toastT = setTimeout(() => t.classList.add('hide'), ms || 2200); },
@@ -1394,6 +1460,12 @@
     title() { G.mode = 'title'; UI.show('#screen-title'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); },
     select() { G.mode = 'select'; UI.show('#screen-select'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); UI.buildSelect(); },
     unlocked(i) { return true; }, // ためしあそびよう: ステージはじゆうにえらべる
+    notes() {
+      G.mode = 'select'; UI.show('#screen-notes'); const box = $('#notes'); box.innerHTML = ''; let got = 0, all = 0;
+      LEVELS.forEach(lv => { if (!lv.gems.length || !FRAG_NOTES[lv.id]) return; all++; const ok = gemsOf(lv, save.levels[lv.id]) >= lv.gems.length; if (ok) got++;
+        const d = document.createElement('div'); d.className = 'note' + (ok ? '' : ' lock'); const b = document.createElement('b'); b.textContent = lv.id + '  ' + lv.name; const p = document.createElement('p'); p.textContent = ok ? FRAG_NOTES[lv.id] : '？？？（かけらを ぜんぶ あつめると よめる）'; d.append(b, p); box.append(d); });
+      $('#notes-rate').textContent = 'メモ ' + got + '/' + all;
+    },
     buildSelect() {
       const box = $('#levels'); box.innerHTML = ''; let perfect = 0, sigma = 0, sigmaAll = 0;
       LEVELS.forEach((lv, i) => {
@@ -1402,15 +1474,16 @@
         b.innerHTML = '<b>' + lv.id + '</b>' + (s && s.rank ? '<i class="rk rk' + s.rank + '">' + s.rank + '</i>' : '') + '<span>' + lv.name + '</span>' + badgesHTML(s ? s.goals : [false, false, false, false], gemsOf(lv, s), lv.gems.length, false, parApplies(lv));
         b.onclick = () => UI.start(i); box.appendChild(b);
       });
-      $('#total').textContent = 'ノーミス ' + perfect + '/' + LEVELS.length + '　Σ ' + sigma + '/' + sigmaAll;
+      $('#total').textContent = 'ノーミス ' + perfect + '/' + LEVELS.length + '　かけら ' + sigma + '/' + sigmaAll;
     },
     showResult(goals) {
       G.mode = 'result'; UI.show('#screen-result');
       $('#r-stars').innerHTML = badgesHTML(goals, G.gems, G.level.gems.length, true, parApplies(G.level));
       const lv = G.level;
-      $('#r-info').innerHTML = (practice ? '' : 'ランク <b class="rk rk' + G.lastRank + '">' + G.lastRank + '</b>　') + 'Σ ' + G.gems + '/' + lv.gems.length + '　タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回' + (parApplies(lv) ? '　つかったコスト ' + G.spent + '（もくひょう ' + lv.par + '）' : '');
-      const tips = []; if (!goals[1]) tips.push('Σをすべて集める'); if (!goals[2]) tips.push('ダメージを受けずにクリア'); if (parApplies(lv) && !goals[3]) tips.push('コストを ' + lv.par + ' 以下で');
+      $('#r-info').innerHTML = (practice ? '' : 'ランク <b class="rk rk' + G.lastRank + '">' + G.lastRank + '</b>　') + (lv.gems.length ? 'かけら ' + G.gems + '/' + lv.gems.length + '（復元率 ' + Math.round(G.gems / lv.gems.length * 100) + '%）　' : '') + 'タイム ' + G.time.toFixed(1) + '秒　ダメージ ' + G.hits + '回' + (parApplies(lv) ? '　つかったコスト ' + G.spent + '（もくひょう ' + lv.par + '）' : '');
+      const tips = []; if (!goals[1]) tips.push('データのかけらを すべて あつめる'); if (!goals[2]) tips.push('ダメージを受けずにクリア'); if (parApplies(lv) && !goals[3]) tips.push('コストを ' + lv.par + ' 以下で');
       $('#r-tip').textContent = practice ? 'れんしゅうモード（記録は残りません）' : (tips.length ? tips.join('　') : 'パーフェクト！');
+      const nt = $('#r-note'); if (nt) { const full = lv.gems.length > 0 && goals[1] && FRAG_NOTES[lv.id]; nt.classList.toggle('hide', !full); if (full) nt.innerHTML = '<b>' + (G.newNote ? 'あたらしい メモが ふえた！' : 'かけらの メモ') + '</b>' + FRAG_NOTES[lv.id].replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
       const last = G.levelIdx >= LEVELS.length - 1; $('#r-next').textContent = last ? 'ステージ選択へ' : '次のステージへ';
     },
   };
@@ -1420,6 +1493,7 @@
   const practiceBtn = $('#btn-practice'); const refreshPractice = () => { if (practiceBtn) { practiceBtn.textContent = 'れんしゅう：' + (practice ? 'ON' : 'OFF'); practiceBtn.classList.toggle('on', practice); } };
   if (practiceBtn) { practiceBtn.onclick = () => { setPractice(!practice); refreshPractice(); UI.toast(practice ? 'れんしゅうモード：エナジー むせいげん（記録は のこりません）' : 'ふつうの モードに もどしました', 2200); }; refreshPractice(); }
   $('#btn-back').onclick = () => UI.title();
+  if ($('#btn-notes')) { $('#btn-notes').onclick = () => UI.notes(); $('#btn-notes-back').onclick = () => UI.select(); }
   let guideFrom = 'title';
   // 実際のゲームとおなじ描画で、み本のえ(16×16)をつくる
   function tileSample(draw) {

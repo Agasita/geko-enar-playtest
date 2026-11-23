@@ -240,7 +240,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     if (k === 'crack') { eraseAt(x, y); L.front[y][x] = 'c'; return; }
     const free = L.front[y][x] === '.';
     if (k === 'ent') { if (!free) return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push({ type: cur.type, x, y }); return; }
-    if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('Σは5個までです（ゲームの枠も5個まで）'); return; } L.gems.push([x, y]); } return; }
+    if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('かけらは5個までです（ゲームの枠も5個まで）'); return; } L.gems.push([x, y]); } return; }
     if (k === 'spark') { if (free && !L.sparks.some(g => g[0] === x && g[1] === y)) L.sparks.push([x, y]); return; }
     if (k === 'check') { if (free && !L.checks.some(c => c[0] === x && c[1] === y)) L.checks.push([x, y]); return; }
     if (k === 'start') { L.start = [x, y]; return; }
@@ -329,7 +329,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => addBtn(p2, '<span class="sw" style="background:' + e[2] + ';border-radius:50%"></span>' + e[1], { kind: 'ent', type: e[0] }));
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
-    addBtn(p2, 'Σ（宝石）', { kind: 'gem' }); addBtn(p2, 'エナジーの玉', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
+    addBtn(p2, 'かけら（宝石）', { kind: 'gem' }); addBtn(p2, 'エナジーの玉', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, 'ゴール', { kind: 'flag' });
     TOOLS.forEach(t => { const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" data-t="' + t[0] + '"> ' + t[1]; $('#tools').appendChild(l); });
     COLORS.forEach((c, i) => { const o = document.createElement('option'); o.value = i; o.textContent = c[0]; $('#l-col').appendChild(o); });
     THEMES.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = t[0]; $('#f-theme').appendChild(o); });

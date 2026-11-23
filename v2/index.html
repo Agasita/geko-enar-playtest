@@ -15,7 +15,7 @@
     <div id="ribbon">
       <div class="rb-group" id="rb-g-life"><div class="rb-items" id="rb-hearts"></div><div class="rb-cap">ライフ</div></div>
       <div class="rb-group" id="rb-g-cost"><div class="rb-items"><div id="rb-bar"><i></i></div><b id="rb-cost">0</b></div><div class="rb-cap">コスト</div></div>
-      <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">Σ</div></div>
+      <div class="rb-group" id="rb-g-sigma"><div class="rb-items" id="rb-sigma"></div><div class="rb-cap">かけら</div></div>
       <div class="rb-group" id="rb-g-time"><div class="rb-items"><b id="rb-time">0:00</b></div><div class="rb-cap">タイム</div></div>
       <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
         <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="なおす">✎<span class="lbl"> なおす</span> <kbd>E</kbd></button>
@@ -84,9 +84,15 @@
 
     <section id="screen-select" class="screen hide">
       <header><button id="btn-back" class="ghost">◀ 戻る</button><h2>ステージ選択</h2><button id="btn-guide2" class="ghost">図鑑</button><button id="btn-practice" class="ghost">れんしゅう：OFF</button><span id="total"></span></header>
-      <p class="legend">見かた：✓ クリア　Σ 宝石（全部集める）　ノーミス＝ダメージなし　ムダなし＝目標コスト以下　カード右上の文字＝ランク（S〜C）</p>
+      <p class="legend">見かた：✓ クリア　◆ データのかけら（全部集める）　ノーミス＝ダメージなし　ムダなし＝目標コスト以下　カード右上の文字＝ランク（S〜C）</p>
       <div id="levels"></div>
-      <footer><button id="btn-editor" class="ghost tiny">ステージを作る</button> <button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
+      <footer><button id="btn-notes" class="ghost tiny">かけらノート</button> <button id="btn-editor" class="ghost tiny">ステージを作る</button> <button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
+    </section>
+
+    <section id="screen-notes" class="screen hide">
+      <header><button id="btn-notes-back" class="ghost">◀ 戻る</button><h2>かけらノート</h2><span id="notes-rate"></span></header>
+      <p class="legend">データのかけらを ぜんぶ あつめると、そのステージの メモが よめる。メモを あつめて、せかいの なぞを とこう。</p>
+      <div id="notes"></div>
     </section>
 
     <section id="screen-guide" class="screen hide">
@@ -99,6 +105,7 @@
       <div id="r-stars"></div>
       <p id="r-info"></p>
       <p id="r-tip"></p>
+      <p id="r-note" class="hide"></p>
       <div class="row"><button id="r-next" class="big">次のステージへ</button></div>
       <div class="row"><button id="r-retry" class="ghost">もう一度</button><button id="r-menu" class="ghost">ステージ選択</button></div>
     </section>
