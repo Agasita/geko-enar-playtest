@@ -520,8 +520,7 @@
       if (e.type === 'fake') { // にせブロック: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
         const look = p.dead ? 0 : d < 30 ? 2 : d < 64 ? 1 : 0;
-        if (look === 2 && e.look < 2) { SFX.bad(); }
-        e.look = look; e.ex = dx; e.ey = dy;
+                e.look = look; e.ex = dx; e.ey = dy;
       }
       if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
         if (Math.abs(p.x + 5 - (e.x + 6)) < 46 && Math.abs(p.y - e.y) < 30 && !p.dead) { e.awake = true; e.t = 0; SFX.bad(); spawnParts(e.x + 6, e.y + 4, 8, '#fff', 60); G.shake = Math.max(G.shake, 2); }

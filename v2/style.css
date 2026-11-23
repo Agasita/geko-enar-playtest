@@ -240,12 +240,12 @@ body.menu #lpad,body.editing #lpad{display:none}
   #game{grid-template-columns:calc(var(--s)*288px)}
   #ribbon{grid-column:1}
   #lpane{grid-column:1;grid-row:3;background:none;border:0;width:50%;z-index:2;pointer-events:none}
-  #lpad{pointer-events:auto;height:auto;top:0;bottom:0;align-items:center;justify-content:center;padding:0 calc(var(--s)*6px)}
-  #lpad button{flex:none;width:calc(var(--s)*38px);height:calc(var(--s)*34px)}
+  #lpad{pointer-events:auto;height:auto!important;top:0;bottom:0;align-items:flex-end;justify-content:flex-start;gap:calc(var(--s)*4px);padding:0 calc(var(--s)*8px) calc(var(--s)*14px + env(safe-area-inset-bottom))}
+  #lpad button{flex:none;width:calc(var(--s)*44px);height:calc(var(--s)*44px)}
   #sheet,#pane{grid-column:1}
-  #pane #touch{width:100%;flex-direction:row;justify-content:flex-end;align-items:center}
-  #pane #touch .acts{margin-left:auto;justify-content:flex-end;padding:0 calc(var(--s)*8px)}
-  #pane #touch .b-jump{width:calc(var(--s)*64px);height:calc(var(--s)*34px)}
+  #pane #touch{width:100%;flex-direction:row;justify-content:flex-end;align-items:flex-end}
+  #pane #touch .acts{margin-left:auto;justify-content:flex-end;align-items:flex-end;padding:0 calc(var(--s)*8px) calc(var(--s)*14px + env(safe-area-inset-bottom) - 4px)}
+  #pane #touch .b-jump{width:calc(var(--s)*72px);height:calc(var(--s)*44px)}
 }
 
 /* 体験版 */
