@@ -257,7 +257,12 @@
       L.x = n.x; L.y = n.y;
       if (ride && dy > 0) { moveY(p, dy); moveX(p, dx); }
       if (!ride && !p.dead && liftOn(L) && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // よこやしたからあたったら、おしだす
-        if (Math.abs(dy) >= Math.abs(dx)) p.y = dy < 0 ? L.y - p.h : L.y + L.h; else p.x = dx > 0 ? L.x + L.w : L.x - p.w;
+        // あたった ひとを おしだす。おした さきが かべや ゆかの なかなら、よこへ にがす。どこも ふさがっていたら「はさまれた」(ミス)
+        const along = Math.abs(dy) >= Math.abs(dx) ? [p.x, dy < 0 ? L.y - p.h : L.y + L.h] : [dx > 0 ? L.x + L.w : L.x - p.w, p.y];
+        const cands = [along, [L.x - p.w, p.y], [L.x + L.w, p.y]];
+        if (Math.abs(dy) >= Math.abs(dx)) cands.splice(1, 2, p.x + p.w / 2 < L.x + L.w / 2 ? [L.x - p.w, p.y] : [L.x + L.w, p.y], p.x + p.w / 2 < L.x + L.w / 2 ? [L.x + L.w, p.y] : [L.x - p.w, p.y]);
+        const ok = cands.find(c => !boxHitsSolid(c[0], c[1], p.w, p.h));
+        if (ok) { p.x = ok[0]; p.y = ok[1]; } else { p.x = along[0]; p.y = along[1]; killPlayer('crush'); }
       }
     }
   }
@@ -302,13 +307,16 @@
     spawnParts(p.x + 5, p.y + 7, 18, '#F5C842', 90); spawnRing(p.x + 5, p.y + 7, 14, 90, '#E8563F');
     p.vx = (p.face ? -p.face : -1) * 30; p.vy = -230; // ここからは p.x / p.y を、そのまま「とんでいくしゅじんこう」の いちとして うごかす
   }
-  const MISS_TEXT = { hp: 'ライフが なくなった…', spike: 'とげに ささった…', fall: 'あなに おちちゃった…' };
+  const MISS_TEXT = { hp: 'ライフが なくなった…', spike: 'とげに ささった…', fall: 'あなに おちちゃった…', crush: 'はさまれちゃった…' };
   function respawnPlayer() {
     const hp = 3; G.p = newPlayer(G.respawn.x, G.respawn.y); G.p.hp = hp; G.p.inv = 1; G.cam.x = G.cam.x; G.flash = .3;
     BGM.restart(); UI.wipe(null); snapCam(); G.hitstop = .25; // BGMを 頭から ならしなおす
   }
   function updatePlayer(dt) {
     const p = G.p;
+    if (!p.dead && !G.cleared) { // かべや ゆかに めりこんだまま うごけなくならない よう、すこし ようすを みて、うえへ にがす(だめなら ミス)
+      if (boxHitsSolid(p.x, p.y, p.w, p.h)) { p.emb = (p.emb || 0) + dt; if (p.emb > .2) { let moved = false; for (let up = 1; up <= 40; up++) if (!boxHitsSolid(p.x, p.y - up, p.w, p.h)) { p.y -= up; p.vy = 0; moved = true; break; } p.emb = 0; if (!moved) killPlayer('crush'); } } else p.emb = 0;
+    }
     if (p.dead) {
       p.dead -= dt; p.deadT += dt;
       if (p.why !== 'fall') { p.vy += 620 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += (p.vx < 0 ? -1 : 1) * 10 * dt; }
