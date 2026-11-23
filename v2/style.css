@@ -349,3 +349,13 @@ body.tuning #tune-toggle{right:252px}
 .note{padding:8px 12px;border-left:4px solid #43B3D8;background:rgba(67,179,216,.12);border-radius:4px}
 .note b{font-size:.85em;color:#2A8DBA}.note p{margin:2px 0 0;line-height:1.6}
 .note.lock{border-left-color:#A6A6A6;background:rgba(128,128,128,.1);opacity:.7}
+
+/* ===== オープニング ===== */
+#screen-opening{background:#141a2e !important;color:#fff !important;gap:6px;padding:10px 12px;background-image:none !important;overflow:hidden !important;justify-content:flex-start !important}
+#op-cv{flex:1 1 0;min-height:0;max-width:100%;width:auto;height:auto;aspect-ratio:16/9;image-rendering:pixelated;border:3px solid #2F3752;border-radius:4px;background:#000}
+#op-text{flex:0 0 auto;min-height:3.4em;max-width:min(94%,760px);margin:0;font-size:clamp(12px,2.4vw,20px);line-height:1.6;white-space:pre-line;color:#fff}
+#op-hint{flex:0 0 auto;margin:0;min-height:1.2em;font-size:13px;color:#9BD28A;letter-spacing:.1em}
+#op-dots{display:flex;gap:8px}
+#op-dots i{width:9px;height:9px;background:#3A4466;display:block}
+#op-dots i.on{background:#70AD47}
+#op-skip{position:absolute;right:12px;top:10px;color:#aeb8d0 !important;border-color:#ffffff40 !important;z-index:2}
