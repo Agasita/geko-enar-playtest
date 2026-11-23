@@ -428,6 +428,22 @@
     }
     return null;
   }
+  // ===== てき図鑑 =====
+  const DEX = [
+    ['walker', 'てくてく', 'ゆかを まっすぐ あるく。ふちや かべに ぶつかると ひきかえす。上から ふむと たおせる'],
+    ['guard', 'かたいこうら', 'かたい こうらを もつ。2かい ふまないと たおせない'],
+    ['flyer', 'ふわふわ', 'くうちゅうを ゆらゆら ただよう。上から ふむと たおせる'],
+    ['turret', 'たまうち', 'エナーの ほうを むいて、たまを うつ。うつ まえに 光る。3かい ふむと たおせる'],
+    ['div0', '#DIV/0!', 'エラーの かたまり。ふめないし、たおせない。ゆっくり おうふく するので、タイミングを みて よけよう'],
+    ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。ねらう マスが 光る。ふむと たおせる'],
+    ['moji', 'しろい文字', 'しろい シートに とけこむ、ほとんど みえない 文字。ちかづくと あらわれて、おいかけてくる。ふむと たおせる'],
+    ['fake', 'にせブロック', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。うごかないけれど、ぶつかると ダメージ。上から ふむと たおせる。へんしゅう中は みわけが つかない'],
+  ];
+  function seeEnemy(type) {
+    save.seenEnemies = save.seenEnemies || {}; if (save.seenEnemies[type]) return;
+    save.seenEnemies[type] = true; persist();
+    const d = DEX.find(x => x[0] === type); if (d && UI.toast) UI.toast('てき図鑑に のったよ：' + d[1], 2600);
+  }
   function updateEnemies(dt) {
     const p = G.p;
     for (const e of G.enemies) {
@@ -435,6 +451,7 @@
       e.hidden = hiddenAt(Math.floor((e.x + e.w / 2) / T), Math.floor((e.y + e.h / 2) / T)); // かくしたぎょう・れつのてきは、そこにいない扱い
       e.t += dt; if (e.flash > 0) e.flash -= dt;
       if (e.hidden) continue;
+      if (!save.seenEnemies || !save.seenEnemies[e.type]) { if (e.type === 'moji' ? e.awake : e.type === 'fake' ? e.look === 2 : (Math.abs(p.x - e.x) < 150 && Math.abs(p.y - e.y) < 100)) seeEnemy(e.type); } // てき図鑑に のる
       if (e.stun > 0) { e.stun -= dt; continue; }
       if (e.type === 'fake') { // にせブロック: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
@@ -1162,12 +1179,12 @@
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0); ctx.globalAlpha = 1;
     const look = G.edit.on ? 0 : (e.look || 0);
-    if (look === 1) { ctx.fillStyle = '#262626'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
+    if (look === 1) { ctx.fillStyle = 'rgba(38,38,38,.32)'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
     else if (look === 2) {
-      ctx.fillStyle = '#fff'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
+      ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
       const px = (e.ex || 0) > 6 ? 2 : (e.ex || 0) < -6 ? 0 : 1, py = (e.ey || 0) > 6 ? 2 : (e.ey || 0) < -6 ? 0 : 1;
-      ctx.fillStyle = '#262626'; ctx.fillRect(x + 3 + Math.min(px, 2), y + 5 + Math.min(py, 2), 2, 2); ctx.fillRect(x + 9 + Math.min(px, 2), y + 5 + Math.min(py, 2), 2, 2);
-      ctx.fillRect(x + 3, y + 4, 4, 1); ctx.fillRect(x + 9, y + 4, 4, 1);
+      ctx.fillStyle = 'rgba(38,38,38,.5)'; ctx.fillRect(x + 3 + px, y + 5 + py, 2, 2); ctx.fillRect(x + 9 + px, y + 5 + py, 2, 2);
+      ctx.fillStyle = 'rgba(38,38,38,.28)'; ctx.fillRect(x + 3, y + 4, 4, 1); ctx.fillRect(x + 9, y + 4, 4, 1);
     }
   }
   function drawWorld() {
@@ -1697,6 +1714,25 @@
       d.querySelector('b').textContent = it[1]; d.querySelector('span').textContent = it[2]; box.appendChild(d);
     });
   }
+  function openBestiary() {
+    G.mode = 'select'; UI.show('#screen-bestiary');
+    const box = $('#bestiary'); box.innerHTML = ''; const seen = save.seenEnemies || {}; let got = 0;
+    DEX.forEach(([type, name, desc]) => {
+      const ok = !!seen[type]; if (ok) got++;
+      const cv = document.createElement('canvas'); cv.width = 20; cv.height = 20; const g2 = cv.getContext('2d'); g2.imageSmoothingEnabled = false; ctx = g2;
+      try {
+        if (!ok) { g2.fillStyle = '#d9d9d9'; g2.fillRect(2, 2, 16, 16); g2.fillStyle = '#9a9a9a'; g2.font = '700 12px system-ui, sans-serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText('?', 10, 11); }
+        else if (type === 'fake') drawFake({ x: 3, y: 4, c: 0, look: 2, ex: -10, ey: 0, flash: 0 }, 0, 0);
+        else { const nm = type === 'div0' || type === 'autofill' || type === 'moji' ? (EXCEL ? type : 'walker') : type; g2.drawImage(EXCEL ? GFXX.enemy(nm, 0, false) : sprite(nm, 0, false), 1, 1); }
+      } finally { ctx = mainCtx; }
+      cv.className = 'gtile';
+      const d = document.createElement('div'); d.className = 'gi' + (ok ? '' : ' lock'); d.innerHTML = '<div><b></b><span></span></div>'; d.insertBefore(cv, d.firstChild);
+      d.querySelector('b').textContent = ok ? name : '？？？'; d.querySelector('span').textContent = ok ? desc : 'まだ であって いない';
+      box.appendChild(d);
+    });
+    $('#bestiary-rate').textContent = got + '/' + DEX.length;
+  }
+  if ($('#btn-bestiary')) { $('#btn-bestiary').onclick = openBestiary; $('#btn-bestiary-back').onclick = () => UI.select(); }
   $('#btn-guide').onclick = () => openGuide('title');
   $('#btn-guide2').onclick = () => openGuide('select');
   $('#btn-guide-back').onclick = () => (guideFrom === 'select' ? UI.select() : UI.title());
