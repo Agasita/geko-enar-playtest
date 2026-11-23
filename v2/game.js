@@ -204,7 +204,7 @@
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
-    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
+    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap || 10, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
     if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
@@ -514,7 +514,7 @@
       }
       if (e.type === 'autofill') {
         e.dir = e.d; e.cd -= dt;
-        if (e.cd <= 0) { const tg = fillTarget(e); e.cd = 2.2; if (tg && e.made < 10 && !cellBlocked(tg[0], tg[1])) {
+        if (e.cd <= 0) { const tg = fillTarget(e); e.cd = 2.2; if (tg && e.made < e.cap && !cellBlocked(tg[0], tg[1])) {
           const below = G.front[tg[1]][Math.floor((e.x + e.w / 2) / T)], sc = isBlockT(below) ? G.col[tg[1]][Math.floor((e.x + e.w / 2) / T)] : 0;
           G.front[tg[1]][tg[0]] = TL.STONE; G.col[tg[1]][tg[0]] = sc === GLASS ? 0 : sc; G.lock[tg[1]][tg[0]] = 0; e.made++; SFX.place(); spawnParts(tg[0] * T + 8, tg[1] * T + 8, 6, '#70AD47', 40); } }
       }
@@ -1291,7 +1291,7 @@
       const x = Math.round(e.x - (e.ox || 0) - cx) - (EXCEL ? 1 : 0), y = Math.round(e.y - (e.oy || 0) - cy) - (EXCEL ? 1 : 0);
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
-      if (e.type === 'autofill' && e.cd < .8 && e.made < 10) { const tg = fillTarget(e); if (tg) { ctx.fillStyle = 'rgba(112,173,71,' + (.35 + .3 * Math.sin(e.t * 18)) + ')'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.strokeStyle = '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
+      if (e.type === 'autofill' && e.cd < .8 && e.made < e.cap) { const tg = fillTarget(e); if (tg) { ctx.fillStyle = 'rgba(112,173,71,' + (.35 + .3 * Math.sin(e.t * 18)) + ')'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.strokeStyle = '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
