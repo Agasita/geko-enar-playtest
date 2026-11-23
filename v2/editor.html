@@ -124,7 +124,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const T = 20, KEY = 'geko-enar-v2-custom';
   const COLORS = [['茶色', '#C9A15E', '#E8CFA0', '#735630'], ['赤', '#E8563F', '#F7A08F', '#A8403F'], ['青', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['緑', '#58B368', '#8FD18A', '#3F8F52'], ['ひび割れ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
   const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
-  const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8']];
+  const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8'], ['condfmt', '条件つき書式', '#E8A33F'], ['shuffler', '並べ替え', '#8497B0'], ['circ', '循環参照', '#2E9C8A'], ['ref', '#REF!', '#E88FA0'], ['dup', '重複データ', '#5B9BD5']];
   const THEMES = [['青緑', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['青空', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
   const $ = (s) => document.querySelector(s);
   // 本編と おなじ ゲームの え(GFXX)を つかって えがく
@@ -132,6 +132,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const SP = (im, px, py, off) => ctx.drawImage(im, px - (off || 0) * KS, py - (off || 0) * KS, im.width * KS, im.height * KS);
   const iconOf = (fn) => { const c = document.createElement('canvas'); c.width = c.height = 20; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; fn(g); return '<img class="ic" src="' + c.toDataURL() + '">'; };
   const spIcon = (im, off) => iconOf(g => { const k = 20 / 16; g.drawImage(im, -(off || 0) * k, -(off || 0) * k, im.width * k, im.height * k); });
+  const entIm = (t) => GFXX.enemy(t === 'condfmt' ? 'condfmt0' : t, 0, false);
   const blockIm = (c) => GFXX.block(0, c), crackIm = () => GFXX.block(3, 0);
   const cv = $('#cv'), ctx = cv.getContext('2d');
   let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
@@ -205,7 +206,9 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
         SP(blockIm(e.c || 0), px, py); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px + 4, py + 6, 4, 4); ctx.fillRect(px + 12, py + 6, 4, 4); ctx.fillStyle = '#262626'; ctx.fillRect(px + 5, py + 7, 2, 3); ctx.fillRect(px + 13, py + 7, 2, 3);
         ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3); ctx.setLineDash([]); continue;
       }
-      SP(GFXX.enemy(e.type, 0, false), px, py, 1);
+      SP(entIm(e.type), px, py, 1);
+      if (e.type === 'shuffler') { const g = e.gap || 2; ctx.strokeStyle = 'rgba(68,84,106,.6)'; ctx.setLineDash([3, 2]); [[e.x - g, e.y + 1], [e.x + g, e.y + 1]].forEach(c => ctx.strokeRect(c[0] * T + 1.5, c[1] * T + 1.5, T - 3, T - 3)); ctx.setLineDash([]); }
+      if (e.type === 'dup') { const g = e.gap || 4; ctx.globalAlpha = .5; SP(entIm('dup'), (e.x + g) * T, py, 1); ctx.globalAlpha = 1; }
       if (e.type === 'autofill') { ctx.fillStyle = '#217346'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((e.d || 1) < 0 ? '◀' : '▶', px + T / 2, py - 1); }
     }
     for (const g of L.gems) { const im = GFXX.shard(); SP(im, g[0] * T + (T - im.width * KS) / 2, g[1] * T + (T - im.height * KS) / 2); }
@@ -346,7 +349,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     ENTS.forEach(e => {
       if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
-      addBtn(p2, spIcon(GFXX.enemy(e[0], 0, false), 1) + e[1], { kind: 'ent', type: e[0] });
+      addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });
     });
     COLORS.forEach((c, i) => { if (i === 5) return; addBtn(p2, spIcon(blockIm(i)) + 'にせブロック（' + c[0] + '）', { kind: 'ent', type: 'fake', opt: { c: i } }); });
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
