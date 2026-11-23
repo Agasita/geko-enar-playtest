@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>エナーとふしぎのシート ゲームガイド</title>
+<style>
+@page { size: A4 landscape; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", "Noto Sans JP", "IPAGothic", sans-serif; color: #1F2A44; font-size: 10.5pt; line-height: 1.65; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 297mm; height: 210mm; padding: 13mm 16mm 16mm; position: relative; page-break-after: always; overflow: hidden; background: #fff; }
+.page:last-child { page-break-after: auto; }
+.cover { background: #1F2A44; color: #fff; padding: 0 22mm; display: flex; flex-direction: column; justify-content: center; }
+.cover h1 { font-size: 34pt; margin: 0 0 6mm; letter-spacing: .04em; border: 0; padding: 0; }
+.cover h1 i { color: #F5C842; font-style: normal; }
+.cover .sub { font-size: 12pt; color: #D7DCEB; margin: 0 0 4mm; }
+.cover .lead { font-size: 11pt; color: #C4CBDF; margin: 0 0 14mm; }
+.cover .toc { font-size: 9pt; color: #8E98B5; }
+h1 { font-size: 21pt; margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 3px solid #F5C842; }
+h2 { font-size: 12.5pt; margin: 0 0 1.5mm; color: #1F2A44; }
+p { margin: 0 0 2mm; }
+.muted { color: #6B7590; font-size: 8.5pt; }
+.foot { position: absolute; left: 16mm; right: 16mm; bottom: 7mm; display: flex; justify-content: space-between; font-size: 7.5pt; color: #8E98B5; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; }
+th { background: #1F2A44; color: #fff; text-align: left; padding: 1.6mm 2.6mm; font-weight: 700; }
+td { padding: 1.5mm 2.6mm; vertical-align: top; border-bottom: 1px solid #E3E7F0; }
+tr:nth-child(even) td { background: #F5F7FB; }
+.tag { display: inline-block; background: #F5C842; color: #1F2A44; border-radius: 99px; padding: 0 3.2mm; font-size: 8pt; font-weight: 700; margin-right: 2.5mm; vertical-align: 1px; }
+.cost { display: inline-block; background: #1F2A44; color: #fff; border-radius: 3mm; padding: .5mm 4mm; font-size: 8.5pt; font-weight: 700; float: right; }
+.cols { display: grid; gap: 8mm; }
+.c2 { grid-template-columns: 1fr 1fr; }
+.c3 { grid-template-columns: 1fr 1fr 1fr; }
+.card { border: 1px solid #DCE1EE; border-radius: 3mm; padding: 4mm 5mm; background: #fff; }
+.card h2 { border-left: 4px solid #F5C842; padding-left: 2.5mm; }
+.card ul, .page ul { margin: 0; padding-left: 5mm; }
+.page li { margin: 0 0 1mm; }
+.tool { display: grid; grid-template-columns: 31% 1fr 1fr; gap: 5mm; align-items: start; margin-bottom: 9mm; }
+.tool .txt .xl { font-size: 8.5pt; color: #6B7590; margin-bottom: 1.5mm; }
+.tool .txt b.k { margin-right: 2mm; }
+.tool .txt .note { font-size: 8.3pt; color: #6B7590; }
+.tool .head { overflow: hidden; margin-bottom: 1.5mm; }
+.tool .head b { font-size: 12pt; }
+figure { margin: 0; text-align: center; }
+figure img.shot { width: 100%; border-radius: 2mm; border: 1px solid #C9D0E2; display: block; image-rendering: auto; }
+figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
+.sw { width: 7mm; height: 7mm; vertical-align: middle; image-rendering: pixelated; margin-right: 2mm; }
+.sp { width: 9mm; height: 9mm; image-rendering: pixelated; vertical-align: middle; margin-right: 2mm; }
+.strip { display: flex; gap: 3mm; align-items: flex-end; margin: 0 0 4mm; padding: 4mm; background: #CFE8D6; border-radius: 3mm; }
+.strip img { width: 15mm; height: 15mm; image-rendering: pixelated; }
+.strip span { font-size: 7.5pt; display: block; text-align: center; color: #1F2A44; }
+.world { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3.5mm; }
+.world figure img.shot { aspect-ratio: 16 / 10; object-fit: cover; }
+.ok { color: #1F7A4A; font-weight: 700; }
+.small td { font-size: 7.8pt; padding: .55mm 2mm; line-height: 1.35; }
+.small th { font-size: 7.8pt; padding: 1mm 2mm; }
+.roomy td { padding: 3.2mm 3mm; font-size: 10pt; vertical-align: middle; }
+.roomy th { font-size: 9.5pt; padding: 2mm 3mm; }
+.roomy .sp { width: 14mm; height: 14mm; margin-right: 3mm; }
+.roomy .sw { width: 9mm; height: 9mm; }
+.compact { grid-template-columns: 26% 1fr 1fr; margin-bottom: 5mm; }
+.compact figure img.shot { height: 43mm; object-fit: cover; object-position: 50% 100%; }
+.compact p { font-size: 9.3pt; }
+</style>
+</head>
+<body>
+
+<!-- 1 表紙 -->
+<section class="page cover">
+  <h1>エナー<i>と</i>ふしぎのシート</h1>
+  <p class="sub">ゲームガイド（v2・13ワールド48ステージ）</p>
+  <p class="lead">世界は「表計算シート」、ブロックは「色つきのセル」。<br>Excelの機能を、遊びに使うと？ エナーが、こわれたシートを直しに行きます。</p>
+  <p class="toc">しくみ／世界観／編集道具／使い方／ブロック／敵キャラ／組み合わせ／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
+</section>
+
+<!-- 2 しくみ -->
+<section class="page">
+  <h1>このゲームのしくみ</h1>
+  <div class="cols c2">
+    <div>
+      <h2>世界＝シート、ブロック＝セル</h2>
+      <p>足場や壁になるブロックは、色のついた「セル」。時間を止めて、Excelのような操作（並べ替え、フィルター、書式のコピー…）で世界を作りかえながら、ゴールのフロッピーをめざします。</p>
+      <h2>何もないところには、作れない</h2>
+      <p>ブロックは新しく生まれません。あるものを「動かす・並べる・変える・隠す」だけ。（敵の「オートフィル」だけは、ブロックを作ります）</p>
+      <h2>ステージごとの「道具」と「コスト上限」</h2>
+      <p>各ステージで、使える道具と、使えるコストの上限が決まっています。回復はしません（実験シートと、エナジーの玉をとった時だけ回復）。持っている能力で、どう解くかを考えるパズルです。</p>
+      <h2>ふれると痛いもの</h2>
+      <p>ライフは3つ。敵や赤（熱い）ブロックにふれるとダメージ、そのあと約1.3秒は無敵。穴・トゲ・ライフ0はミスで、ステージの最初からやり直し（BGMも最初から）。</p>
+    </div>
+    <div>
+      <h2>基本操作</h2>
+      <table>
+        <tr><th style="width:26%">操作</th><th>キー・内容</th></tr>
+        <tr><td>移動</td><td>← →</td></tr>
+        <tr><td>ジャンプ</td><td>Z / Space。約2.6マスの高さまで。空中で長押しすると「ふわり」と羽ばたく</td></tr>
+        <tr><td>なおす（編集）</td><td>E または画面の「なおす」。時間が止まる</td></tr>
+        <tr><td>やり直し</td><td>R または ↻ ボタン（コストも元にもどる）</td></tr>
+        <tr><td>敵をたおす</td><td>上から踏む（ダッシュ攻撃はない）。踏めない敵もいる</td></tr>
+        <tr><td>スマホ</td><td>画面のボタンで、同じことができる</td></tr>
+      </table>
+      <h2 style="margin-top:4mm">編集の流れ</h2>
+      <ul>
+        <li>画面上部の「リボン」で、タブ（ホーム／セル／データ／表示）と道具をえらぶ</li>
+        <li>範囲をドラッグ（移動などは、行き先をタップ）。確定するとコストを消費</li>
+        <li>戻す／やり直す：何度でも。戻すとコストも全額もどる</li>
+        <li>「編集を終える」で、時間が動きだす</li>
+      </ul>
+      <h2 style="margin-top:4mm">ほかの要素</h2>
+      <ul>
+        <li>4つの目標：クリア／かけらを全部／ノーミス／ムダなし（コスト目標以下）</li>
+        <li>チェックポイントの旗で、落ちても途中から再開</li>
+        <li>エナジーの玉をとると、「なおす」のコストが15回復</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 世界観 -->
+<section class="page">
+  <h1>世界観とオープニング</h1>
+  <div class="cols c2">
+    <div>
+      <h2>やさしい絵本のような物語</h2>
+      <p>エナーは、データの世界でのんびり暮らしています。ある日、こわれた表計算シートがたくさんできてしまいました。天気がおかしくなり、暑い日と寒い日がごちゃまぜになり、作物も育ちません。</p>
+      <p>原因は、最近インストールされたソフト「ぴかぴかクリーナー」。悪者ではなく、世界をきれいにしようと張り切りすぎているだけです。エナーは原因をつきとめ、世界を元どおりにするために旅立ちます（最後は仲直りする想定）。</p>
+      <p>語り口は、子ども向けの絵本に近く、笑わせることを狙わない温かいトーンです。ひらがな中心の、やさしい言葉で書きます。</p>
+      <h2 style="margin-top:4mm">敵は「Excelの困った挙動」</h2>
+      <p>名前を見ただけで、動きが想像できるように、#DIV/0!・オートフィル・条件つき書式・並べ替え・循環参照…を敵にしています。</p>
+    </div>
+    <div>
+      <h2>オープニング（5場面の紙芝居）</h2>
+      <table>
+        <tr><th style="width:10%">場面</th><th>内容</th></tr>
+        <tr><td>1</td><td>ひだまりのシートで、のんびり暮らすエナー（朝の草原）</td></tr>
+        <tr><td>2</td><td>空がちらちらして、暑い日と寒い日がごちゃまぜになる</td></tr>
+        <tr><td>3</td><td>「ぴかぴかクリーナー」のインストール完了の通知</td></tr>
+        <tr><td>4</td><td>あちこちのシートが壊れ、畑の作物も育たない</td></tr>
+        <tr><td>5</td><td>「原因をつきとめて、世界を元どおりにしよう！」エナーは、はばたく</td></tr>
+      </table>
+      <p class="muted" style="margin-top:2mm">タップかSpaceで次へ、Escかスキップで飛ばせます。タイトル画面の「オープニング」から、いつでも見直せます。</p>
+      <h2 style="margin-top:4mm">ステージの演出</h2>
+      <ul>
+        <li>開始：「WORLD n／ステージ番号／名前」のタイトルが大きく出て、その間は動きとタイムが止まる</li>
+        <li>ミス：専用の演出（約1.8秒）のあと、ステージの最初へ</li>
+        <li>手ごたえ：着地のほこり、かけらの光、ふみつけの一瞬の止まり、クリアの紙吹雪</li>
+        <li>ゴール：角を下にしたフロッピーが、ゆっくり回りながら浮く</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 4 道具一覧 -->
+<section class="page">
+  <h1>編集機能の一覧（6種）</h1>
+  <table>
+    <tr><th style="width:9%">タブ</th><th style="width:17%">道具</th><th style="width:20%">Excelでは</th><th style="width:8%">コスト</th><th>はたらき</th></tr>
+    <tr><td>ホーム</td><td><b>いろコピー</b></td><td>書式のコピー／貼り付け</td><td>2</td><td>色をまねるブロックを選び、ガラスの範囲をドラッグする。ガラスにだけ色がつく（一度ついた色は変えられない）。</td></tr>
+    <tr><td>セル</td><td><b>かたち</b></td><td>図形の回転・反転</td><td>8</td><td>範囲のブロックを、左右・上下に反転、または回転する。90°回転は正方形の範囲で。</td></tr>
+    <tr><td>データ</td><td><b>ならべかえ</b></td><td>並べ替え</td><td>10</td><td>範囲のブロックを、上・下・左・右の一方向に寄せる。保護ブロック・鋼・人や敵のいるマスで区切られる。</td></tr>
+    <tr><td>データ</td><td><b>フィルター</b></td><td>フィルター</td><td>8</td><td>残す色を選ぶ。ほかの色のブロックは薄くなり、通りぬけられる（磁石には効かない）。</td></tr>
+    <tr><td>表示</td><td><b>シートをまもる</b></td><td>シートの保護</td><td>4</td><td>範囲のブロックを保護（カギのマーク）。編集もフィルターも効かず、寄せるときの仕切りになる。</td></tr>
+    <tr><td>表示</td><td><b>まもりをはずす</b></td><td>保護の解除</td><td>6</td><td>範囲の保護を外す。外してから、ほかの編集ができる。</td></tr>
+  </table>
+  <p class="muted" style="margin-top:3mm">コストは、ステージごとの上限の中でやりくりします。ステージごとに、使える道具と上限が決まっています（実験シートは全部使えて、コストも回復）。次のページから、それぞれの使い方を実際の画面で紹介します。</p>
+</section>
+
+<!-- 5 使い方(1,2) -->
+<section class="page">
+  <h1>使い方（1・2／6）</h1>
+  <div class="tool">
+    <div class="txt">
+      <div class="head"><span class="tag">データ</span><b>ならべかえ</b><span class="cost">コスト 10</span></div>
+      <p class="xl">Excelでは：並べ替え</p>
+      <p><b class="k">使い方</b>範囲をドラッグ → 方向（上・下・左・右）をえらぶ</p>
+      <p><b class="k">はたらき</b>範囲のブロックを、行（または列）ごとに一方向に寄せる。「下」は重力のように、浮かぶブロックを落として橋にできる。</p>
+      <p class="note">鋼や保護ブロックで区切られた区間ごとに寄せる。エナーや敵のいるマスは動かない。</p>
+    </div>
+    <figure><img class="shot" data-shot="sort-b"><figcaption>実行前（黄＝選んだ範囲）</figcaption></figure>
+    <figure><img class="shot" data-shot="sort-a"><figcaption>実行後</figcaption></figure>
+  </div>
+  <div class="tool">
+    <div class="txt">
+      <div class="head"><span class="tag">データ</span><b>フィルター</b><span class="cost">コスト 8</span></div>
+      <p class="xl">Excelでは：フィルター</p>
+      <p><b class="k">使い方</b>「残す色」をえらぶ（もう一度「解除」で戻す）</p>
+      <p><b class="k">はたらき</b>えらんだ色のブロックだけが残り、ほかの色は薄くなって通りぬけられる。壁だけ通りぬけたいときに。</p>
+      <p class="note">保護ブロックは影響を受けない。終わったら「解除」を忘れずに（解除にコストはかからない）。</p>
+    </div>
+    <figure><img class="shot" data-shot="filter-b"><figcaption>実行前</figcaption></figure>
+    <figure><img class="shot" data-shot="filter-a"><figcaption>実行後（青だけ残す）</figcaption></figure>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
+</section>
+
+<!-- 6 使い方(3,4) -->
+<section class="page">
+  <h1>使い方（3・4／6）</h1>
+  <div class="tool">
+    <div class="txt">
+      <div class="head"><span class="tag">ホーム</span><b>いろコピー</b><span class="cost">コスト 2</span></div>
+      <p class="xl">Excelでは：書式のコピー／貼り付け</p>
+      <p><b class="k">使い方</b>①まねしたいブロックをタップ ②色をぬるガラスの範囲をドラッグ</p>
+      <p><b class="k">はたらき</b>すでにあるブロックの色を、ガラスにうつす。色は「性質」なので、足場を、はずむ緑にする、などに使う。</p>
+      <p class="note">ガラスにだけ色がつく。一度ついた色は変えられない。まねる色のブロックが、画面のどこかに必要。</p>
+    </div>
+    <figure><img class="shot" data-shot="painter-b"><figcaption>実行前</figcaption></figure>
+    <figure><img class="shot" data-shot="painter-a"><figcaption>実行後</figcaption></figure>
+  </div>
+  <div class="tool">
+    <div class="txt">
+      <div class="head"><span class="tag">セル</span><b>かたち</b><span class="cost">コスト 8</span></div>
+      <p class="xl">Excelでは：図形の回転・反転</p>
+      <p><b class="k">使い方</b>範囲をドラッグ → 変形の種類（左右反転・上下反転・回転）をえらぶ</p>
+      <p><b class="k">はたらき</b>範囲のブロックを、ひっくり返す。左が高い階段を右が高い階段にする、塔を倒して橋にする、など。</p>
+      <p class="note">回転は、正方形の範囲だけ。</p>
+    </div>
+    <figure><img class="shot" data-shot="transform-b"><figcaption>実行前</figcaption></figure>
+    <figure><img class="shot" data-shot="transform-a"><figcaption>実行後（左右反転）</figcaption></figure>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
+</section>
+
+<!-- 7 使い方(5,6) -->
+<section class="page">
+  <h1>使い方（5・6／6）</h1>
+  <div class="tool">
+    <div class="txt">
+      <div class="head"><span class="tag">表示</span><b>シートをまもる</b><span class="cost">コスト 4</span></div>
+      <p class="xl">Excelでは：シートの保護</p>
+      <p><b class="k">使い方</b>範囲をドラッグ</p>
+      <p><b class="k">はたらき</b>範囲のブロックを保護する（カギのマーク）。保護されたブロックは、どの編集も受けない。</p>
+      <p class="note">動かしたくないブロックを守る。敵「条件つき書式」や「並べ替え」にも、書きかえられなくなる。</p>
+    </div>
+    <figure><img class="shot" data-shot="protect-b"><figcaption>実行前</figcaption></figure>
+    <figure><img class="shot" data-shot="protect-a"><figcaption>実行後（カギがつく）</figcaption></figure>
+  </div>
+  <div class="tool">
+    <div class="txt">
+      <div class="head"><span class="tag">表示</span><b>まもりをはずす</b><span class="cost">コスト 6</span></div>
+      <p class="xl">Excelでは：保護の解除</p>
+      <p><b class="k">使い方</b>範囲をドラッグ</p>
+      <p><b class="k">はたらき</b>範囲のブロックの保護を解除する。解除してから、ほかの編集ができる。</p>
+      <p class="note">解除のほうが、保護より少し高い。</p>
+    </div>
+    <figure><img class="shot" data-shot="unprotect-b"><figcaption>実行前</figcaption></figure>
+    <figure><img class="shot" data-shot="unprotect-a"><figcaption>実行後</figcaption></figure>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
+</section>
+
+<!-- 8 ブロック一覧 -->
+<section class="page">
+  <h1>ブロックの一覧</h1>
+  <div class="strip" id="blockStrip"></div>
+  <table id="blockTable" class="roomy">
+    <tr><th style="width:15%">ブロック</th><th style="width:30%">性質</th><th>編集との関係</th></tr>
+  </table>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 9 ギミック -->
+<section class="page">
+  <h1>仕掛けと、そのほかのしるし</h1>
+  <div class="cols c2">
+    <div>
+      <table>
+        <tr><th style="width:24%">仕掛け</th><th>内容</th></tr>
+        <tr><td>磁石ブロック</td><td>いちばん近い鋼へ、一直線に動く。となりあった磁石はくっついて動く。どれか1つでも鋼にくっつくと、かたまり全体が止まる。</td></tr>
+        <tr><td>判定セル</td><td>存在セル（実体があるとON）・空きセル（何もないとON）・色セル（指定色があるとON）。ONの間、同じ番号の扉が開き、リフトが動く。</td></tr>
+        <tr><td>スイッチと扉</td><td>磁石がスイッチに重なるとONになり、同じ色の扉が開く。</td></tr>
+        <tr><td>リフト</td><td>決まった道を往復する足場。色の性質やフィルターが効く。ガラス製は「いろコピー」が使える。</td></tr>
+        <tr><td>溶ける</td><td>赤（マグマ）と青（氷）が縦横に隣り合うと、お互いを打ち消して茶色になる（湯気が出る）。</td></tr>
+        <tr><td>ひび割れ</td><td>乗ると約0.5秒で崩れる。編集の対象で、ふつうのブロックのように動かせる。</td></tr>
+      </table>
+    </div>
+    <div>
+      <table>
+        <tr><th style="width:32%">しるし</th><th>内容</th></tr>
+        <tr><td><img class="sp" id="icoGoal">ゴール</td><td>回るフロッピーディスク。取るとクリア。</td></tr>
+        <tr><td><img class="sp" id="icoShard">データのかけら</td><td>1ステージに最大5個。全部集めると、そのステージのメモが読める。</td></tr>
+        <tr><td>チェックポイント</td><td>小さな旗。ふれると、ミスしたときの再開地点になる。</td></tr>
+        <tr><td>エナジーの玉</td><td>取ると、「なおす」のコストが15回復する。</td></tr>
+        <tr><td>ヒントの吹き出し</td><td>ステージの場所に来ると、ことばが出る。</td></tr>
+      </table>
+      <div class="cols c2" style="margin-top:5mm">
+        <figure><img class="shot" data-shot="g-magnet"><figcaption>磁石と判定セル（8-1）</figcaption></figure>
+        <figure><img class="shot" data-shot="g-lift"><figcaption>リフト（7-1）</figcaption></figure>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 10-11 敵 -->
+<section class="page">
+  <h1>敵キャラクター図鑑（1／2）</h1>
+  <table class="dex roomy" id="dex1"><tr><th style="width:17%">敵</th><th style="width:38%">動き</th><th>倒し方・ヒント</th></tr></table>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※出会った敵は、ステージ選択の「てき図鑑」にのります</span><span class="pn"></span></div>
+</section>
+<section class="page">
+  <h1>敵キャラクター図鑑（2／2）</h1>
+  <table class="dex roomy" id="dex2"><tr><th style="width:17%">敵</th><th style="width:38%">動き</th><th>倒し方・ヒント</th></tr></table>
+  <p class="muted" style="margin-top:3mm">敵は11種。ほかの敵と見分けがつくよう、輪郭と色を変えています。</p>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 12 組み合わせ -->
+<section class="page">
+  <h1>床を操作する敵と、道具の組み合わせ</h1>
+  <p>オートフィル・条件つき書式・並べ替えは、床を「作る」「変える」「動かす」敵です。エナーの道具と組み合わせると、仕掛けになります。（試験ステージ 13-8・13-10・13-11）</p>
+  <div class="tool compact">
+    <div class="txt">
+      <div class="head"><b>13-8 うまった かけら</b></div>
+      <p>オートフィルが、みぞをブロックで埋める。かけらが下に埋まったら、「ならべかえ」で寄せて掘り出す。ねらうはんいに6個たまると、いったん止まる。</p>
+    </div>
+    <figure><img class="shot" data-shot="c8-b"><figcaption>埋めたあと</figcaption></figure>
+    <figure><img class="shot" data-shot="c8-a"><figcaption>右へ寄せたあと</figcaption></figure>
+  </div>
+  <div class="tool compact">
+    <div class="txt">
+      <div class="head"><b>13-10 マグマの橋</b></div>
+      <p>橋は赤いマグマばかりで渡れない。オートフィルが氷のブロックを作っている。「ならべかえ」で下へ寄せると、赤と氷が隣り合い、ふつうのブロックになる。</p>
+    </div>
+    <figure><img class="shot" data-shot="c10-b"><figcaption>氷が並んだところ</figcaption></figure>
+    <figure><img class="shot" data-shot="c10-a"><figcaption>寄せて、溶けたあと</figcaption></figure>
+  </div>
+  <div class="tool compact">
+    <div class="txt">
+      <div class="head"><b>13-11 ふえる橋</b></div>
+      <p>オートフィルは、届くはんいにしか作れない。12個作ったら、向こうへ寄せると、また作り足して、広い穴に橋がかかる。</p>
+    </div>
+    <figure><img class="shot" data-shot="c11-b"><figcaption>12個作ったところ</figcaption></figure>
+    <figure><img class="shot" data-shot="c11-a"><figcaption>寄せて、作り足したあと</figcaption></figure>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
+</section>
+
+<!-- 13 ワールドと窓 -->
+<section class="page">
+  <h1>ワールドと、窓の景色</h1>
+  <p>シートの一部のセルが窓になり、外の景色が見えます。ワールドごとに、景色とセルの色が変わります。ワールド4からは、窓のよろい戸がパタパタ開け閉めします（先のワールドほど、速く、長く閉まる）。</p>
+  <div class="world" id="worldGrid"></div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※景色の割り当ては仮です</span><span class="pn"></span></div>
+</section>
+
+<!-- 14-15 ステージ一覧 -->
+<section class="page">
+  <h1>ステージ一覧（1／2）</h1>
+  <table class="small" id="stg1"><tr><th style="width:8%">ステージ</th><th style="width:25%">名前</th><th>使える道具</th><th style="width:10%">コスト上限</th><th style="width:9%">大きさ</th></tr></table>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+<section class="page">
+  <h1>ステージ一覧（2／2）</h1>
+  <table class="small" id="stg2"><tr><th style="width:8%">ステージ</th><th style="width:25%">名前</th><th>使える道具</th><th style="width:10%">コスト上限</th><th style="width:9%">大きさ</th></tr></table>
+  <p class="muted" style="margin-top:2.5mm">大きさは、横×縦（マス）。体験版は、1-1・1-2・1-3・2-1・3-1・4-1・5-1・5-2の8ステージ。ワールド13は、新しい敵を試すための仮の構成です。</p>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 16 採点 -->
+<section class="page">
+  <h1>採点・やりこみ・救済</h1>
+  <div class="cols c2">
+    <div>
+      <h2>4つの目標とランク</h2>
+      <table>
+        <tr><th style="width:24%">目標</th><th>内容</th></tr>
+        <tr><td>クリア</td><td>ゴールのフロッピーを取る</td></tr>
+        <tr><td>かけら</td><td>データのかけら（最大5個）を全部集める</td></tr>
+        <tr><td>ノーミス</td><td>ダメージを受けずにクリアする</td></tr>
+        <tr><td>ムダなし</td><td>「なおす」の合計コストが、目標コスト以下</td></tr>
+      </table>
+      <p class="muted" style="margin-top:2mm">達成度に応じて、カードの右上にランク（S〜C）がつきます。ステージ選択画面に、達成状況が出ます。</p>
+    </div>
+    <div>
+      <h2>やりこみと、助けになるしくみ</h2>
+      <ul>
+        <li><b>かけらノート</b>：そのステージのかけらを全部集めると、世界の謎や冒険のヒントを書いたメモが読める（いまは1-1〜13-4）</li>
+        <li><b>れんしゅうモード</b>：コストが無制限になる（記録は残らない）</li>
+        <li><b>アシスト</b>：同じステージで3回以上ミスすると、コスト上限が1.5倍になる（クリアすると元に戻る）</li>
+        <li><b>セーブ</b>：ブラウザに自動で保存される。ステージ選択画面から消せる</li>
+        <li><b>ステージの選択</b>：全ステージを自由にえらべる（試しあそび用）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 17 ステージ作成 -->
+<section class="page">
+  <h1>ステージ作成（エディター）</h1>
+  <p>ステージ選択画面の「ステージを作る」から開く、あなただけのステージを作るツールです。スマホでも使えます。ブロック・鋼・磁石・敵・かけら・ゴールは、本編と同じ絵で表示されます。</p>
+  <div class="cols c2">
+    <div>
+      <table>
+        <tr><th style="width:24%">できること</th><th>内容</th></tr>
+        <tr><td>大きさ</td><td>横20〜160マス、縦12〜60マス</td></tr>
+        <tr><td>置けるもの</td><td>色ブロック（6色）、鋼、ひび割れ壁、磁石、判定セル、スイッチ、扉、リフト、かけら、エナジーの玉、チェックポイント、スタート、ゴール</td></tr>
+        <tr><td>敵（11種）</td><td>オートフィル（向き・作る色）、にせブロック（色）、並べ替え（横・縦）など。「はんい」ツールで、条件つき書式・並べ替え・循環参照の範囲を、2か所のクリックで決める</td></tr>
+        <tr><td>設定</td><td>名前、エナジー上限、回復、目標コスト、背景の色、使える道具、ヒント（横位置を指定）</td></tr>
+      </table>
+    </div>
+    <div>
+      <table>
+        <tr><th style="width:24%">便利な機能</th><th>内容</th></tr>
+        <tr><td>テスト</td><td>「試しに遊ぶ」でテストプレイ。クリアすると、エディターに戻る</td></tr>
+        <tr><td>ひな形</td><td>本編のステージを読みこんで、コピーして作り直せる</td></tr>
+        <tr><td>保存・共有</td><td>ブラウザに保存。JSONファイルの書き出し・読み込みで、人にわたせる</td></tr>
+        <tr><td>戻す・やり直し</td><td>最大60回</td></tr>
+        <tr><td>チェック</td><td>保存時に、足もとに地面がない、リフトの道にブロックがある、扉を開ける仕掛けがない、赤と青が隣り合って溶ける、などを知らせる</td></tr>
+      </table>
+      <p class="muted" style="margin-top:2mm">窓の景色・セルの色は、まだエディターからは指定できません（ステージデータ側で指定）。</p>
+    </div>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 18 見送った案 -->
+<section class="page">
+  <h1>見送った案・やめたこと</h1>
+  <table>
+    <tr><th style="width:20%">案</th><th style="width:34%">内容</th><th>見送った理由</th></tr>
+    <tr><td>敵「#REF!」</td><td>ついていく相手がいなくなると、いっしょに消える</td><td>必要ないと判断した</td></tr>
+    <tr><td>敵「重複データ」</td><td>そっくりなふたごの片方を踏むと、もう片方も消える</td><td>使い道が浮かばなかった。使い道が決まれば、「重複の削除」の道具として再検討</td></tr>
+    <tr><td>オープニングの描き下ろし</td><td>エナーを喜怒哀楽つきの一枚絵にした</td><td>好みに合わず、元のドット絵に戻した（作り方の履歴は残っている）</td></tr>
+    <tr><td>条件つき書式（旧案）</td><td>歩き回って、色が茶・赤・青に変わる敵</td><td>「ブロックの状態を勝手に変える」ほうが面白いので、作り直した</td></tr>
+    <tr><td>並べ替え（旧案）</td><td>左右の足もとの2マスを入れ替える敵</td><td>範囲を複数持てるように、「片側へ寄せる」動きに作り直した</td></tr>
+    <tr><td>循環参照（旧案）</td><td>円を描いて回る、踏める敵</td><td>「マスに沿って直角に曲がる、倒せない敵」に作り直した</td></tr>
+  </table>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<!-- 19 課題 -->
+<section class="page">
+  <h1>未確認のこと・今後の課題</h1>
+  <div class="cols c2">
+    <div class="card">
+      <h2>まだ確認していないこと</h2>
+      <ul>
+        <li>人が遊んだときの難しさ（特にワールド13の敵の間隔や、オートフィルの作るペース）</li>
+        <li>スマホ実機での、画面の収まりと、エディターの押しやすさ</li>
+        <li>「ソリッド版」「元の絵」のテーマでの見た目（新しい敵は「てくてく」の絵で代用、窓は出ない）</li>
+        <li>効果音と、窓を含めた動きの滑らかさ</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>今後の課題</h2>
+      <ul>
+        <li>ワールド構成の練り直し（ワールド13は試験用。景色の割り当ても仮）</li>
+        <li>各ワールドの導入文（舞台名と困りごと）と、ワールドクリアの演出</li>
+        <li>最後の「ぴかぴか工場」と、クリーナーとの仲直り</li>
+        <li>スコアアタックと、一風変わったステージ（バベルの塔のビッグパスワード面のようなもの）</li>
+        <li>並べ替えの敵と、エナーの道具を組み合わせたステージ</li>
+        <li>オートフィルのペースを、個体ごとにするか、3段階に揃えるか</li>
+        <li>以前からいる敵（てくてく、#DIV/0!など）の絵の見直し</li>
+        <li>ステージ作成から、窓・セルの色を指定できるように</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
+</section>
+
+<script>
+(function () {
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const TN = { painter: 'いろコピー', transform: 'かたち', sort: 'ならべかえ', filter: 'フィルター', protect: 'シートをまもる', unprotect: 'まもりをはずす' };
+  const frame = document.createElement('iframe');
+  frame.src = '/v2/index.html?gfx=excel'; frame.style.cssText = 'position:fixed;left:-3000px;top:0;width:1024px;height:768px;border:0';
+  document.body.appendChild(frame);
+  const imgs = (k) => [...document.querySelectorAll('[data-shot="' + k + '"]')];
+  const setShot = (k, url) => imgs(k).forEach(i => { i.src = url; });
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  async function main() {
+    for (let i = 0; i < 200 && !(frame.contentWindow && frame.contentWindow.__geko && frame.contentWindow.GFXX); i++) await sleep(100);
+    const W = frame.contentWindow, g = W.__geko, GX = W.GFXX;
+    const G = () => g.G, cv = () => W.document.querySelector('#cv');
+    const url = (c) => c.toDataURL('image/png');
+
+    // ---- 画面のうつしかた ----
+    async function begin(id) {
+      const i = g.LEVELS.findIndex(l => l.id === id); g.start(i); await sleep(50);
+      const x = G(); x.hitstop = 0; x.mode = 'play'; x.paused = true; x.energy = 99; x.maxE = 99; x.p.dead = 0; return x;
+    }
+    function snap(x, cell, sel) {
+      const lv = x.level; x.cam.x = clamp(cell[0] * 16 + 8 - 144, 0, Math.max(0, lv.w * 16 - 288)); x.cam.y = clamp(cell[1] * 16 + 8 - 90, 0, Math.max(0, lv.h * 16 - 180)); x.hitstop = 0; g.render();
+      const c = document.createElement('canvas'); c.width = 576; c.height = 360; const k = c.getContext('2d'); k.imageSmoothingEnabled = false; k.drawImage(cv(), 0, 0, 576, 360);
+      if (sel) { k.strokeStyle = '#F5C842'; k.lineWidth = 3; k.setLineDash([8, 5]); k.strokeRect((sel.x0 * 16 - x.cam.x) * 2 + 1.5, (sel.y0 * 16 - x.cam.y) * 2 + 1.5, (sel.x1 - sel.x0 + 1) * 32 - 3, (sel.y1 - sel.y0 + 1) * 32 - 3); }
+      return url(c);
+    }
+    const wait = (x, sec) => { for (let k = 0; k < sec * 60; k++) { x.p.x = 20; x.p.y = 146; x.p.vx = 0; x.p.vy = 0; x.hitstop = 0; g.update(1 / 60); } };
+    async function pair(key, id, idx, opt) {
+      const x = await begin(id), lv = x.level, ed = lv.solution[0].edits;
+      for (let e = 0; e < idx; e++) { g.runTool(ed[e]); }
+      const e = ed[idx], r = e.rect, cell = r ? [(r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2] : e.srcCell || [lv.start[0] + 8, 6];
+      if (opt && opt.cell) cell[0] = opt.cell[0], cell[1] = opt.cell[1];
+      if (opt && opt.wait) wait(x, opt.wait);
+      setShot(key + '-b', snap(x, cell, r));
+      const res = g.runTool(e); for (let k = 0; k < (opt && opt.after || 6); k++) { x.hitstop = 0; g.update(1 / 60); }
+      setShot(key + '-a', snap(x, cell, null));
+    }
+    // 道具ごと
+    await pair('sort', '1-2', 0); await pair('filter', '2-1', 0, { cell: [24, 6] }); await pair('painter', '3-1', 0); await pair('transform', '4-1', 0);
+    await pair('protect', '13-9', 0, { cell: [12, 8] }); await pair('unprotect', '5-2', 0);
+    // 組み合わせ
+    await pair('c8', '13-8', 0, { wait: 16, cell: [13, 8] }); await pair('c10', '13-10', 0, { wait: 12, cell: [13, 8], after: 30 }); await pair('c11', '13-11', 0, { wait: 16, cell: [17, 8] });
+    // 仕掛け
+    { const x = await begin('8-1'); setShot('g-magnet', snap(x, [x.level.w / 2 | 0, 6])); }
+    { const x = await begin('7-1'); setShot('g-lift', snap(x, [x.level.w / 2 | 0, 6])); }
+    // ワールドの窓
+    const names = { 1: '草原', 2: '森', 3: '湖', 4: '夕焼け', 5: '洞窟', 6: '春', 7: '夏', 8: '秋', 9: '冬', 10: '夜', 11: '空', 12: '火山', 13: 'こわれたシート' };
+    const grid = document.getElementById('worldGrid');
+    for (let w = 1; w <= 13; w++) {
+      const i = g.LEVELS.findIndex(l => l.world === w); const id = g.LEVELS[i].id; const x = await begin(id); const per = { 4: 16, 5: 15, 6: 14, 7: 10, 8: 9.5, 9: 9, 10: 6.5, 11: 6, 12: 6, 13: 4.5 }[w]; x.t = per ? (w === 7 ? 5.4 : per * 0.12) : 3 + w * 0.7; x.cam.x = 0;
+      const f = document.createElement('figure'); const im = document.createElement('img'); im.className = 'shot'; im.src = snap(x, [9, 6]); const cp = document.createElement('figcaption'); cp.textContent = 'W' + w + '：' + names[w] + (w === 7 ? '（よろい戸が閉まる途中）' : ''); f.append(im, cp); grid.appendChild(f);
+    }
+    // ブロックの絵
+    const strip = document.getElementById('blockStrip');
+    const add = (c, label) => { const d = document.createElement('div'); const im = document.createElement('img'); im.src = url(c); const s = document.createElement('span'); s.textContent = label; d.append(im, s); strip.appendChild(d); };
+    const bl = [[GX.block(0, 0), '茶'], [GX.block(0, 1), '赤'], [GX.block(0, 2), '青'], [GX.block(0, 3), '緑'], [GX.block(3, 0), 'ひび割れ'], [GX.block(0, 5), 'ガラス'], [W.GFX.metal(), '鋼']];
+    bl.forEach(([c, l]) => add(c, l));
+    const tbl = document.getElementById('blockTable');
+    const rows = [['茶', 0, 'ふつうの足場・壁', '基本の色。ほかの色の見本になる'], ['赤（マグマ）', 1, '熱い。さわるとダメージ', '氷（青）と隣り合うと、溶けて茶色になる。フィルターで通りぬけ、寄せて避ける'], ['青（氷）', 2, 'すべる床', '勢いがつくので、飛び越える距離にも影響。赤と隣り合うと溶ける'], ['緑（バネ）', 3, 'はずむ床', '足場を緑にして、高い所へ飛ぶのに使う'], ['ひび割れ', null, '乗ると約0.5秒で崩れる', 'ふつうのブロックのように動かせる。崩れる前に渡る'], ['ガラス', 5, '色のない、すきとおったセル', '「いろコピー」で、色の性質をつけられる'], ['鋼', 'metal', '固い壁・床・天井', 'どの編集もできない（固定）。寄せるときの仕切りになる']];
+    rows.forEach(([n, ci, a, b]) => { const tr = document.createElement('tr'); const c = ci === null ? GX.block(3, 0) : ci === 'metal' ? W.GFX.metal() : GX.block(0, ci); tr.innerHTML = '<td><img class="sw" src="' + url(c) + '"><b>' + n + '</b></td><td>' + a + '</td><td>' + b + '</td>'; tbl.appendChild(tr); });
+    { const t = document.createElement('tr'); const c = GX.block(0, 0); const k = document.createElement('canvas'); k.width = 16; k.height = 16; const kc = k.getContext('2d'); kc.drawImage(c, 0, 0); kc.drawImage(W.GFX.lock(), 8, 1); t.innerHTML = '<td><img class="sw" src="' + url(k) + '"><b>カギ（保護）</b></td><td>保護されたブロック</td><td>どの編集も受けない。「まもりをはずす」で外せる。敵の書きかえも受けない</td>'; tbl.appendChild(t); }
+    document.getElementById('icoGoal').src = url(GX.floppy(false)); document.getElementById('icoShard').src = url(GX.shard());
+    // 敵
+    const fake = (() => { const k = document.createElement('canvas'); k.width = 18; k.height = 18; const kc = k.getContext('2d'); kc.drawImage(GX.block(0, 0), 1, 1); kc.fillStyle = 'rgba(255,255,255,.6)'; kc.fillRect(5, 6, 4, 4); kc.fillRect(11, 6, 4, 4); kc.fillStyle = 'rgba(38,38,38,.5)'; kc.fillRect(5, 7, 2, 2); kc.fillRect(11, 7, 2, 2); return k; })();
+    const DEX = [
+      ['てくてく', 'walker', '床をまっすぐ歩き、縁や壁で引き返す', '上から踏むと倒せる'],
+      ['かたいこうら', 'guard', '歩く。硬い甲羅をもつ', '2回踏むと倒せる'],
+      ['ふわふわ', 'flyer', '宙をゆらゆら漂う', '上から踏むと倒せる'],
+      ['たまうち', 'turret', 'エナーを向いて、光ったあとに弾を撃つ', '踏めない・倒せない。光ったときに、弾の道から外れる'],
+      ['#DIV/0!', 'div0', 'ゆっくり往復するエラーの塊', '踏めない・倒せない。タイミングを見て、よける'],
+      ['オートフィル', 'autofill', 'ねらうマスに、ブロックを作り続ける。作る色は、種類で違う（赤・氷なども）。ねらうマスが光る', '踏むと倒せる。作ったブロックを「ならべかえ」で寄せると、また作る'],
+      ['しろい文字', 'moji', '白いシートに溶けこみ、ほとんど見えない。近づくと現れて追いかける', '踏むと倒せる'],
+      ['にせブロック', 'fake', 'ブロックに擬態して動かない。遠くでは見分けがつかず、近づくと閉じた目、かなり近づくと目が開いてエナーを目で追う', '触れるとダメージ。上から踏むと倒せる。編集中は見分けがつかない'],
+      ['条件つき書式', 'condfmt', '宙に浮いて、点線のはんい（複数可）のブロックの色を、ときどき勝手に変える。変わる前に、はんいがちかちかする。はんいが2つあると、変わる色がずれる', '踏むと倒せる。「シートをまもる」で、書きかえを防げる'],
+      ['並べ替え', 'shuffler', 'はんい（複数可・横または縦）のブロックを、ときどき片側へ寄せる。寄せる向きは毎回逆。寄せる前に、はんいが光る', '2回踏むと倒せる。エナーのいる列は、寄せられない'],
+      ['循環参照', 'circ', 'マスに沿って、かどを直角に曲がりながら、決まった四角形をぐるぐる回る', '踏めない・倒せない。通り道が薄く見えるので、タイミングで通りぬける'],
+    ];
+    DEX.forEach((d, n) => {
+      const t = document.getElementById(n < 6 ? 'dex1' : 'dex2'); const tr = document.createElement('tr');
+      const c = d[1] === 'fake' ? fake : GX.enemy(d[1], 0, false);
+      tr.innerHTML = '<td><img class="sp" src="' + url(c) + '"><b>' + d[0] + '</b></td><td>' + d[2] + '</td><td>' + d[3] + '</td>'; t.appendChild(tr);
+    });
+    // ステージ表
+    g.LEVELS.forEach((lv, n) => {
+      if (lv.custom) return;
+      const tools = lv.tools && lv.tools.length ? lv.tools.map(t => TN[t]).join('、') : '（編集なし）';
+      const label = lv.id === 'LAB' ? '実験' : lv.id;
+      const cost = lv.id === 'LAB' ? '回復あり' : (lv.tools && lv.tools.length ? lv.energy : '―');
+      const tr = document.createElement('tr'); tr.innerHTML = '<td>' + label + '</td><td>' + lv.name + '</td><td>' + (lv.id === 'LAB' ? '全部' : tools) + '</td><td>' + cost + '</td><td>' + lv.w + '×' + lv.h + '</td>';
+      document.getElementById(n < 25 ? 'stg1' : 'stg2').appendChild(tr);
+    });
+    // ページ番号
+    document.querySelectorAll('.page').forEach((p, i) => {
+      if (p.classList.contains('cover')) return;
+      let f = p.querySelector('.foot');
+      if (!f) { f = document.createElement('div'); f.className = 'foot'; f.innerHTML = '<span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span>'; p.appendChild(f); }
+      f.querySelector('.pn').textContent = i + 1;
+    });
+    frame.remove();
+    document.body.setAttribute('data-ready', '1'); document.title = document.title + ' (ready)';
+  }
+  main().catch(e => { document.body.setAttribute('data-error', String(e && e.stack || e)); document.title = 'ERROR ' + e; });
+})();
+</script>
+</body>
+</html>
