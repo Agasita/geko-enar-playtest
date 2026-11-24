@@ -176,7 +176,7 @@
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
     G.fog = lv.fog || null; G.areas = []; G.zoomT = 0;
-    G.enemies = lv.ents.map((e, k) => makeEnemy(e, k));
+    G.enemies = lv.ents.map((e, k) => makeEnemy(e, k)); G.fakes = G.enemies.filter(e => e.type === 'fake');
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = []; G.under = {};
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
     G.doors = (lv.doors || []).map(d => ({ x: d[0], y: d[1], h: d[2], id: d[3] || 0, open: false, anim: 0, latched: false }));
@@ -211,7 +211,7 @@
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
     if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap === undefined ? 1e9 : e.cap, max: e.max === undefined ? 1e9 : e.max, reach: e.reach || 12, rate: e.rate || 2.2, c: e.c, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
-    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
+    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, gx: Math.round(base.x / T), gy: Math.round(base.y / T), mv: 0, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
     if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, cd: 2.4, step: 0, seq: e.seq || [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // 条件つき書式: はんいの ブロックの いろを かってに かえる
@@ -235,6 +235,7 @@
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
     if (G.doors) for (const d of G.doors) if (!d.open && tx === d.x && ty >= d.y && ty < d.y + d.h) return true;
     if (G.mgs) for (const m of G.mgs) for (const c of m.cells) if (tx === c[0] + m.dx && ty === c[1] + m.dy) return true;
+    if (G.fakes) for (const f of G.fakes) if (!f.hidden && tx === f.gx && ty === f.gy) return true; // にせブロックは かべ
     const t = G.front[ty][tx]; if (t === TL.STEEL) return true;
     return isBlockT(t) && blockVisible(tx, ty);
   }
@@ -517,7 +518,7 @@
     ['bucket', '塗りつぶし', 'ゆかを あるいて、ガラスの上で 立ちどまっては、足もとを 1マスずつ ぬっていく。ぬる とき、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
     ['shuffler', '並べ替え', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', '循環参照', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
-    ['fake', 'にせブロック', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。うごかないけれど、ぶつかると ダメージ。上から ふむと たおせる。へんしゅう中は みわけが つかない'],
+    ['fake', 'にせブロック', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。でも あつい（赤い）ブロックが となりに くると、あつがって 1マス はなれる'],
   ];
   function seeEnemy(type) {
     save.seenEnemies = save.seenEnemies || {}; if (save.seenEnemies[type]) return;
@@ -537,6 +538,21 @@
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
         const look = p.dead ? 0 : d < 30 ? 2 : d < 64 ? 1 : 0;
                 e.look = look; e.ex = dx; e.ey = dy;
+        // あつい(赤い)ブロックが となりに くると、あつがって 1マス はなれる(はんたいがわへ)
+        const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
+        if (e.mv > 0) { e.mv -= dt; const k = Math.max(0, e.mv / .25); e.x = tx0 - e.fdx * T * k; e.y = ty0 - e.fdy * T * k; if (e.mv <= 0) { e.mv = 0; e.x = tx0; e.y = ty0; } }
+        else {
+          const hot = (x, y) => colorAt(x, y) === 1;
+          const tries = [[hot(e.gx - 1, e.gy), 1, 0], [hot(e.gx + 1, e.gy), -1, 0], [hot(e.gx, e.gy - 1), 0, 1], [hot(e.gx, e.gy + 1), 0, -1]];
+          for (const [h, mx, my] of tries) {
+            if (!h) continue;
+            const nx = e.gx + mx, ny = e.gy + my;
+            if (solidCell(nx, ny) || liftRailHit(nx, ny)) continue;
+            if (overlap(nx * T, ny * T, T, T, p.x, p.y, p.w, p.h)) continue;
+            if (G.enemies.some(o => o !== e && !o.dead && overlap(nx * T, ny * T, T, T, o.x, o.y, o.w, o.h))) continue;
+            e.gx = nx; e.gy = ny; e.fdx = mx; e.fdy = my; e.mv = .25; SFX.place(); spawnParts(e.x + 7, e.y + 7, 5, '#E8563F', 40); break;
+          }
+        }
       }
       if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
         if (Math.abs(p.x + 5 - (e.x + 6)) < 46 && Math.abs(p.y - e.y) < 30 && !p.dead) { e.awake = true; e.t = 0; SFX.bad(); spawnParts(e.x + 6, e.y + 4, 8, '#fff', 60); G.shake = Math.max(G.shake, 2); }
@@ -582,7 +598,7 @@
         if (e.cd <= 0 && Math.abs(p.x - e.x) < 150) { e.cd = 2.2; G.bullets.push({ x: e.x + 6 + e.dir * 8, y: e.y + 4, w: 4, h: 4, vx: e.dir * 85 }); }
       }
       // 接触ダメージ・ダッシュ攻撃
-      if (!p.dead && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
+      if (!p.dead && e.type !== 'fake' && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
         if (p.dashT > 0 && (e.type === 'guard' || e.type === 'walker' || e.type === 'flyer' || e.type === 'moji')) { if (e.type === 'guard') { e.stun = .8; } damageEnemy(e, 1); p.dashT = 0; p.vx = -p.face * 60; }
         else if (p.vy > 60 && p.y + p.h - 6 < e.y + 4 && e.type !== 'turret' && e.type !== 'div0' && e.type !== 'circ') { damageEnemy(e, 1); p.vy = -240; p.hover = TU.HOVER_T; p.free = true; p.dashAvail = true; } // ふみつけ
         else hurtPlayer(e);
