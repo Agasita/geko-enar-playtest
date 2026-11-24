@@ -81,9 +81,9 @@
   // ---- ワールドごとの シートの いろと、まどの けしき ----
   //  sheet=セルの いろ / ln=わくせん / scene=まどの けしき / shut=よろい戸(period=いちまわりの びょう, closed=しまっている わりあい)
   const SHEETS = {
-    1: { bg: '#FFFFFF', ln: '#D4D4D4', scene: 'meadow' },
-    2: { bg: '#F6FBF3', ln: '#D2E2CB', scene: 'forest' },
-    3: { bg: '#F3F9FD', ln: '#CFDFEC', scene: 'lake' },
+    1: { bg: '#FFFFFF', ln: '#D4D4D4', scene: 'meadow', shut: { period: 24, closed: .1 } },
+    2: { bg: '#F6FBF3', ln: '#D2E2CB', scene: 'forest', shut: { period: 22, closed: .12 } },
+    3: { bg: '#F3F9FD', ln: '#CFDFEC', scene: 'lake', shut: { period: 20, closed: .14 } },
     4: { bg: '#FFF8F0', ln: '#EBD9C4', scene: 'sunset', shut: { period: 16, closed: .22 } },
     5: { bg: '#F4F1F9', ln: '#DAD3E6', scene: 'cave', shut: { period: 15, closed: .25 } },
     6: { bg: '#FFF6F9', ln: '#F0D6DF', scene: 'spring', shut: { period: 14, closed: .28 } },
@@ -105,9 +105,9 @@
     for (let x0 = 2; x0 + 7 <= lv.w - 2; x0 += 15, k++) { if (k % 2 === 0) out.push([x0, 3, Math.min(lv.w - 2, x0 + 9), 7]); else out.push([x0, 4, Math.min(lv.w - 2, x0 + 7), 7]); }
     return (lv._wins = out);
   }
-  function shutterOpen(sh, t, idx) { // 1=あいている 0=しまっている (パタパタ)
+  function shutterOpen(sh, t, idx, trs) { // 1=あいている 0=しまっている (パタパタ)。trs=めくれる びょう数
     if (!sh) return 1;
-    const tr = .05, c = sh.closed, a = 1 - c - tr * 2, p = (((t / sh.period) + idx * .37) % 1 + 1) % 1;
+    const tr = Math.min(.2, (trs || .6) / sh.period), c = sh.closed, a = 1 - c - tr * 2, p = (((t / sh.period) + idx * .37) % 1 + 1) % 1;
     if (p < a) return 1; if (p < a + tr) return 1 - (p - a) / tr; if (p < a + tr + c) return 0; if (p < a + tr * 2 + c) return (p - a - tr - c) / tr; return 1;
   }
   function sky(ctx, w, h, cols) { const n = cols.length; for (let i = 0; i < n; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(0, Math.floor(h * i / n), w, Math.ceil(h / n) + 1); } }
@@ -187,10 +187,10 @@
   const SUNP = { meadow: [.78, .34], sunset: [.5, .5], summer: [.75, .34], night: [.72, .34], sky: [.2, .34] }; // 画面のなかの たいようの いち
   const clamp01 = (v) => Math.max(0, Math.min(1, v));
   function cellOpen(sh, t, idx, i, j) { // 0=しろい面 1=けしきの面
-    const d = (i + j * .7) * .045 + idx * .13;
-    const first = clamp01((t - .15 - d) / .3); // はじめに、くるりと めくれる
+    const tn = (window.GFXX && window.GFXX.tune) || {}, fl = tn.WIN_FLIP || .6, d = (i + j * .7) * .06 + idx * .13;
+    const first = clamp01((t - .15 - d) / fl); // はじめに、くるりと めくれる
     if (!sh.shut) return first;
-    return Math.min(first, shutterOpen({ period: sh.shut.period, closed: sh.shut.closed }, t - d, idx));
+    return Math.min(first, shutterOpen({ period: sh.shut.period * (tn.WIN_PERIOD || 1), closed: Math.min(.8, sh.shut.closed * (tn.WIN_CLOSED == null ? 1 : tn.WIN_CLOSED)) }, t - d, idx, fl));
   }
   function drawWindow(ctx, win, idx, sh, G, cx, cy, W, H, lv) {
     const T = 16, x = win[0] * T - cx, y = win[1] * T - cy, cols = win[2] - win[0] + 1, rows = win[3] - win[1] + 1, w = cols * T, h = rows * T;
