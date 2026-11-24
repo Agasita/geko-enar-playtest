@@ -116,7 +116,7 @@
   const cloud = (ctx, x, y, s, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, 14 * s, 3 * s); ctx.fillRect(x + 3 * s, y - 2 * s, 8 * s, 3 * s); };
   function hillsRow(ctx, w, h, base, amp, step, col, off) { ctx.fillStyle = col; for (let x = -step; x < w + step; x += step) { const px = x - (((off % step) + step) % step), k = Math.floor((x + off) / step); ctx.beginPath(); ctx.ellipse(px + step / 2, base + 2, step * .75, amp * (.6 + hash(k) * .6), 0, Math.PI, 0); ctx.fill(); } ctx.fillRect(0, base, w, h - base); }
   function scene(ctx, kind, w, h, t, cx, sun) {
-    const SX = sun.x, SY = sun.y; // たいよう・つきは、とおいので画面にくっついている(まどが2つあっても1つだけ)
+    const SX = sun.x, SY = sun.y; // たいよう・つきは、さいしょの まどの なかに 1つだけ(まどと いっしょに うごく)
     const s1 = cx * .05, s2 = cx * .1, s3 = cx * .17; // うしろの けしきは、ゆっくり ながれる
     if (kind === 'meadow') {
       sky(ctx, w, h, ['#BFE3F5', '#D6EEF9', '#EAF6FC']); disc(ctx, SX, SY, 7 + Math.sin(t * 2), 'rgba(255,230,153,.6)'); disc(ctx, SX, SY, 5, '#FFD966');
@@ -202,7 +202,7 @@
     const wc = (lv._wc = lv._wc || {})[idx] || (lv._wc[idx] = document.createElement('canvas')); if (wc.width !== w || wc.height !== h) { wc.width = w; wc.height = h; }
     const k = wc.getContext('2d'), sp = SUNP[sh.scene];
     k.imageSmoothingEnabled = false; k.clearRect(0, 0, w, h);
-    scene(k, sh.scene, w, h, t + idx * 3.1, cx + idx * 37, { x: sp ? W * sp[0] - x : -99, y: sp ? H * sp[1] - y : -99 });
+    scene(k, sh.scene, w, h, t + idx * 3.1, cx + idx * 37, (sp && idx === 0) ? { x: Math.max(14, Math.min(w - 14, w * sp[0])), y: Math.max(14, Math.min(h - 14, h * sp[1])) } : { x: -99, y: -99 });
     for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
       const p = ps[j * cols + i]; if (p <= .001) continue;
       const ang = p * Math.PI, sx = Math.abs(Math.cos(ang)), cw = T * sx, mx = x + i * T + T / 2, y0 = y + j * T, left = mx - cw / 2;
