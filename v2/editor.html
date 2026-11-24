@@ -124,7 +124,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const T = 20, KEY = 'geko-enar-v2-custom';
   const COLORS = [['茶色', '#C9A15E', '#E8CFA0', '#735630'], ['赤', '#E8563F', '#F7A08F', '#A8403F'], ['青', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['緑', '#58B368', '#8FD18A', '#3F8F52'], ['ひび割れ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
   const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
-  const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8'], ['condfmt', '条件つき書式', '#7030A0'], ['shuffler', '並べ替え', '#ED7D31'], ['circ', '循環参照', '#2F3E6B']];
+  const ENTS = [['walker', 'ノイズ', '#B04F5A'], ['guard', 'ガード', '#4C9BE8'], ['flyer', 'フライヤー', '#9B6FD0'], ['turret', 'タレット', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8'], ['condfmt', '条件つき書式', '#7030A0'], ['bucket', '塗りつぶし', '#E8A33D'], ['shuffler', '並べ替え', '#ED7D31'], ['circ', '循環参照', '#2F3E6B']];
   const THEMES = [['青緑', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['青空', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
   const $ = (s) => document.querySelector(s);
   // 本編と おなじ ゲームの え(GFXX)を つかって えがく
@@ -133,7 +133,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const iconOf = (fn) => { const c = document.createElement('canvas'); c.width = c.height = 20; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; fn(g); return '<img class="ic" src="' + c.toDataURL() + '">'; };
   const spIcon = (im, off) => iconOf(g => { const k = 20 / 16; g.drawImage(im, -(off || 0) * k, -(off || 0) * k, im.width * k, im.height * k); });
   const entIm = (t) => GFXX.enemy(t, 0, false);
-  const rangesOf = (e) => (e.ranges && e.ranges.length) ? e.ranges : (e.type === 'condfmt' ? [[e.x - 2, e.y + 1, e.x + 2, e.y + 2]] : e.type === 'shuffler' ? [[e.x - 3, e.y + 1, e.x + 3, e.y + 1]] : e.type === 'circ' ? [[e.x, e.y, e.x + 3, e.y + 2]] : []);
+  const rangesOf = (e) => (e.ranges && e.ranges.length) ? e.ranges : ((e.type === 'condfmt' || e.type === 'bucket') ? [[e.x - 2, e.y + 1, e.x + 2, e.y + 2]] : e.type === 'shuffler' ? [[e.x - 3, e.y + 1, e.x + 3, e.y + 1]] : e.type === 'circ' ? [[e.x, e.y, e.x + 3, e.y + 2]] : []);
   let pend = null;
   const blockIm = (c) => GFXX.block(0, c), crackIm = () => GFXX.block(3, 0);
   const cv = $('#cv'), ctx = cv.getContext('2d');
@@ -203,8 +203,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
     const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
     for (const e of L.ents) { // はんい(条件つき書式・並べ替え・循環参照)
-      if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') continue;
-      ctx.strokeStyle = e.type === 'condfmt' ? '#7030A0' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ' && e.type !== 'bucket') continue;
+      ctx.strokeStyle = e.type === 'condfmt' ? '#7030A0' : e.type === 'bucket' ? '#217346' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       rangesOf(e).forEach(r => { const x0 = Math.min(r[0], r[2]), y0 = Math.min(r[1], r[3]), x1 = Math.max(r[0], r[2]), y1 = Math.max(r[1], r[3]);
         if (e.type === 'circ') ctx.strokeRect(x0 * T + T / 2, y0 * T + T / 2, Math.max(1, x1 - x0) * T, Math.max(1, y1 - y0) * T); else ctx.strokeRect(x0 * T + 1, y0 * T + 1, (x1 - x0 + 1) * T - 2, (y1 - y0 + 1) * T - 2); });
       ctx.setLineDash([]); ctx.lineWidth = 1;
@@ -215,7 +215,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
         SP(blockIm(e.c || 0), px, py); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px + 4, py + 6, 4, 4); ctx.fillRect(px + 12, py + 6, 4, 4); ctx.fillStyle = '#262626'; ctx.fillRect(px + 5, py + 7, 2, 3); ctx.fillRect(px + 13, py + 7, 2, 3);
         ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3); ctx.setLineDash([]); continue;
       }
-      SP(entIm(e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type), px, py, 1);
+      SP(entIm(e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type === 'bucket' ? 'bucket' + (e.c || 0) : e.type), px, py, 1);
       if (e.type === 'autofill') { ctx.fillStyle = '#217346'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((e.d || 1) < 0 ? '◀' : '▶', px + T / 2, py - 1); }
     }
     for (const g of L.gems) { const im = GFXX.shard(); SP(im, g[0] * T + (T - im.width * KS) / 2, g[1] * T + (T - im.height * KS) / 2); }
@@ -273,8 +273,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     if (k === 'range') {
       if (!pend) { pend = [x, y]; msg('はんいの もうひとつの角を おしてください'); return; }
       const r = [pend[0], pend[1], x, y]; pend = null; const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2; let best = null, bd = 1e9;
-      L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
-      if (!best) return msg('条件つき書式・並べ替え・循環参照の敵が いません。先に敵を おいてください');
+      L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ' && e.type !== 'bucket') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
+      if (!best) return msg('条件つき書式・塗りつぶし・並べ替え・循環参照の敵が いません。先に敵を おいてください');
       if (best.type === 'circ') best.ranges = [r]; else best.ranges = (best.ranges && best.ranges.length ? best.ranges : []).concat([r]);
       msg('はんいを つけました（いちばん近い敵に）。まちがえたら「戻す」'); return;
     }
@@ -365,6 +365,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">オートフィルが作る色：足もとをまねる</option>' + COLORS.slice(0, 5).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
     ENTS.forEach(e => {
       if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
+      if (e[0] === 'bucket') { COLORS.slice(0, 5).forEach((c, i) => addBtn(p2, spIcon(entIm('bucket' + i), 1) + e[1] + '（' + c[0] + '）', { kind: 'ent', type: 'bucket', opt: { c: i } })); return; }
       if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
       addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });
     });

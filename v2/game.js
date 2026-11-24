@@ -214,6 +214,7 @@
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
     if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, cd: 2.4, step: 0, seq: e.seq || [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // 条件つき書式: はんいの ブロックの いろを かってに かえる
+    if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, cd: 2.4, c: e.c === undefined ? 0 : e.c, painted: [], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // 塗りつぶし: はんいの ガラスに いろを ぬる。たおすと、ぬった ガラスは もとに もどる
     if (e.type === 'shuffler') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 2, cd: 2.4, sdir: e.dir || (e.axis === 'y' ? -1 : 1), axis: e.axis || 'x', ranges: rg([e.x - 3, e.y + 1, e.x + 3, e.y + 1]), tele: 0, x: base.x + 2, y: base.y + 2 }); // 並べ替え: はんいの ブロックを かたほうへ よせて ならべなおす
     if (e.type === 'circ') { const lp = rg([e.x, e.y, e.x + 3, e.y + 2])[0]; if (lp.x1 === lp.x0) lp.x1++; if (lp.y1 === lp.y0) lp.y1++; return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 999, loop: lp, dir: 1, t: 0, x: lp.x0 * T + 2, y: lp.y0 * T + 2 }); } // 循環参照: マスに そって、直角に まがりながら ぐるぐる まわる。たおせない
     if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
@@ -428,7 +429,7 @@
   function breakCrack(tx, ty) { G.front[ty][tx] = 0; G.col[ty][tx] = 0; SFX.hit(); spawnParts(tx * T + 8, ty * T + 8, 8, '#B07A4F', 70); G.shake = 3; }
   function damageEnemy(e, n) {
     e.hp -= n; e.flash = .15; G.hitstop = .05; G.shake = 3; SFX.hit(); spawnParts(e.x + e.w / 2, e.y + e.h / 2, 7, '#fff', 60);
-    if (e.hp <= 0) { e.dead = true; spawnParts(e.x + e.w / 2, e.y + e.h / 2, 14, '#F5C842', 90); if (G.regen) G.pick.push({ type: 'spark', x: e.x + 2, y: e.y + 2, w: 8, h: 8, got: false, drop: true }); }
+    if (e.hp <= 0) { e.dead = true; if (e.type === 'bucket') restorePaint(e); spawnParts(e.x + e.w / 2, e.y + e.h / 2, 14, '#F5C842', 90); if (G.regen) G.pick.push({ type: 'spark', x: e.x + 2, y: e.y + 2, w: 8, h: 8, got: false, drop: true }); }
   }
 
   // ===== てき =====
@@ -458,6 +459,24 @@
       G.col[y][x] = col; n++; spawnParts(x * T + 8, y * T + 8, 3, ['#C9A15E', '#E8563F', '#6FD6E8', '#58B368', '#F5C842'][col] || '#fff', 40);
     }
     return n;
+  }
+  // 塗りつぶし: はんいの ガラスに いろを ぬる(まもった ガラスは ぬれない)。ぬった マスは おぼえておく
+  function paintRange(e, r) {
+    let n = 0;
+    for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) {
+      if (!inb(x, y) || !isBlockT(G.front[y][x]) || G.lock[y][x] || G.col[y][x] !== GLASS) continue;
+      G.front[y][x] = TL.GLASSED; G.col[y][x] = e.c; e.painted.push([x, y]); n++; spawnParts(x * T + 8, y * T + 8, 3, AF_COL[e.c] || '#fff', 40);
+    }
+    return n;
+  }
+  // 塗りつぶしを たおしたら、ぬった ガラスは もとの ガラスに もどる(うごかして その場に ないものは、そのまま)
+  function restorePaint(e) {
+    let n = 0;
+    for (const [x, y] of e.painted || []) {
+      if (!inb(x, y) || G.front[y][x] !== TL.GLASSED || G.col[y][x] !== e.c) continue;
+      G.front[y][x] = TL.STONE; G.col[y][x] = GLASS; n++; spawnParts(x * T + 8, y * T + 8, 4, '#DCEBF3', 50);
+    }
+    e.painted = []; if (n) SFX.place();
   }
   // 並べ替え: はんいの ブロックを、かたほうへ よせて ならべなおす(鋼・磁石・カギ・ひび割れは しきり。ひとや てきの いる ところは そのまま)
   function slideRange(r, axis, dir) {
@@ -501,6 +520,7 @@
     ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。つくる ブロックの いろは、しゅるいで ちがう（赤や 氷も）。ねらう マスが 光る。ふむと たおせる'],
     ['moji', 'しろい文字', 'しろい シートに とけこむ、ほとんど みえない 文字。ちかづくと あらわれて、おいかけてくる。ふむと たおせる'],
     ['condfmt', '条件つき書式', 'ふわふわ ういて、はんいの ブロックの いろを、ときどき かってに かえる。かえる まえに、はんいが ちかちか する。はんいが ふたつ ある ときは、かわる いろが ずれる。ふむと たおせる'],
+    ['bucket', '塗りつぶし', 'ふわふわ ういて、はんいの ガラスに、ときどき いろを ぬる。ぬる まえに、はんいが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは もとに もどる'],
     ['shuffler', '並べ替え', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', '循環参照', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
     ['fake', 'にせブロック', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。うごかないけれど、ぶつかると ダメージ。上から ふむと たおせる。へんしゅう中は みわけが つかない'],
@@ -543,11 +563,12 @@
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
         if (e.type === 'fake') { /* あるかない */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
-      } else if (e.type === 'condfmt' || e.type === 'shuffler') {
+      } else if (e.type === 'condfmt' || e.type === 'shuffler' || e.type === 'bucket') {
         e.cd -= dt; e.tele = e.cd < 1 ? 1 : 0; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         if (e.cd <= 0) {
           e.cd = 4.2; let n = 0;
           if (e.type === 'condfmt') { e.step++; e.ranges.forEach((r, k) => { n += formatRange(r, e.seq[(e.step + k) % e.seq.length]); }); }
+          else if (e.type === 'bucket') { e.ranges.forEach(r => { n += paintRange(e, r); }); }
           else { e.ranges.forEach(r => { n += slideRange(r, e.axis, e.sdir); }); e.sdir = -e.sdir; }
           if (n) SFX.place();
         }
@@ -1319,18 +1340,18 @@
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       if (e.type === 'moji' && !e.awake) { drawMojiHint(e, cx, cy); continue; }
       if (e.type === 'fake') { drawFake(e, cx, cy); continue; }
-      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'condfmt') ? (EXCEL ? (e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type) : 'walker') : 'turret';
+      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'condfmt' || e.type === 'bucket') ? (EXCEL ? (e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type === 'bucket' ? 'bucket' + e.c : e.type) : 'walker') : 'turret';
       const fi = name === 'guard' || name === 'turret' ? 0 : fr;
       if (e.type === 'circ') { // みちすじ(うすい てんせん)
         const lp = e.loop; ctx.strokeStyle = 'rgba(47,62,107,.32)'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.strokeRect(lp.x0 * T + 8 - cx + .5, lp.y0 * T + 8 - cy + .5, (lp.x1 - lp.x0) * T, (lp.y1 - lp.y0) * T); ctx.setLineDash([]);
       }
-      if (e.type === 'condfmt' || e.type === 'shuffler') { // はんい(ちかちかは、もうすぐ かわる/うごく あいず)
+      if (e.type === 'condfmt' || e.type === 'shuffler' || e.type === 'bucket') { // はんい(ちかちかは、もうすぐ かわる/うごく あいず)
         const blink = e.tele ? (.5 + .5 * Math.sin(e.t * 22)) : 0, NC = ['#C9A15E', '#E8563F', '#6FD6E8', '#58B368', '#F5C842'];
         e.ranges.forEach((r, k) => {
           const rx = r.x0 * T - cx, ry = r.y0 * T - cy, rw = (r.x1 - r.x0 + 1) * T, rh = (r.y1 - r.y0 + 1) * T;
-          const base = e.type === 'condfmt' ? NC[e.seq[(e.step + 1 + k) % e.seq.length]] : '#ADB9CA';
+          const base = e.type === 'condfmt' ? NC[e.seq[(e.step + 1 + k) % e.seq.length]] : e.type === 'bucket' ? NC[e.c] : '#ADB9CA';
           if (e.tele) { ctx.globalAlpha = .12 + .22 * blink; ctx.fillStyle = base; ctx.fillRect(rx, ry, rw, rh); ctx.globalAlpha = 1; }
-          ctx.strokeStyle = e.type === 'condfmt' ? 'rgba(112,48,160,' + (.35 + .4 * blink) + ')' : 'rgba(197,90,17,' + (.35 + .4 * blink) + ')'; ctx.lineWidth = 1; ctx.setLineDash([3, 2]); ctx.strokeRect(rx + .5, ry + .5, rw - 1, rh - 1); ctx.setLineDash([]);
+          ctx.strokeStyle = e.type === 'condfmt' ? 'rgba(112,48,160,' + (.35 + .4 * blink) + ')' : e.type === 'bucket' ? 'rgba(33,115,70,' + (.35 + .4 * blink) + ')' : 'rgba(197,90,17,' + (.35 + .4 * blink) + ')'; ctx.lineWidth = 1; ctx.setLineDash([3, 2]); ctx.strokeRect(rx + .5, ry + .5, rw - 1, rh - 1); ctx.setLineDash([]);
           if (e.type === 'shuffler') { ctx.fillStyle = 'rgba(197,90,17,' + (.5 + .4 * blink) + ')'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.axis === 'x' ? (e.sdir > 0 ? '▶' : '◀') : (e.sdir > 0 ? '▼' : '▲'), rx + rw / 2, ry + rh / 2); }
         });
       }
@@ -2029,7 +2050,7 @@
 
   // ===== テストようの口(自どうプレイが使う) =====
   window.__geko = {
-    G, input, press, update, render, UI, LEVELS, T, TL, COLORS, TOOLS, setEdit, undoEdit, redoEdit, runPlan, planFor, normRect,
+    G, input, press, update, render, UI, LEVELS, T, TL, COLORS, TOOLS, makeEnemy, setEdit, undoEdit, redoEdit, runPlan, planFor, normRect,
     // 自どうプレイ・テストよう: {tool, rect, dst, srcCell, col, opts} を指定して、実際のなおすとおなじ処理をぎょうう
     runTool(spec) {
       const E = G.edit; E.tool = spec.tool; Object.assign(E.opts, spec.opts || {});
