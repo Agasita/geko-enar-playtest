@@ -133,7 +133,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   const iconOf = (fn) => { const c = document.createElement('canvas'); c.width = c.height = 20; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; fn(g); return '<img class="ic" src="' + c.toDataURL() + '">'; };
   const spIcon = (im, off) => iconOf(g => { const k = 20 / 16; g.drawImage(im, -(off || 0) * k, -(off || 0) * k, im.width * k, im.height * k); });
   const entIm = (t) => GFXX.enemy(t, 0, false);
-  const rangesOf = (e) => (e.ranges && e.ranges.length) ? e.ranges : ((e.type === 'condfmt' || e.type === 'bucket') ? [[e.x - 2, e.y + 1, e.x + 2, e.y + 2]] : e.type === 'shuffler' ? [[e.x - 3, e.y + 1, e.x + 3, e.y + 1]] : e.type === 'circ' ? [[e.x, e.y, e.x + 3, e.y + 2]] : []);
+  const rangesOf = (e) => (e.ranges && e.ranges.length) ? e.ranges : (e.type === 'condfmt' ? [[e.x - 2, e.y + 1, e.x + 2, e.y + 2]] : e.type === 'shuffler' ? [[e.x - 3, e.y + 1, e.x + 3, e.y + 1]] : e.type === 'circ' ? [[e.x, e.y, e.x + 3, e.y + 2]] : []);
   let pend = null;
   const blockIm = (c) => GFXX.block(0, c), crackIm = () => GFXX.block(3, 0);
   const cv = $('#cv'), ctx = cv.getContext('2d');
@@ -203,8 +203,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
     const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
     for (const e of L.ents) { // はんい(条件つき書式・並べ替え・循環参照)
-      if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ' && e.type !== 'bucket') continue;
-      ctx.strokeStyle = e.type === 'condfmt' ? '#7030A0' : e.type === 'bucket' ? '#217346' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') continue;
+      ctx.strokeStyle = e.type === 'condfmt' ? '#7030A0' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       rangesOf(e).forEach(r => { const x0 = Math.min(r[0], r[2]), y0 = Math.min(r[1], r[3]), x1 = Math.max(r[0], r[2]), y1 = Math.max(r[1], r[3]);
         if (e.type === 'circ') ctx.strokeRect(x0 * T + T / 2, y0 * T + T / 2, Math.max(1, x1 - x0) * T, Math.max(1, y1 - y0) * T); else ctx.strokeRect(x0 * T + 1, y0 * T + 1, (x1 - x0 + 1) * T - 2, (y1 - y0 + 1) * T - 2); });
       ctx.setLineDash([]); ctx.lineWidth = 1;
@@ -273,8 +273,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     if (k === 'range') {
       if (!pend) { pend = [x, y]; msg('はんいの もうひとつの角を おしてください'); return; }
       const r = [pend[0], pend[1], x, y]; pend = null; const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2; let best = null, bd = 1e9;
-      L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ' && e.type !== 'bucket') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
-      if (!best) return msg('条件つき書式・塗りつぶし・並べ替え・循環参照の敵が いません。先に敵を おいてください');
+      L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
+      if (!best) return msg('条件つき書式・並べ替え・循環参照の敵が いません。先に敵を おいてください');
       if (best.type === 'circ') best.ranges = [r]; else best.ranges = (best.ranges && best.ranges.length ? best.ranges : []).concat([r]);
       msg('はんいを つけました（いちばん近い敵に）。まちがえたら「戻す」'); return;
     }
