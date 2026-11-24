@@ -1097,7 +1097,9 @@
   // ===== 描画 =====
   function dotRect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
   // みた目: ?gfx=excel(ふつう: Excelふう) / ?gfx=snes(ソリッドばん) / ?gfx=classic(もとのえ)
-  const THEME = ((/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
+  // 公開版は Excelふう ひとつだけ。開発用に ?dev=1 を付けると、見た目の切りかえ(?gfx=)と 調整パネルが つかえる
+  const DEV = /[?&]dev=1/.test(location.search);
+  const THEME = (DEV && (/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
   const EXCEL = THEME === 'excel' && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
   const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
   if (EXCEL) document.body.classList.add('theme-excel');
@@ -1916,6 +1918,7 @@
   // ===== 操作感チューニングパネル: 数値をスライダーでかえて、そのまま あそんで たしかめる =====
   // 値は TU(上の TUNE_DEF がもとの値)。「コピー」で、いまの値をクリップボードに出せる。
   (function tunePanel() {
+    if (!DEV) return;
     const GROUPS = [
       ['はしる', [
         ['RUN', 'さいだい速度', 40, 220, 1], ['ACC', '地上の加速', 200, 4000, 10], ['FRIC', '地上のブレーキ', 200, 4000, 10],
