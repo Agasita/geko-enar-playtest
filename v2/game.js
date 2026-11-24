@@ -514,7 +514,7 @@
     ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。つくる ブロックの いろは、しゅるいで ちがう（赤や 氷も）。ねらう マスが 光る。ふむと たおせる'],
     ['moji', 'しろい文字', 'しろい シートに とけこむ、ほとんど みえない 文字。ちかづくと あらわれて、おいかけてくる。ふむと たおせる'],
     ['condfmt', '条件つき書式', 'ふわふわ ういて、はんいの ブロックの いろを、ときどき かってに かえる。かえる まえに、はんいが ちかちか する。はんいが ふたつ ある ときは、かわる いろが ずれる。ふむと たおせる'],
-    ['bucket', '塗りつぶし', 'ゆかを あるきながら、足もとの ガラスを 1マスずつ ぬっていく。ぬる まえに、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
+    ['bucket', '塗りつぶし', 'ゆかを あるいて、ガラスの上で 立ちどまっては、足もとを 1マスずつ ぬっていく。ぬる とき、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
     ['shuffler', '並べ替え', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', '循環参照', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
     ['fake', 'にせブロック', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。うごかないけれど、ぶつかると ダメージ。上から ふむと たおせる。へんしゅう中は みわけが つかない'],
@@ -551,16 +551,17 @@
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake' || e.type === 'bucket') {
         // おもさとあるぎょう(縁やかべで折り返す)
         if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // にせブロックは その場に ある
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : e.type === 'bucket' ? 18 : 28;
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
         if (e.lim) { const mc = (e.x + e.w / 2) / T; if (mc < e.lim[0] + .5) e.dir = 1; else if (mc > e.lim[1] + .5) e.dir = -1; } // 行ったり来たりの はんい(マス)
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
         const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
-        if (e.type === 'fake') { /* あるかない */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
-        if (e.type === 'bucket') { // 足もとの ガラスを、すこし ちかちかしてから ぬる
-          const bx = Math.floor((e.x + e.w / 2) / T), by = Math.floor((e.y + e.h + 1) / T);
-          if (paintableAt(bx, by)) { e.pt += dt; e.ptc = [bx, by]; if (e.pt >= .35) { paintCell(e, bx, by); e.pt = 0; } } else e.pt = 0;
+        const bkx = Math.floor((e.x + e.w / 2) / T), bky = Math.floor((e.y + e.h + 1) / T);
+        const bkOn = e.type === 'bucket' && paintableAt(bkx, bky) && Math.abs((e.x + e.w / 2) - (bkx * T + T / 2)) <= 2; // ガラスの まんなかに きたら 立ちどまる
+        if (e.type === 'fake') { /* あるかない */ } else if (bkOn) { /* 塗るあいだは 立ちどまる */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
+        if (e.type === 'bucket') { // 立ちどまって、足もとが ちかちか してから ぬる。ぬりおわったら また すすむ
+          if (bkOn) { e.pt += dt; e.ptc = [bkx, bky]; if (e.pt >= .45) { paintCell(e, bkx, bky); e.pt = 0; } } else e.pt = 0;
         }
       } else if (e.type === 'condfmt' || e.type === 'shuffler') {
         e.cd -= dt; e.tele = e.cd < 1 ? 1 : 0; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
@@ -1358,7 +1359,7 @@
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
       if (e.type === 'autofill' && e.cd < .8 && e.made < e.max && fillWindowCount(e) < e.cap) { const tg = fillTarget(e); if (tg) { ctx.globalAlpha = .35 + .3 * Math.sin(e.t * 18); ctx.fillStyle = e.c !== undefined ? AF_COL[e.c] : '#70AD47'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.globalAlpha = 1; ctx.strokeStyle = e.c !== undefined ? AF_COL[e.c] : '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
-      if (e.type === 'bucket' && e.pt > 0 && e.ptc) { const bl = .5 + .5 * Math.sin(e.t * 26); ctx.globalAlpha = .25 + .35 * bl * (e.pt / .35 + .4); ctx.fillStyle = AF_COL[e.c] || '#fff'; ctx.fillRect(e.ptc[0] * T - cx, e.ptc[1] * T - cy, T, T); ctx.globalAlpha = 1; }
+      if (e.type === 'bucket' && e.pt > 0 && e.ptc) { const bl = .5 + .5 * Math.sin(e.t * 26); ctx.globalAlpha = .25 + .35 * bl * (e.pt / .45 + .4); ctx.fillStyle = AF_COL[e.c] || '#fff'; ctx.fillRect(e.ptc[0] * T - cx, e.ptc[1] * T - cy, T, T); ctx.globalAlpha = 1; }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
