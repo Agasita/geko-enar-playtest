@@ -360,7 +360,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <!-- 13 ワールドと窓 -->
 <section class="page">
   <h1>ワールドと、窓の景色</h1>
-  <p>シートの一部のセルが窓になり、外の景色が見えます。ワールドごとに、景色とセルの色が変わります。ワールド4からは、窓のよろい戸がパタパタ開け閉めします（先のワールドほど、速く、長く閉まる）。</p>
+  <p>シートの白いセルが、くるりとひっくり返って、外の景色が見えます（ふちの枠はありません）。ワールドごとに、景色とセルの色が変わります。ワールド4からは、景色のセルが、波のようにくるりと白に戻ったり、また開いたりします（先のワールドほど、速く、長く閉じる）。太陽や月は遠くにあるので、画面にくっついていて、窓が2つあっても1つだけ見えます。</p>
   <div class="world" id="worldGrid"></div>
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※景色の割り当ては仮です</span><span class="pn"></span></div>
 </section>
@@ -541,8 +541,8 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     const names = { 1: '草原', 2: '森', 3: '湖', 4: '夕焼け', 5: '洞窟', 6: '春', 7: '夏', 8: '秋', 9: '冬', 10: '夜', 11: '空', 12: '火山', 13: 'こわれたシート', 14: '改ページプレビュー' };
     const grid = document.getElementById('worldGrid');
     for (let w = 1; w <= 14; w++) {
-      const i = g.LEVELS.findIndex(l => l.world === w); const id = g.LEVELS[i].id; const x = await begin(id); const per = { 4: 16, 5: 15, 6: 14, 7: 10, 8: 9.5, 9: 9, 10: 6.5, 11: 6, 12: 6, 13: 4.5, 14: 4.5 }[w]; x.t = per ? (w === 7 ? 5.4 : per * 0.12) : 3 + w * 0.7; x.cam.x = 0;
-      const f = document.createElement('figure'); const im = document.createElement('img'); im.className = 'shot'; im.src = snap(x, [9, 6]); const cp = document.createElement('figcaption'); cp.textContent = 'W' + w + '：' + names[w] + (w === 7 ? '（よろい戸が閉まる途中）' : ''); f.append(im, cp); grid.appendChild(f);
+      const i = g.LEVELS.findIndex(l => l.world === w); const id = g.LEVELS[i].id; const x = await begin(id); const per = { 4: 16, 5: 15, 6: 14, 7: 10, 8: 9.5, 9: 9, 10: 6.5, 11: 6, 12: 6, 13: 4.5, 14: 4.5 }[w]; x.t = per ? Math.max(1.8, per * 0.3) : 3 + w * 0.7; x.cam.x = 0;
+      const f = document.createElement('figure'); const im = document.createElement('img'); im.className = 'shot'; im.src = snap(x, [9, 6]); const cp = document.createElement('figcaption'); cp.textContent = 'W' + w + '：' + names[w] ; f.append(im, cp); grid.appendChild(f);
     }
     // ブロックの絵
     const strip = document.getElementById('blockStrip');
