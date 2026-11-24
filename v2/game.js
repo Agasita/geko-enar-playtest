@@ -551,7 +551,7 @@
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake' || e.type === 'bucket') {
         // おもさとあるぎょう(縁やかべで折り返す)
         if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // にせブロックは その場に ある
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : e.type === 'bucket' ? 24 : 28;
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : e.type === 'bucket' ? 18 : 28;
         if (e.lim) { const mc = (e.x + e.w / 2) / T; if (mc < e.lim[0] + .5) e.dir = 1; else if (mc > e.lim[1] + .5) e.dir = -1; } // 行ったり来たりの はんい(マス)
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
