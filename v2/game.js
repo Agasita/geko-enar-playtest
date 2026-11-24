@@ -540,7 +540,7 @@
                 e.look = look; e.ex = dx; e.ey = dy;
         // あつい(赤い)ブロックが となりに くると、あつがって 1マス はなれる(はんたいがわへ)
         const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
-        if (e.mv > 0) { e.mv -= dt; const k = Math.max(0, e.mv / .25); e.x = tx0 - e.fdx * T * k; e.y = ty0 - e.fdy * T * k; if (e.mv <= 0) { e.mv = 0; e.x = tx0; e.y = ty0; } }
+        if (e.mv > 0) { e.mv -= dt; const k = Math.max(0, e.mv / .5); if (Math.random() < dt * 40) { const sd = Math.random() < .5 ? -1 : 1; G.parts.push({ x: e.x + 7 + sd * 5, y: e.y + 3, vx: sd * (25 + Math.random() * 35), vy: -50 - Math.random() * 40, g: 260, s: 2, life: .45 + Math.random() * .25, col: Math.random() < .5 ? '#8FD0FF' : '#D6EEFF' }); } e.x = tx0 - e.fdx * T * k; e.y = ty0 - e.fdy * T * k; if (e.mv <= 0) { e.mv = 0; e.x = tx0; e.y = ty0; } }
         else {
           const hot = (x, y) => colorAt(x, y) === 1;
           const tries = [[hot(e.gx - 1, e.gy), 1, 0], [hot(e.gx + 1, e.gy), -1, 0], [hot(e.gx, e.gy - 1), 0, 1], [hot(e.gx, e.gy + 1), 0, -1]];
@@ -550,7 +550,7 @@
             if (solidCell(nx, ny) || liftRailHit(nx, ny)) continue;
             if (overlap(nx * T, ny * T, T, T, p.x, p.y, p.w, p.h)) continue;
             if (G.enemies.some(o => o !== e && !o.dead && overlap(nx * T, ny * T, T, T, o.x, o.y, o.w, o.h))) continue;
-            e.gx = nx; e.gy = ny; e.fdx = mx; e.fdy = my; e.mv = .25; SFX.place(); spawnParts(e.x + 7, e.y + 7, 5, '#E8563F', 40); break;
+            e.gx = nx; e.gy = ny; e.fdx = mx; e.fdy = my; e.mv = .5; SFX.bad(); spawnParts(e.x + 7, e.y + 7, 5, '#E8563F', 40); break;
           }
         }
       }
@@ -1317,15 +1317,16 @@
   }
   // にせブロック: とおくでは ふつうの ブロック。ちかづくと とじた目、かなり ちかづくと 目が あいて こちらを おう。へんしゅう中は しょうたいが わからない
   function drawFake(e, cx, cy) {
-    const x = Math.round(e.x - 1 - cx), y = Math.round(e.y - 2 - cy);
+    const hotMv = e.mv > 0; // あつがって にげている ところ: 目を 見開いて、ぶるぶる ふるえる
+    const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0); ctx.globalAlpha = 1;
-    const look = G.edit.on ? 0 : (e.look || 0);
+    const look = hotMv ? 2 : G.edit.on ? 0 : (e.look || 0);
     if (look === 1) { ctx.fillStyle = 'rgba(38,38,38,.32)'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
     else if (look === 2) {
       ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
-      const px = (e.ex || 0) > 6 ? 2 : (e.ex || 0) < -6 ? 0 : 1, py = (e.ey || 0) > 6 ? 2 : (e.ey || 0) < -6 ? 0 : 1;
-      ctx.fillStyle = 'rgba(38,38,38,.5)'; ctx.fillRect(x + 3 + px, y + 5 + py, 2, 2); ctx.fillRect(x + 9 + px, y + 5 + py, 2, 2);
+      const px = hotMv ? 1 : (e.ex || 0) > 6 ? 2 : (e.ex || 0) < -6 ? 0 : 1, py = hotMv ? 1 : (e.ey || 0) > 6 ? 2 : (e.ey || 0) < -6 ? 0 : 1;
+      ctx.fillStyle = 'rgba(38,38,38,.5)'; if (hotMv) { ctx.fillStyle = 'rgba(38,38,38,.75)'; ctx.fillRect(x + 4 + px, y + 6 + py, 1, 1); ctx.fillRect(x + 10 + px, y + 6 + py, 1, 1); } else { ctx.fillRect(x + 3 + px, y + 5 + py, 2, 2); ctx.fillRect(x + 9 + px, y + 5 + py, 2, 2); }
       ctx.fillStyle = 'rgba(38,38,38,.28)'; ctx.fillRect(x + 3, y + 4, 4, 1); ctx.fillRect(x + 9, y + 4, 4, 1);
     }
   }
