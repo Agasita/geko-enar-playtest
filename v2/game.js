@@ -162,8 +162,10 @@
   const ENER = ((/[?&]hero=(\w+)/.exec(location.search) || [])[1]) !== 'gekko';
   // 操作感の数値。パネル(操作感チューニング)から リアルタイムに かえられる。もとの値は TUNE_DEF
   const TUNE_DEF = { RUN: 105, ACC: 1000, AIR: 720, FRIC: 1400, AIRF: 200, GRAV: 1100, FALLM: 1.45, JUMP: 300, MAXFALL: 420, CUT: 2.6, COYOTE: .1, JBUF: .11,
-    HOVER_T: .35, HOVER_VY: 36, BOUNCE: 440, DASH_V: 235, DASH_T: .17, ICE_ACC: 260, ICE_FRIC: 70 };
+    HOVER_T: .35, HOVER_VY: 36, BOUNCE: 440, DASH_V: 235, DASH_T: .17, ICE_ACC: 260, ICE_FRIC: 70,
+    WIN_FLIP: .6, WIN_PERIOD: 1.6, WIN_CLOSED: 1 };
   const TU = Object.assign({}, TUNE_DEF);
+  if (window.GFXX) window.GFXX.tune = TU; // 窓のくるりの速さも、パネルから
   if (ENER) document.body.classList.add('ener');
   const input = { left: false, right: false, down: false, up: false, jumpHeld: false, jumpP: false, atkP: false, dashP: false, editP: false };
 
@@ -1926,6 +1928,8 @@
         ['HOVER_T', 'ふわりの時間(秒)', 0, 1.5, 0.01], ['HOVER_VY', 'ふわりのおちる速さ', 0, 150, 1], ['BOUNCE', 'ばねの強さ', 200, 800, 5],
         ['DASH_V', 'ダッシュ速度', 100, 500, 5], ['DASH_T', 'ダッシュ時間(秒)', 0.05, 0.5, 0.01],
         ['ICE_ACC', 'こおりの加速', 50, 1000, 10], ['ICE_FRIC', 'こおりのブレーキ', 10, 600, 5]]],
+      ['まど(背景)', [
+        ['WIN_FLIP', 'めくれる時間(秒)', 0.2, 2, 0.05], ['WIN_PERIOD', '閉じる間隔(倍率・大きいほど たまに)', 0.5, 4, 0.1], ['WIN_CLOSED', '閉じている長さ(倍率)', 0, 2, 0.1]]],
     ];
     const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
     const panel = el('aside', null); panel.id = 'tune';
