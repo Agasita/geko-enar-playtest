@@ -905,7 +905,7 @@
     build(m) {
       m.floor(); m.ceil(3); m.pit(10, 17);
       for (let x = 10; x <= 17; x++) m.blk(x, 10, 1);
-      m.ent('autofill', 9, 7, { d: 1, c: 2, reach: 8, max: 8, rate: 1.1 });
+      m.ent('autofill', 9, 7, { d: 1, c: 2, reach: 8, max: 8 });
       m.gem(5, 8); m.gem(13, 7); m.gem(21, 8);
       m.flag = [23, 9];
     },
@@ -920,7 +920,7 @@
     ],
     build(m) {
       m.floor(); m.ceil(3); m.pit(8, 25);
-      m.ent('autofill', 7, 9, { d: 1, reach: 12, rate: 0.9 });
+      m.ent('autofill', 7, 9, { d: 1, reach: 12 });
       m.gem(12, 8); m.gem(20, 8); m.gem(27, 8);
       m.flag = [28, 9];
     },
