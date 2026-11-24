@@ -31,7 +31,7 @@ def main():
         if os.path.exists(OUT):
             os.remove(OUT)
         subprocess.run([browser, '--headless=new', '--disable-gpu', '--no-pdf-header-footer', '--user-data-dir=' + prof,
-                        '--virtual-time-budget=90000', '--print-to-pdf=' + OUT, 'http://127.0.0.1:%d/docs/guide/guide.html' % port],
+                        '--virtual-time-budget=240000', '--print-to-pdf=' + OUT, 'http://127.0.0.1:%d/docs/guide/guide.html' % port],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
     finally:
         srv.shutdown(); shutil.rmtree(prof, ignore_errors=True)

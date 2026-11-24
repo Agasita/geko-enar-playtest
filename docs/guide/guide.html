@@ -67,9 +67,9 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <!-- 1 表紙 -->
 <section class="page cover">
   <h1>エナー<i>と</i>ふしぎのシート</h1>
-  <p class="sub">ゲームガイド（v2・14ワールド51ステージ）</p>
+  <p class="sub" id="coverSub">ゲームガイド（v2）</p>
   <p class="lead">世界は「表計算シート」、ブロックは「色つきのセル」。<br>Excelの機能を、遊びに使うと？ エナーが、こわれたシートを直しに行きます。</p>
-  <p class="toc">しくみ／世界観／編集道具／使い方／ブロック／敵キャラ／組み合わせ／改ページプレビュー／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
+  <p class="toc">しくみ／世界観／オープニング／編集道具／使い方／ブロック／敵キャラ／組み合わせ／改ページプレビュー／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
 </section>
 
 <!-- 2 しくみ -->
@@ -109,6 +109,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <li>4つの目標：クリア／かけらを全部／ノーミス／ムダなし（コスト目標以下）</li>
         <li>チェックポイントの旗で、落ちても途中から再開</li>
         <li>エナジーの玉をとると、「なおす」のコストが15回復</li>
+        <li>公開用の版では、調整パネルを隠し、見た目は「Excel風」だけ（開発用に ?dev=1 で戻せる）</li>
       </ul>
     </div>
   </div>
@@ -127,16 +128,9 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       <p>名前を見ただけで、動きが想像できるように、#DIV/0!・オートフィル・条件つき書式・並べ替え・循環参照…を敵にしています。</p>
     </div>
     <div>
-      <h2>オープニング（5場面の紙芝居）</h2>
-      <table>
-        <tr><th style="width:10%">場面</th><th>内容</th></tr>
-        <tr><td>1</td><td>ひだまりのシートで、のんびり暮らすエナー（朝の草原）</td></tr>
-        <tr><td>2</td><td>空がちらちらして、暑い日と寒い日がごちゃまぜになる</td></tr>
-        <tr><td>3</td><td>「ぴかぴかクリーナー」のインストール完了の通知</td></tr>
-        <tr><td>4</td><td>あちこちのシートが壊れ、畑の作物も育たない</td></tr>
-        <tr><td>5</td><td>「原因をつきとめて、世界を元どおりにしよう！」エナーは、はばたく</td></tr>
-      </table>
-      <p class="muted" style="margin-top:2mm">タップかSpaceで次へ、Escかスキップで飛ばせます。タイトル画面の「オープニング」から、いつでも見直せます。</p>
+      <h2>オープニング</h2>
+      <p>5場面の紙芝居です。次のページに、実際の絵と、画面に出る文章をのせています。</p>
+      <p class="muted">タップかSpaceで次へ、Escかスキップで飛ばせます。タイトル画面の「オープニング」から、いつでも見直せます。</p>
       <h2 style="margin-top:4mm">ステージの演出</h2>
       <ul>
         <li>開始：「WORLD n／ステージ番号／名前」のタイトルが大きく出て、その間は動きとタイムが止まる</li>
@@ -146,6 +140,14 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       </ul>
     </div>
   </div>
+</section>
+
+<!-- 3b オープニング -->
+<section class="page">
+  <h1>オープニング（5場面の紙芝居）</h1>
+  <p>絵本のように、1枚の絵と、1文字ずつ出てくる文章で進みます。実際の画面を、そのまま写しています。</p>
+  <div class="cols c3" id="opGrid" style="margin-bottom:3mm"></div>
+  <p class="muted">タップ／Space／Enterで次へ。Esc・スキップで飛ばせます。最初の「あそぶ」で一度だけ流れ、タイトルの「オープニング」から見直せます。</p>
 </section>
 
 <!-- 4 道具一覧 -->
@@ -301,7 +303,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <section class="page">
   <h1>敵キャラクター図鑑（2／2）</h1>
   <table class="dex roomy" id="dex2"><tr><th style="width:17%">敵</th><th style="width:38%">動き</th><th>倒し方・ヒント</th></tr></table>
-  <p class="muted" style="margin-top:3mm">敵は11種。ほかの敵と見分けがつくよう、輪郭と色を変えています。</p>
+  <p class="muted" style="margin-top:3mm">敵は12種。ほかの敵と見分けがつくよう、輪郭と色を変えています。</p>
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
 </section>
 
@@ -336,6 +338,36 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
 </section>
 
+<!-- 12a 新しい敵の面 -->
+<section class="page">
+  <h1>にせブロックと、塗りつぶし（ワールド13）</h1>
+  <div class="tool compact">
+    <div class="txt">
+      <div class="head"><b>13-4 にせブロック</b></div>
+      <p>空にういたブロックを「ならべかえ」で下へ寄せて橋を作る。でも、橋のまんなかに動かないにせブロックがいて、思った形にならない（ダメージはなく、壁のように立ちふさがる。編集もコピーもきかない）。</p>
+    </div>
+    <figure><img class="shot" data-shot="f4-b"><figcaption>寄せる前</figcaption></figure>
+    <figure><img class="shot" data-shot="f4-a"><figcaption>寄せたあと（真ん中だけ、でこぼこ）</figcaption></figure>
+  </div>
+  <div class="tool compact">
+    <div class="txt">
+      <div class="head"><b>13-13 あつがりのにせブロック</b></div>
+      <p>トンネルをにせブロックがふさいでいる。上の小部屋の赤い（熱い）ブロックを、「ならべかえ」でにせブロックの上へ落とすと、熱がって汗を飛ばし、目を見開いて震えながら、1マス逃げる。</p>
+    </div>
+    <figure><img class="shot" data-shot="f13-b"><figcaption>落とす前</figcaption></figure>
+    <figure><img class="shot" data-shot="f13-a"><figcaption>にせブロックが沈んで、道があく</figcaption></figure>
+  </div>
+  <div class="tool compact">
+    <div class="txt">
+      <div class="head"><b>13-12 塗りつぶし</b></div>
+      <p>歩いては立ちどまり、足もとのガラスを1マスずつ（1秒かけて）赤く塗っていく。塗られると熱くて渡れない。全部塗られる前に「シートをまもる」で保護するか、踏んで倒すと、塗ったガラスは元にもどる。</p>
+    </div>
+    <figure><img class="shot" data-shot="f12-b"><figcaption>何もしないと、橋が赤く塗られていく</figcaption></figure>
+    <figure><img class="shot" data-shot="f12-a"><figcaption>先に保護すると、塗られない</figcaption></figure>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
+</section>
+
 <!-- 12b 改ページプレビュー -->
 <section class="page">
   <h1>改ページプレビュー（ワールド14）</h1>
@@ -360,7 +392,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <!-- 13 ワールドと窓 -->
 <section class="page">
   <h1>ワールドと、窓の景色</h1>
-  <p>シートの白いセルが、くるりとひっくり返って、外の景色が見えます（ふちの枠はありません）。ワールドごとに、景色とセルの色が変わります。ワールド4からは、景色のセルが、波のようにくるりと白に戻ったり、また開いたりします（先のワールドほど、速く、長く閉じる）。太陽や月は遠くにあるので、画面にくっついていて、窓が2つあっても1つだけ見えます。</p>
+  <p>シートの白いセルが、くるりとひっくり返って、外の景色が見えます（ふちの枠はありません）。ワールドごとに、景色とセルの色が変わります。ワールド4からは、景色のセルが、波のようにくるりと白に戻ったり、また開いたりします（先のワールドほど、速く、長く閉じる）。太陽や月は、そのステージの最初の窓の中に1つだけあり、窓といっしょに流れます（画面にはついてきません）。</p>
   <div class="world" id="worldGrid"></div>
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※景色の割り当ては仮です</span><span class="pn"></span></div>
 </section>
@@ -374,7 +406,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
 <section class="page">
   <h1>ステージ一覧（2／2）</h1>
   <table class="small" id="stg2"><tr><th style="width:8%">ステージ</th><th style="width:25%">名前</th><th>使える道具</th><th style="width:10%">コスト上限</th><th style="width:9%">大きさ</th></tr></table>
-  <p class="muted" style="margin-top:2.5mm">大きさは、横×縦（マス）。体験版は、1-1・1-2・1-3・2-1・3-1・4-1・5-1・5-2の8ステージ。ワールド13は、新しい敵を試すための仮の構成です。</p>
+  <p class="muted" style="margin-top:2.5mm">大きさは、横×縦（マス）。体験版は、1-1・1-2・1-3・2-1・3-1・4-1・5-1・5-2の8ステージ。ワールド13は、新しい敵を試すための仮の構成です（13-12・13-13は末尾に追加）。</p>
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
 </section>
 
@@ -396,7 +428,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     <div>
       <h2>やりこみと、助けになるしくみ</h2>
       <ul>
-        <li><b>かけらノート</b>：そのステージのかけらを全部集めると、世界の謎や冒険のヒントを書いたメモが読める（いまは1-1〜13-4）</li>
+        <li><b>かけらノート</b>：そのステージのかけらを全部集めると、世界の謎や冒険のヒントを書いたメモが読める</li>
         <li><b>れんしゅうモード</b>：コストが無制限になる（記録は残らない）</li>
         <li><b>アシスト</b>：同じステージで3回以上ミスすると、コスト上限が1.5倍になる（クリアすると元に戻る）</li>
         <li><b>セーブ</b>：ブラウザに自動で保存される。ステージ選択画面から消せる</li>
@@ -417,7 +449,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <tr><th style="width:24%">できること</th><th>内容</th></tr>
         <tr><td>大きさ</td><td>横20〜160マス、縦12〜60マス</td></tr>
         <tr><td>置けるもの</td><td>色ブロック（6色）、鋼、ひび割れ壁、磁石、判定セル、スイッチ、扉、リフト、かけら、エナジーの玉、チェックポイント、スタート、ゴール</td></tr>
-        <tr><td>敵（11種）</td><td>オートフィル（向き・作る色）、にせブロック（色）、並べ替え（横・縦）など。「はんい」ツールで、条件つき書式・並べ替え・循環参照の範囲を、2か所のクリックで決める</td></tr>
+        <tr><td>敵（12種）</td><td>オートフィル（向き・作る色）、にせブロック（色）、塗りつぶし（塗る色）、並べ替え（横・縦）など。「はんい」ツールで、条件つき書式・並べ替え・循環参照の範囲を、2か所のクリックで決める</td></tr>
         <tr><td>設定</td><td>名前、エナジー上限、回復、目標コスト、背景の色、使える道具、ヒント（横位置を指定）</td></tr>
       </table>
     </div>
@@ -430,7 +462,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <tr><td>戻す・やり直し</td><td>最大60回</td></tr>
         <tr><td>チェック</td><td>保存時に、足もとに地面がない、リフトの道にブロックがある、扉を開ける仕掛けがない、赤と青が隣り合って溶ける、などを知らせる</td></tr>
       </table>
-      <p class="muted" style="margin-top:2mm">窓の景色・セルの色は、まだエディターからは指定できません（ステージデータ側で指定）。</p>
+      <p class="muted" style="margin-top:2mm">窓の景色・セルの色、塗りつぶしの歩く範囲は、まだエディターからは指定できません（ステージデータ側で指定）。</p>
     </div>
   </div>
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span></div>
@@ -444,6 +476,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     <tr><td>敵「#REF!」</td><td>ついていく相手がいなくなると、いっしょに消える</td><td>必要ないと判断した</td></tr>
     <tr><td>敵「重複データ」</td><td>そっくりなふたごの片方を踏むと、もう片方も消える</td><td>使い道が浮かばなかった。使い道が決まれば、「重複の削除」の道具として再検討</td></tr>
     <tr><td>オープニングの描き下ろし</td><td>エナーを喜怒哀楽つきの一枚絵にした</td><td>好みに合わず、元のドット絵に戻した（作り方の履歴は残っている）</td></tr>
+    <tr><td>テーマの切り替え（ソリッド版・元の絵）</td><td>見た目を3種から選べた</td><td>公開用の版は、Excel風だけに。開発用の ?dev=1 では選べる</td></tr>
     <tr><td>条件つき書式（旧案）</td><td>歩き回って、色が茶・赤・青に変わる敵</td><td>「ブロックの状態を勝手に変える」ほうが面白いので、作り直した</td></tr>
     <tr><td>並べ替え（旧案）</td><td>左右の足もとの2マスを入れ替える敵</td><td>範囲を複数持てるように、「片側へ寄せる」動きに作り直した</td></tr>
     <tr><td>循環参照（旧案）</td><td>円を描いて回る、踏める敵</td><td>「マスに沿って直角に曲がる、倒せない敵」に作り直した</td></tr>
@@ -458,9 +491,9 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
     <div class="card">
       <h2>まだ確認していないこと</h2>
       <ul>
-        <li>人が遊んだときの難しさ（特にワールド13の敵の間隔や、オートフィルの作るペース）</li>
+        <li>人が遊んだときの難しさ（特に、塗りつぶしの塗る時間・歩く速さと、にせブロックの面の分かりやすさ）</li>
         <li>スマホ実機での、画面の収まりと、エディターの押しやすさ</li>
-        <li>「ソリッド版」「元の絵」のテーマでの見た目（新しい敵は「てくてく」の絵で代用、窓は出ない）</li>
+        <li>オートフィルの間隔を2.2秒にそろえたあとの、13-10・13-11の遊びごこち</li>
         <li>効果音と、窓を含めた動きの滑らかさ</li>
       </ul>
     </div>
@@ -472,7 +505,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <li>最後の「ぴかぴか工場」と、クリーナーとの仲直り</li>
         <li>スコアアタックと、一風変わったステージ（バベルの塔のビッグパスワード面のようなもの）</li>
         <li>並べ替えの敵と、エナーの道具を組み合わせたステージ</li>
-        <li>オートフィルのペースを、個体ごとにするか、3段階に揃えるか</li>
+        <li>ステージ作成から、塗りつぶしの歩く範囲を指定できるように</li>
         <li>以前からいる敵（てくてく、#DIV/0!など）の絵の見直し</li>
         <li>ステージ作成から、窓・セルの色・改ページプレビューを指定できるように</li>
         <li>ワールド14（改ページプレビュー）の、難しさの確認と、ステージ追加</li>
@@ -534,6 +567,11 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       g.runTool(ed[0]); setShot('fg-3', snap(x, [13, 8]));
       g.runTool(ed[1]); for (let k = 0; k < 20; k++) { x.hitstop = 0; g.update(1 / 60); } setShot('fg-4', snap(x, [13, 8])); }
     { const x = await begin('14-3'); wait(x, 1); g.runTool({ tool: 'zoom' }); for (let k = 0; k < 20; k++) { x.hitstop = 0; g.update(1 / 60); } setShot('fg-5', snap(x, [x.level.start[0] + 3, 8])); }
+    // 新しい敵の面
+    await pair('f4', '13-4', 0, { cell: [13, 8], after: 20 });
+    await pair('f13', '13-13', 0, { cell: [14, 8], after: 60 });
+    { const x = await begin('13-12'); wait(x, 7); setShot('f12-b', snap(x, [12, 8])); }
+    { const x = await begin('13-12'); g.runTool(x.level.solution[0].edits[0]); wait(x, 7); setShot('f12-a', snap(x, [12, 8])); }
     // 仕掛け
     { const x = await begin('8-1'); setShot('g-magnet', snap(x, [x.level.w / 2 | 0, 6])); }
     { const x = await begin('7-1'); setShot('g-lift', snap(x, [x.level.w / 2 | 0, 6])); }
@@ -564,7 +602,8 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       ['#DIV/0!', 'div0', 'ゆっくり往復するエラーの塊', '踏めない・倒せない。タイミングを見て、よける'],
       ['オートフィル', 'autofill', 'ねらうマスに、ブロックを作り続ける。作る色は、種類で違う（赤・氷なども）。ねらうマスが光る', '踏むと倒せる。作ったブロックを「ならべかえ」で寄せると、また作る'],
       ['しろい文字', 'moji', '白いシートに溶けこみ、ほとんど見えない。近づくと現れて追いかける', '踏むと倒せる'],
-      ['にせブロック', 'fake', 'ブロックに擬態して動かない。遠くでは見分けがつかず、近づくと閉じた目、かなり近づくと目が開いてエナーを目で追う', '触れるとダメージ。上から踏むと倒せる。編集中は見分けがつかない'],
+      ['にせブロック', 'fake', 'ブロックに擬態して、壁のように立ちふさがる。遠くでは見分けがつかず、近づくと閉じた目、かなり近づくと目が開いてエナーを目で追う。ダメージはない', '倒せない・編集もコピーもきかない。熱い（赤い）ブロックが隣に来ると、熱がって汗を飛ばし、反対側へ1マス逃げる'],
+      ['塗りつぶし', 'bucket0', '床を歩き、ガラスの上で立ちどまっては、足もとを1マスずつ1秒かけて塗る（足もとが、ちかちかする）。塗られたガラスは、その色の性質になる', '踏むと倒せて、塗ったガラスは全部元にもどる。「シートをまもる」で保護したガラスには塗れない'],
       ['条件つき書式', 'condfmt', '宙に浮いて、点線のはんい（複数可）のブロックの色を、ときどき勝手に変える。変わる前に、はんいがちかちかする。はんいが2つあると、変わる色がずれる', '踏むと倒せる。「シートをまもる」で、書きかえを防げる'],
       ['並べ替え', 'shuffler', 'はんい（複数可・横または縦）のブロックを、ときどき片側へ寄せる。寄せる向きは毎回逆。寄せる前に、はんいが光る', '2回踏むと倒せる。エナーのいる列は、寄せられない'],
       ['循環参照', 'circ', 'マスに沿って、かどを直角に曲がりながら、決まった四角形をぐるぐる回る', '踏めない・倒せない。通り道が薄く見えるので、タイミングで通りぬける'],
@@ -581,7 +620,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       const label = lv.id === 'LAB' ? '実験' : lv.id;
       const cost = lv.id === 'LAB' ? '回復あり' : (lv.tools && lv.tools.length ? lv.energy : '―');
       const tr = document.createElement('tr'); tr.innerHTML = '<td>' + label + '</td><td>' + lv.name + '</td><td>' + (lv.id === 'LAB' ? '全部' : tools) + '</td><td>' + cost + '</td><td>' + lv.w + '×' + lv.h + '</td>';
-      document.getElementById(n < 26 ? 'stg1' : 'stg2').appendChild(tr);
+      document.getElementById(n < 27 ? 'stg1' : 'stg2').appendChild(tr);
     });
     // ページ番号
     document.querySelectorAll('.page').forEach((p, i) => {
@@ -590,6 +629,17 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       if (!f) { f = document.createElement('div'); f.className = 'foot'; f.innerHTML = '<span>エナーとふしぎのシート ゲームガイド</span><span class="pn"></span>'; p.appendChild(f); }
       f.querySelector('.pn').textContent = i + 1;
     });
+    { const real = g.LEVELS.filter(l => !l.custom && l.id !== 'LAB'); const ws = Math.max(...real.map(l => l.world)); document.getElementById('coverSub').textContent = 'ゲームガイド（v2・' + ws + 'ワールド' + real.length + 'ステージ）'; }
+    // オープニング: 実際の画面から、5場面の絵と文章を写す
+    {
+      const D = W.document, og = document.getElementById('opGrid'), ocv = D.querySelector('#op-cv');
+      for (let s = 0; s < 5; s++) {
+        const text = g.OP.peek(s, 2.6);
+        const c = document.createElement('canvas'); c.width = 576; c.height = 324; const k = c.getContext('2d'); k.imageSmoothingEnabled = false; k.drawImage(ocv, 0, 0, 576, 324);
+        const f = document.createElement('figure'); const im = document.createElement('img'); im.className = 'shot'; im.src = url(c); const cp = document.createElement('figcaption'); cp.style.cssText = 'font-size:9pt;color:#1F2A44;margin-top:1.5mm;line-height:1.5'; cp.innerHTML = '<b>場面' + (s + 1) + '</b><br>' + text.split(String.fromCharCode(10)).join('<br>'); f.append(im, cp);
+        og.appendChild(f);
+      }
+    }
     frame.remove();
     document.body.setAttribute('data-ready', '1'); document.title = document.title + ' (ready)';
   }

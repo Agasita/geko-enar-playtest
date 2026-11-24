@@ -1852,6 +1852,7 @@
     function go(i) { idx = i; t0 = performance.now(); shown = -1; drawDots(); }
     const api = {
       start(to) { next = to || 'select'; G.mode = 'opening'; UI.show('#screen-opening'); $('#hud').classList.add('hide'); $('#touch').classList.add('hide'); $('#editbar').classList.add('hide'); running = true; go(0); cancelAnimationFrame(raf); frame(); },
+      peek(i, t) { scene(i, t); return SCENES[i]; }, // ガイド用: i場面の絵を、t秒めの ようすで かく（文もかえす）
       advance() { if (!running) return; const full = SCENES[idx]; if (shown < full.length) { t0 = performance.now() - full.length / 26 * 1000; return; } if (idx >= SCENES.length - 1) { api.finish(); } else go(idx + 1); },
       finish() { running = false; cancelAnimationFrame(raf); save.seenOpening = true; persist(); if (next === 'title') UI.title(); else UI.select(); },
     };
@@ -2067,7 +2068,7 @@
   requestAnimationFrame(loop);
 
   // ===== テストようの口(自どうプレイが使う) =====
-  window.__geko = {
+  window.__geko = { OP,
     G, input, press, update, render, UI, LEVELS, T, TL, COLORS, TOOLS, makeEnemy, setEdit, undoEdit, redoEdit, runPlan, planFor, normRect,
     // 自どうプレイ・テストよう: {tool, rect, dst, srcCell, col, opts} を指定して、実際のなおすとおなじ処理をぎょうう
     runTool(spec) {
