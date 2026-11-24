@@ -927,6 +927,22 @@
     solution: [{ x: 7, edits: [{ tool: 'sort', rect: { x0: 8, y0: 10, x1: 25, y1: 10 }, opts: { sort: 'R' } }] }],
   }));
 
+  L.push(make({
+    id: '13-12', name: '塗りつぶし', world: 13, w: 26, tools: ['protect'], energy: 12, bg: '#DCE9C9', bg2: '#CADBB4',
+    hints: [
+      { x: 2, text: '「塗りつぶし」は、点線のはんいの ガラスに、色を塗る。ここでは 赤（あつくてさわれない）' },
+      { x: 5, text: '塗られる前に「シートをまもる」で ガラスをまもるか、塗りつぶしを踏んで倒すと、ガラスは もとに もどる' },
+    ],
+    build(m) {
+      m.floor(); m.ceil(3); m.pit(8, 15);
+      for (let x = 8; x <= 15; x++) m.blk(x, 10, 5);
+      m.ent('bucket', 12, 8, { c: 1, ranges: [[8, 10, 15, 10]] });
+      m.gem(9, 8); m.gem(14, 8); m.gem(21, 8);
+      m.flag = [23, 9];
+    },
+    solution: [{ x: 4, edits: [{ tool: 'protect', rect: { x0: 8, y0: 10, x1: 15, y1: 10 } }] }],
+  }));
+
   // ---- ワールド14: 改ページプレビュー(見えるのは、エナーのまわりだけ。青い枠の外はグレー) ----
   L.push(make({
     id: '14-1', name: '見えるのは まわりだけ', world: 14, w: 34, tools: [], energy: 0, bg: '#D9D2E6', bg2: '#C9C0DA', fog: { w: 11, h: 7 },
