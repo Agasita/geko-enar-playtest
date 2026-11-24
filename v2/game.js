@@ -561,7 +561,7 @@
         const bkOn = e.type === 'bucket' && paintableAt(bkx, bky) && Math.abs((e.x + e.w / 2) - (bkx * T + T / 2)) <= 2; // ガラスの まんなかに きたら 立ちどまる
         if (e.type === 'fake') { /* あるかない */ } else if (bkOn) { /* 塗るあいだは 立ちどまる */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
         if (e.type === 'bucket') { // 立ちどまって、足もとが ちかちか してから ぬる。ぬりおわったら また すすむ
-          if (bkOn) { e.pt += dt; e.ptc = [bkx, bky]; if (e.pt >= .45) { paintCell(e, bkx, bky); e.pt = 0; } } else e.pt = 0;
+          if (bkOn) { e.pt += dt; e.ptc = [bkx, bky]; if (e.pt >= 1) { paintCell(e, bkx, bky); e.pt = 0; } } else e.pt = 0;
         }
       } else if (e.type === 'condfmt' || e.type === 'shuffler') {
         e.cd -= dt; e.tele = e.cd < 1 ? 1 : 0; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
@@ -1359,7 +1359,7 @@
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
       if (e.type === 'autofill' && e.cd < .8 && e.made < e.max && fillWindowCount(e) < e.cap) { const tg = fillTarget(e); if (tg) { ctx.globalAlpha = .35 + .3 * Math.sin(e.t * 18); ctx.fillStyle = e.c !== undefined ? AF_COL[e.c] : '#70AD47'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.globalAlpha = 1; ctx.strokeStyle = e.c !== undefined ? AF_COL[e.c] : '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
-      if (e.type === 'bucket' && e.pt > 0 && e.ptc) { const bl = .5 + .5 * Math.sin(e.t * 26); ctx.globalAlpha = .25 + .35 * bl * (e.pt / .45 + .4); ctx.fillStyle = AF_COL[e.c] || '#fff'; ctx.fillRect(e.ptc[0] * T - cx, e.ptc[1] * T - cy, T, T); ctx.globalAlpha = 1; }
+      if (e.type === 'bucket' && e.pt > 0 && e.ptc) { const bl = .5 + .5 * Math.sin(e.t * 26); ctx.globalAlpha = .25 + .35 * bl * (e.pt / 1 + .4); ctx.fillStyle = AF_COL[e.c] || '#fff'; ctx.fillRect(e.ptc[0] * T - cx, e.ptc[1] * T - cy, T, T); ctx.globalAlpha = 1; }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
