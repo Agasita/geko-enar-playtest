@@ -1109,7 +1109,7 @@
   // ===== 更新 =====
   function update(dt) {
     if (G.mode !== 'play') return;
-    if (G.edit.on) { G.frame++; G.shake = 0; updateDoors(dt); return; }
+    if (G.edit.on) { G.frame++; G.shake = 0; return; } // 編集中は、判定セルも扉も うごかさない(結果は、編集を終えてから)
     if (G.hitstop > 0) { G.hitstop -= dt; return; }
     G.frame++; G.t += dt; if (G.zoomT > 0) G.zoomT = Math.max(0, G.zoomT - dt);
     if (!G.cleared) G.time += dt;
