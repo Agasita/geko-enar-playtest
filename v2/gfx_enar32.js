@@ -8,12 +8,16 @@
   const ON = /[?&]gfx=enar32/.test(location.search);
   if (!ON) return;
   const BASE = 'assets/enar32/';
-  const HD = window.HD = { ready: false, blocks: (function () { const m = (/[?&]blocks=(old|concept|gpt|raw)/.exec(location.search) || [])[1]; return m === 'old' ? null : (m || 'gpt'); })() }; // 茶・鋼・赤・青は、大きい絵(GPT)から32pxに縮めて、決めたパレットに寄せたものを つかう。blocks=old(いまの素材) / concept(原画から) / raw(パレットに寄せる前) でくらべられる(HD.blocks を かえると、その場で きりかわる)
+  const HD = window.HD = { ready: false, blocks: (function () { const m = (/[?&]blocks=(old|concept|gpt|raw|big)/.exec(location.search) || [])[1]; return m === 'old' ? null : (m || 'big'); })() }; // 茶・鋼・赤・青は、大きい絵(GPT)から32pxに縮めて、決めたパレットに寄せたものを つかう。blocks=old(いまの素材) / concept(原画から) / raw(パレットに寄せる前) でくらべられる(HD.blocks を かえると、その場で きりかわる)
+  // 画面の大きさ: ?ts=64 なら 1マス=64px(画面 1152×720)。ふつうは 32(576×360)。ブロックの絵(320px)は、ts=40/64/80/160/320 で ぴったり割り切れる
+  const TS = Math.max(16, Math.min(320, parseInt((/[?&]ts=(\d+)/.exec(location.search) || [])[1], 10) || 32)), SC = TS / 16;
   const cv = document.getElementById('cv');
-  if (cv) { cv.width = 576; cv.height = 360; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.setTransform(2, 0, 0, 2, 0, 0); }
+  if (cv) { cv.width = Math.round(288 * SC); cv.height = Math.round(180 * SC); const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.setTransform(SC, 0, 0, SC, 0, 0); }
+  HD.ts = TS;
   // HDの絵は、2つの引数(x, y)で描くと、半分の大きさ。そのほかの形は、そのまま。
   const _draw = CanvasRenderingContext2D.prototype.drawImage;
   CanvasRenderingContext2D.prototype.drawImage = function (im) {
+    if (im && im.__lw && arguments.length === 3) return _draw.call(this, im, arguments[1], arguments[2], im.__lw, im.__lw * im.height / im.width);
     if (im && im.__hd && arguments.length === 3) return _draw.call(this, im, arguments[1], arguments[2], im.width / 2, im.height / 2);
     return _draw.apply(this, arguments);
   };
@@ -28,6 +32,9 @@
     const n = img.width / 32; cmp[k] = [];
     for (let i = 0; i < n; i++) { const c = document.createElement('canvas'); c.width = 32; c.height = 32; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, i * 32, 0, 32, 32, 0, 0, 32, 32); c.__hd = true; cmp[k].push(c); }
   }).catch(() => {}));
+  // 320px四方のブロック(8まい)。どれも 1マス(=論理16)の大きさで 描く
+  const big = {};
+  ['brown', 'lava', 'ice', 'spring', 'cracked', 'glass', 'steel', 'lock'].forEach((n) => loadImg('assets/enar32_hires/blocks320/' + n + '.png').then((i) => { i.__hd = true; i.__lw = 16; big[n] = i; }).catch(() => {}));
   // gpt: 茶0-3 / 鋼4-6 / 赤7-11(idle,heat0-3) / 青12-16(idle,shine0-3)。concept: 茶0 / 鋼1 / 赤2 / 青3
   function cmpFrame(kind, s) {
     const a = cmp[HD.blocks]; if (!a) return null; const g = HD.blocks !== 'concept';
@@ -56,7 +63,11 @@
   X.block = function (t, c, top, bot, seed) {
     if (HD.ready) {
       let f = null; const s = Math.abs(seed || 0);
-      if (HD.blocks && t !== 3 && c <= 2) { const kk = ['brown', 'red', 'blue'][c]; const q = cmpFrame(kk, s); if (q) return q; }
+      if (HD.blocks === 'big') {
+        const n = t === 3 ? 'cracked' : c === 0 ? 'brown' : c === 1 ? 'lava' : c === 2 ? 'ice' : c === 3 ? 'spring' : c === 5 ? 'glass' : null;
+        if (n && big[n]) return big[n];
+      }
+      if (HD.blocks && HD.blocks !== 'big' && t !== 3 && c <= 2) { const kk = ['brown', 'red', 'blue'][c]; const q = cmpFrame(kk, s); if (q) return q; }
       if (t === 3) f = frame('block_cracked', 'idle_0');                                  // ひび割れ
       else if (c === 4) f = frame('block_yellow', 'idle_0');                              // 黄(もろい)
       else if (c === 0) f = frame('block_brown', 'variant_' + (s % 4));
@@ -84,7 +95,7 @@
     return orig.shard.apply(X, arguments);
   };
   if (S) {
-    S.metal = function () { if (HD.blocks) { const q = cmpFrame('steel', 0); if (q) return q; } if (HD.ready) { const f = frame('block_steel', 'variant_0'); if (f) return f; } return orig.metal.apply(S, arguments); };
+    S.metal = function () { if (HD.blocks === 'big' && big.steel) return big.steel; if (HD.blocks && HD.blocks !== 'big') { const q = cmpFrame('steel', 0); if (q) return q; } if (HD.ready) { const f = frame('block_steel', 'variant_0'); if (f) return f; } return orig.metal.apply(S, arguments); };
   }
   // ゲームがわから つかう: カギの重ね絵(ブロックと おなじ大きさ)、エナジーの玉
   HD.lock = () => (HD.ready ? frame('block_lock', 'overlay') : null);
