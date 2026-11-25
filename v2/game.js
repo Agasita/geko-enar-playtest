@@ -1614,9 +1614,12 @@
     return { px, py, tx: clamp(Math.floor(px / T), 0, G.level.w - 1), ty: clamp(Math.floor(py / T), 0, G.level.h - 1) };
   }
   let dragging = false, panLast = null, tapMode = false;
+  const RING = /[?&]ring=1/.test(location.search); // 試験: なおすコマンドを リングコマンドにして、画面ながおしで よびだす。ダブルタップで 手(画面いどう)を きりかえる
+  let downInfo = null, lastTap = { t: 0, x: 0, y: 0 }, pendTap = null;
+  const cancelPend = () => { if (pendTap) { clearTimeout(pendTap); pendTap = null; } };
   const wantsRect = () => { const d = toolDef(), E = G.edit; return d && (d.mode === 'rect' || (d.mode === 'two' && E.step === 0) || (d.mode === 'painter' && E.step === 1)); };
   cv.addEventListener('pointerdown', (e) => {
-    audio(); if (G.mode !== 'play' || !G.edit.on) return; e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    audio(); if (G.mode !== 'play' || !G.edit.on) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); if (RING) cancelPend();
     const E = G.edit, w = toWorld(e);
     if (E.pan) { panLast = { x: e.clientX, y: e.clientY }; return; }
     E.kb = null; E.cursor = [w.tx, w.ty]; E.hover = [w.tx, w.ty];
@@ -1629,12 +1632,75 @@
     const w = toWorld(e); E.hover = [w.tx, w.ty]; if (!dragging) { E.cursor = [w.tx, w.ty]; return; }
     if (E.sel) { E.sel.x1 = w.tx; E.sel.y1 = w.ty; }
   });
-  const endDrag = () => {
-    const E = G.edit; if (panLast) { panLast = null; return; }
+  const endDrag = (e) => {
+    const E = G.edit;
+    let tap = false;
+    if (RING && e && downInfo) tap = Math.hypot(e.clientX - downInfo.x, e.clientY - downInfo.y) < 10 && performance.now() - downInfo.t < 300;
+    if (RING && tap) { // ダブルタップ: 手(画面いどう)を きりかえる
+      const n = performance.now();
+      if (n - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 36) {
+        lastTap.t = 0; cancelPend(); dragging = false; tapMode = false; panLast = null; E.sel = null; E.pan = !E.pan; SFX.place(); UI.refreshTools(); return;
+      }
+      lastTap = { t: n, x: e.clientX, y: e.clientY };
+    }
+    if (panLast) { panLast = null; return; }
     if (!dragging) return; dragging = false;
-    if (tapMode) { const h = E.hover; tapMode = false; if (h) onTap(h[0], h[1]); return; }
-    if (!E.sel) return; const r = normRect(E.sel); E.sel = null; onRectDone(r);
+    const tm = tapMode; tapMode = false;
+    const fin = () => { pendTap = null; if (tm) { const h = E.hover; if (h) onTap(h[0], h[1]); return; } if (!E.sel) return; const r = normRect(E.sel); E.sel = null; onRectDone(r); };
+    if (RING && tap) { cancelPend(); pendTap = setTimeout(fin, 300); } else fin();
   };
+  // ---- リングコマンド(聖剣2ふう): ながおしで わっかが ひらく。ゆびを 目あての方向へ うごかして はなすと えらべる ----
+  const Ring = (function () {
+    const el = document.createElement('div'); el.id = 'ring'; el.className = 'hide'; document.body.append(el);
+    let items = [], sx = 0, sy = 0, hi = -1, held = false;
+    const E = () => G.edit;
+    function build() {
+      items = G.level.tools.map(id => ({ label: TOOL_BY[id].name, sub: TOOL_BY[id].cost, cur: E().tool === id && !E().pan, run: () => UI.pickTool(id) }));
+      items.push({ label: '手', sub: '', cur: E().pan, run: () => { E().pan = !E().pan; UI.refreshTools(); } });
+      items.push({ label: 'もどす', sub: '', run: () => undoEdit() });
+      items.push({ label: 'やりなおし', sub: '', run: () => redoEdit() });
+      items.push({ label: 'おわる', sub: '', run: () => setEdit(false) });
+    }
+    function open(x, y) {
+      build(); sx = x; sy = y; hi = -1; held = true;
+      const n = items.length, R = n <= 6 ? 86 : 108, m = R + 46;
+      const cx = Math.max(Math.min(x, innerWidth - m), Math.min(m, innerWidth / 2)), cy = Math.max(Math.min(y, innerHeight - m), Math.min(m, innerHeight / 2));
+      el.innerHTML = '<div class="ring-disc" style="left:' + cx + 'px;top:' + cy + 'px;width:' + (R * 2) + 'px;height:' + (R * 2) + 'px"></div><div class="ring-center" style="left:' + cx + 'px;top:' + cy + 'px"></div>';
+      items.forEach((it, i) => {
+        const a = -Math.PI / 2 + i * 2 * Math.PI / n; it.a = a;
+        const b = document.createElement('button'); b.className = 'ri' + (it.cur ? ' cur' : ''); b.style.left = cx + 'px'; b.style.top = cy + 'px'; b.style.setProperty('--x', Math.round(Math.cos(a) * R) + 'px'); b.style.setProperty('--y', Math.round(Math.sin(a) * R) + 'px'); b.style.transitionDelay = (i * 22) + 'ms';
+        b.innerHTML = it.label + (it.sub !== '' ? '<small>' + it.sub + '</small>' : ''); b.onclick = () => choose(i); it.el = b; el.append(b);
+      });
+      el.className = 'held'; SFX.editOn(); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
+    }
+    function move(x, y) {
+      if (!held) return; const dx = x - sx, dy = y - sy; let k = -1;
+      if (Math.hypot(dx, dy) > 24) { const a = Math.atan2(dy, dx); let best = 9; items.forEach((it, i) => { let d = Math.abs(a - it.a) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; if (d < best) { best = d; k = i; } }); }
+      if (k !== hi) { hi = k; items.forEach((it, i) => it.el.classList.toggle('hi', i === k)); const c = el.querySelector('.ring-center'); if (c) c.textContent = k >= 0 ? items[k].label : ''; }
+    }
+    function choose(i) { const it = items[i]; close(); if (it) { SFX.place(); it.run(); } }
+    function close() { held = false; el.className = 'hide'; el.innerHTML = ''; items = []; }
+    function release() { if (!held) return; held = false; if (hi >= 0) choose(hi); else el.classList.remove('held'); }
+    el.addEventListener('pointerdown', (e) => { if (e.target === el || e.target.classList.contains('ring-disc')) close(); });
+    return { open, move, release, close, get isOpen() { return !el.classList.contains('hide'); } };
+  })();
+  if (RING) {
+    let lpTimer = null, lpPointer = null;
+    cv.addEventListener('contextmenu', (e) => e.preventDefault());
+    cv.addEventListener('pointerdown', (e) => {
+      if (G.mode !== 'play') return; if (Ring.isOpen) { Ring.close(); return; }
+      downInfo = { x: e.clientX, y: e.clientY, t: performance.now() }; clearTimeout(lpTimer); lpPointer = e.pointerId;
+      try { cv.setPointerCapture(e.pointerId); } catch (_) { /* no-op */ }
+      lpTimer = setTimeout(() => {
+        lpTimer = null; if (G.mode !== 'play') return; const E = G.edit;
+        if (!E.on) { setEdit(true); if (!G.edit.on) return; }
+        dragging = false; tapMode = false; panLast = null; G.edit.sel = null; downInfo = null; cancelPend(); Ring.open(e.clientX, e.clientY);
+      }, 480);
+    });
+    cv.addEventListener('pointermove', (e) => { if (lpTimer && downInfo && Math.hypot(e.clientX - downInfo.x, e.clientY - downInfo.y) > 10) { clearTimeout(lpTimer); lpTimer = null; } Ring.move(e.clientX, e.clientY); });
+    const lpEnd = () => { clearTimeout(lpTimer); lpTimer = null; Ring.release(); };
+    cv.addEventListener('pointerup', lpEnd); cv.addEventListener('pointercancel', lpEnd);
+  }
   cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', () => { dragging = false; G.edit.sel = null; panLast = null; });
 
   // ===== UI(DOM) =====
@@ -1706,7 +1772,7 @@
       const lv = G.level; $('#lvname').textContent = lv.id + ' ' + lv.name; $('#btn-edit').classList.toggle('hide', !lv.tools.length);
       UI.refreshTools();
     },
-    helpText() { const E = G.edit, d = TOOL_BY[E.tool]; const t = E.pan ? 'ドラッグで画面を移動' : (E.msg || E.hint || (d ? d.help : '')); const el = $('#edithelp'); if (el.textContent !== t) el.textContent = t; },
+    helpText() { const E = G.edit, d = TOOL_BY[E.tool]; const t = E.pan ? 'ドラッグで画面を移動' + (RING ? '（ダブルタップで もどる）' : '') : (E.msg || E.hint || (d ? d.help : '')); const el = $('#edithelp'); if (el.textContent !== t) el.textContent = t; },
     tabsOf() { const t = new Set(); G.level.tools.forEach(id => t.add(TOOL_BY[id].tab)); return TABS.map(x => x.id).filter(id => t.has(id)); },
     toolsOfTab(tab) { return G.level.tools.map(id => TOOL_BY[id]).filter(t => t.tab === tab); },
     pickTab(tab) { const E = G.edit; E.tab = tab; const l = UI.toolsOfTab(tab); if (!l.find(t => t.id === E.tool)) UI.pickTool(l[0].id); else UI.refreshTools(); },
@@ -1731,7 +1797,7 @@
       else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '外す' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
       else if (id === 'zoom') chips('', [{ v: 1, label: 'ズームする' }], null, v => { runPlan(planFor('zoom', {})); UI.refreshTools(); });
-      const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' : (E.msg || E.hint || (d ? d.help : ''));
+      const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' + (RING ? '（ダブルタップで もどる）' : '') : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
     restart() { if (G.mode !== 'play') return; const id = G.level.id; if (!practice && !G.cleared && !EDITOR_TEST) { save.fails = save.fails || {}; save.fails[id] = (save.fails[id] || 0) + 1; persist(); } loadLevel(G.levelIdx); UI.show(null); UI.assistNote(); },
