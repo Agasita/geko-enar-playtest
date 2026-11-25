@@ -34,7 +34,9 @@
   }).catch(() => {}));
   // 320px四方のブロック(8まい)。どれも 1マス(=論理16)の大きさで 描く
   const big = {};
-  ['brown', 'lava', 'ice', 'spring', 'cracked', 'glass', 'steel', 'lock'].forEach((n) => loadImg('assets/enar32_hires/blocks320/' + n + '.png').then((i) => { i.__hd = true; i.__lw = 16; big[n] = i; }).catch(() => {}));
+  ['brown', 'lava', 'ice', 'spring', 'cracked', 'glass', 'steel', 'lock'].forEach((n) => loadImg('assets/enar32_hires/blocks320/' + n + '.png').then((i) => { if (n === 'brown' && !/[?&]brown=320/.test(location.search)) return; i.__hd = true; i.__lw = 16; big[n] = i; }).catch(() => {}));
+  // 土(茶)のブロックは、32pxの絵(brown_user.png)に さしかえる。?brown=320 で 320px版にもどせる
+  if (!/[?&]brown=320/.test(location.search)) loadImg(BASE + 'brown_user.png').then((i) => { i.__hd = true; i.__lw = 16; big.brown = i; }).catch(() => {});
   // gpt: 茶0-3 / 鋼4-6 / 赤7-11(idle,heat0-3) / 青12-16(idle,shine0-3)。concept: 茶0 / 鋼1 / 赤2 / 青3
   function cmpFrame(kind, s) {
     const a = cmp[HD.blocks]; if (!a) return null; const g = HD.blocks !== 'concept';
