@@ -1492,10 +1492,6 @@
   const FUNNEL = ['1111111', '.11111.', '..111..', '..111..', '...1...'];
   function drawEditOverlay() {
     const E = G.edit, cx = Math.round(G.cam.x), cy = Math.round(G.cam.y);
-    if (E.pan) { // 手モード: 黄色いわく と 札で、はっきり しらせる
-      ctx.strokeStyle = '#FFC000'; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
-      ctx.fillStyle = '#FFC000'; ctx.fillRect(W / 2 - 38, 3, 76, 13); ctx.fillStyle = '#000'; ctx.font = 'bold 9px sans-serif'; ctx.textBaseline = 'top'; ctx.textAlign = 'center'; ctx.fillText('✋ 手モード', W / 2, 5); ctx.textAlign = 'left';
-    }
     ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.18)' : 'rgba(255,255,255,.12)';
     for (let x = -(cx % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(cy % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
@@ -1533,9 +1529,16 @@
     const hasEdit = !$('#btn-edit').classList.contains('hide'); if (RB.edit !== hasEdit) { RB.edit = hasEdit; $('#rb-edit').style.display = hasEdit ? '' : 'none'; $('#lb-edit').style.display = hasEdit ? '' : 'none'; }
     const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').innerHTML = mu + '<span class="lbl"> 音</span>'; $('#lb-mute').textContent = mu + ' 音'; }
   }
+  // いまのモード(なおす=書ける / 手=画面いどう)を、画面のそとの リボンに アイコンで出し、画面のわくの色もかえる
+  let modeMark = '';
+  function updateModeMark() {
+    const m = G.mode === 'play' && G.edit.on ? (G.edit.pan ? 'pan' : 'draw') : ''; if (m === modeMark) return; modeMark = m;
+    document.body.classList.toggle('m-pan', m === 'pan'); document.body.classList.toggle('m-draw', m === 'draw');
+    const g = $('#rb-g-mode'), i = $('#rb-mode'); if (g) g.style.display = m ? '' : 'none'; if (i) { i.textContent = m === 'pan' ? '✋' : '✎'; i.className = m; i.title = m === 'pan' ? '手モード(画面を動かす)' : '書けるモード'; }
+  }
   function render() {
     if (!G.level) return;
-    updateRibbon();
+    updateRibbon(); updateModeMark();
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
     drawBackground();
     if (G.edit.on) { ctx.fillStyle = 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); } // 編集中: 背景だけ暗く。ブロックや仕掛けは、明るいまま
