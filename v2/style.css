@@ -361,3 +361,24 @@ body.tuning #tune-toggle{right:252px}
 #op-skip{position:absolute;right:12px;top:10px;color:#aeb8d0 !important;border-color:#ffffff40 !important;z-index:2}
 
 #bestiary .gi.lock{opacity:.6}
+
+/* リングコマンド(?ring=1): ながおしで ひらく わっか */
+#ring{position:fixed;inset:0;z-index:80;background:#0000;transition:background .2s;touch-action:none}
+#ring.open{background:#0b1226a0}
+#ring.held{pointer-events:none}
+#ring .ring-disc{position:absolute;transform:translate(-50%,-50%) scale(.3);border-radius:50%;border:2px dashed #ffffff55;background:#ffffff0d;opacity:0;transition:transform .25s,opacity .25s}
+#ring.open .ring-disc{transform:translate(-50%,-50%) scale(1);opacity:1}
+#ring .ring-center{position:absolute;transform:translate(-50%,-50%);min-width:60px;text-align:center;color:var(--accent);font-weight:800;font-size:15px;text-shadow:0 1px 3px #000;pointer-events:none}
+#ring .ri,#ring .ri:active{position:absolute;min-height:0;padding:7px 10px;border-radius:18px;background:var(--panel);border:2px solid #ffffff44;color:#fff;font-weight:700;font-size:13px;line-height:1.15;white-space:nowrap;text-align:center;opacity:0;transform:translate(-50%,-50%) scale(.3);transition:transform .26s cubic-bezier(.2,1.4,.4,1),opacity .2s,background .1s,border-color .1s;box-shadow:0 3px 8px #0008}
+#ring.open .ri,#ring.open .ri:active{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1)}
+#ring .ri small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+#ring .ri.cur{border-color:var(--blue)}
+#ring.open .ri.hi,#ring.open .ri.hi:active{background:var(--accent);color:var(--bg);border-color:#fff;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.18)}
+#ring .ri.hi small{color:var(--bg)}
+
+.theme-excel #ring .ri,.theme-excel #ring .ri:active{background:#fff;color:#262626;border:2px solid #ABABAB;border-radius:18px}
+.theme-excel #ring .ri small{color:#217346}
+.theme-excel #ring .ri.cur{border-color:#217346;box-shadow:0 0 0 2px #21734660,0 3px 8px #0008}
+.theme-excel #ring.open .ri.hi,.theme-excel #ring.open .ri.hi:active{background:#217346;color:#fff;border-color:#fff}
+.theme-excel #ring .ri.hi small{color:#fff}
+.theme-excel #ring .ring-center{color:#fff}
