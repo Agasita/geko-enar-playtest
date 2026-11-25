@@ -1,14 +1,14 @@
-/* 32px素材（enar32）を、あたらしい見た目テーマとして つかう。 ?dev=1&gfx=enar32 のときだけ はたらく（公開用の版は、いままでの Excel風のまま）。
+/* 32px素材（enar32）を、あたらしい見た目テーマとして つかう。 URLに ?gfx=enar32 を つけたときだけ はたらく（なにも つけなければ、いままでの Excel風のまま）。
    - ゲームの座標・物理は、いままで(16px=1マス)のまま。絵だけを、2倍の こまかさ(32px=1マス)で描く。
    - そのために、画面(canvas)を 576×360 にして、ctx.scale(2,2)。HDの絵(__hd)は、2つの引数の drawImage だと、半分の大きさ(論理px)で描く。
    - 素材は assets/enar32/ 。よみこみが おわるまでは、いままでの Excel風の絵が出る。
    いまの対象(第1弾): ブロック・鋼・カギ・エナー・ゴール・かけら・エナジーの玉。てき・背景・UIは、これから。 */
 (function () {
   'use strict';
-  const DEV = /[?&]dev=1/.test(location.search), ON = DEV && /[?&]gfx=enar32/.test(location.search);
+  const ON = /[?&]gfx=enar32/.test(location.search);
   if (!ON) return;
   const BASE = 'assets/enar32/';
-  const HD = window.HD = { ready: false, blocks: ((/[?&]blocks=(concept|gpt)/.exec(location.search) || [])[1]) || null }; // blocks=concept|gpt: 大きい絵から作った 茶・鋼・赤・青 との くらべ用(HD.blocks を かえると、その場で きりかわる)
+  const HD = window.HD = { ready: false, blocks: (function () { const m = (/[?&]blocks=(old|concept|gpt|raw)/.exec(location.search) || [])[1]; return m === 'old' ? null : (m || 'gpt'); })() }; // 茶・鋼・赤・青は、大きい絵(GPT)から32pxに縮めて、決めたパレットに寄せたものを つかう。blocks=old(いまの素材) / concept(原画から) / raw(パレットに寄せる前) でくらべられる(HD.blocks を かえると、その場で きりかわる)
   const cv = document.getElementById('cv');
   if (cv) { cv.width = 576; cv.height = 360; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.setTransform(2, 0, 0, 2, 0, 0); }
   // HDの絵は、2つの引数(x, y)で描くと、半分の大きさ。そのほかの形は、そのまま。
@@ -24,13 +24,13 @@
     .then(([a]) => { Object.assign(atlas, a); HD.ready = true; })
     .catch((e) => { console.warn('enar32: よみこみに しっぱい', e); });
   // くらべ用: 大きい絵(コンセプト原画 / GPTの縮小版)から 32pxに切った 1列のシート。HD.blocks で つかう
-  ['concept', 'gpt'].forEach((k) => loadImg('assets/enar32_hires/cmp_' + k + '.png').then((img) => {
+  ['concept', 'gpt', 'raw'].forEach((k) => loadImg('assets/enar32_hires/' + (k === 'raw' ? 'cmp_gpt_raw' : 'cmp_' + k) + '.png').then((img) => {
     const n = img.width / 32; cmp[k] = [];
     for (let i = 0; i < n; i++) { const c = document.createElement('canvas'); c.width = 32; c.height = 32; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, i * 32, 0, 32, 32, 0, 0, 32, 32); c.__hd = true; cmp[k].push(c); }
   }).catch(() => {}));
   // gpt: 茶0-3 / 鋼4-6 / 赤7-11(idle,heat0-3) / 青12-16(idle,shine0-3)。concept: 茶0 / 鋼1 / 赤2 / 青3
   function cmpFrame(kind, s) {
-    const a = cmp[HD.blocks]; if (!a) return null; const g = HD.blocks === 'gpt';
+    const a = cmp[HD.blocks]; if (!a) return null; const g = HD.blocks !== 'concept';
     if (kind === 'brown') return g ? a[s % 4] : a[0];
     if (kind === 'steel') return g ? a[4 + (s % 3)] : a[1];
     if (kind === 'red') return g ? a[7 + [0, 1, 2, 3, 4, 3, 2, 1][Math.floor(now() * 6 + s) % 8]] : a[2];
