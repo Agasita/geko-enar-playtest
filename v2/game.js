@@ -1140,7 +1140,7 @@
   const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
   if (EXCEL) document.body.classList.add('theme-excel');
   const IW = (im) => im.__hd ? im.width / 2 : im.width, IH = (im) => im.__hd ? im.height / 2 : im.height; // 32px素材(__hd)は、論理px(16px=1マス)では 半分の大きさ
-  function drawLock(x, y) { const h = window.HD && window.HD.lock(); if (h) ctx.drawImage(h, x, y); else drawLock(x, y); }
+  function drawLock(x, y) { const h = window.HD && window.HD.lock(); if (h) ctx.drawImage(h, x, y); else ctx.drawImage(GFX.lock(), x + 8, y + 1); }
   function drawBackground() {
     if (TILES) { TILES.bg(ctx, G, G.level, W, H); return; }
     const lv = G.level; ctx.fillStyle = lv.bg; ctx.fillRect(0, 0, W, H);
