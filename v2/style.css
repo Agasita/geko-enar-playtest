@@ -382,3 +382,10 @@ body.tuning #tune-toggle{right:252px}
 .theme-excel #ring.open .ri.hi,.theme-excel #ring.open .ri.hi:active{background:#217346;color:#fff;border-color:#fff}
 .theme-excel #ring .ri.hi small{color:#fff}
 .theme-excel #ring .ring-center{color:#fff}
+/* いまのモードの わく と アイコン(画面のそと=リボン) */
+#sheet::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:30;box-shadow:none}
+body.m-draw #sheet::after{box-shadow:inset 0 0 0 4px #2E75B6}
+body.m-pan #sheet::after{box-shadow:inset 0 0 0 4px #F0A000}
+#rb-mode{display:inline-flex;align-items:center;justify-content:center;min-width:calc(var(--s)*12px);min-height:calc(var(--s)*10px);padding:0 6px;border-radius:6px;font-size:calc(var(--s)*8px);line-height:1.1;color:#fff}
+#rb-mode.draw{background:#2E75B6}
+#rb-mode.pan{background:#F0A000;color:#000}
