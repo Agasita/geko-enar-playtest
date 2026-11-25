@@ -1136,9 +1136,11 @@
   // 公開版は Excelふう ひとつだけ。開発用に ?dev=1 を付けると、見た目の切りかえ(?gfx=)と 調整パネルが つかえる
   const DEV = /[?&]dev=1/.test(location.search);
   const THEME = (DEV && (/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
-  const EXCEL = THEME === 'excel' && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
+  const EXCEL = (THEME === 'excel' || THEME === 'enar32') && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
   const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
   if (EXCEL) document.body.classList.add('theme-excel');
+  const IW = (im) => im.__hd ? im.width / 2 : im.width, IH = (im) => im.__hd ? im.height / 2 : im.height; // 32px素材(__hd)は、論理px(16px=1マス)では 半分の大きさ
+  function drawLock(x, y) { const h = window.HD && window.HD.lock(); if (h) ctx.drawImage(h, x, y); else drawLock(x, y); }
   function drawBackground() {
     if (TILES) { TILES.bg(ctx, G, G.level, W, H); return; }
     const lv = G.level; ctx.fillStyle = lv.bg; ctx.fillRect(0, 0, W, H);
@@ -1234,12 +1236,12 @@
     }
   }
   function drawTile(t, x, y, tx, ty) {
-    if (t === TL.MAGNET) { if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return; const mv = G.mgs.find(m => m.cells.some(c => c[0] === tx && c[1] === ty)); drawMagnet(Math.round(x + (mv ? mv.dx * mv.off * T : 0)), Math.round(y + (mv ? mv.dy * mv.off * T : 0))); if (G.lock[ty][tx] && SOLID) ctx.drawImage(GFX.lock(), x + 8, y + 1); return; }
+    if (t === TL.MAGNET) { if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return; const mv = G.mgs.find(m => m.cells.some(c => c[0] === tx && c[1] === ty)); drawMagnet(Math.round(x + (mv ? mv.dx * mv.off * T : 0)), Math.round(y + (mv ? mv.dy * mv.off * T : 0))); if (G.lock[ty][tx] && SOLID) drawLock(x, y); return; }
     if (isBlockT(t)) {
       if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return;
       const faded = G.filter !== null && G.col[ty][tx] !== G.filter && !G.lock[ty][tx];
       drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined, tx * 7 + ty * 13);
-      if (G.lock[ty][tx] && SOLID) ctx.drawImage(GFX.lock(), x + 8, y + 1);
+      if (G.lock[ty][tx] && SOLID) drawLock(x, y);
       else if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
     } else if (t === TL.STEEL) {
       ctx.drawImage(GFX.metal(), x, y);
@@ -1296,14 +1298,14 @@
   // かけら: ゆらゆら うごいて、ときどき ぴかっと ひかる(1ドットの 十字)。on=false は HUDの「まだ」の わく
   function drawShard(cx, cy, s, on) {
     if (!on) return;
-    const im = GFXX.shard(); ctx.drawImage(im, Math.round(cx - im.width / 2), Math.round(cy - im.height / 2));
+    const im = GFXX.shard(); ctx.drawImage(im, Math.round(cx - IW(im) / 2), Math.round(cy - IH(im) / 2));
     if (Math.sin(G.t * 3 + cx * .7) > .93) { const x = Math.round(cx - 3), y = Math.round(cy - 4); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3); }
   }
   // ゴール: 角を下にした フロッピーディスクが、ゆっくり くるくる まわる(よこはばが ちぢんで、うらがえる)。とると クリア
   function drawGoal(x, y) {
     const cx = x + 8; let a = 1, spin = G.t * 1.6, grow = 1;
     if (G.cleared) { const c = G.clearT || 0; a = Math.max(0, 1 - c * 1.8); grow = 1 + c * 1.6; spin = G.t * 1.6 + c * 14; if (a <= 0) return; }
-    const k = Math.cos(spin), back = k < 0, im = GFXX.floppy(back), w = Math.max(3, Math.round(im.width * Math.abs(k) * grow)), h = Math.round(im.height * grow);
+    const k = Math.cos(spin), back = k < 0, im = GFXX.floppy(back), w = Math.max(3, Math.round(IW(im) * Math.abs(k) * grow)), h = Math.round(IH(im) * grow);
     const bob = Math.round(Math.sin(G.t * 2.4) * 1.5), dx = Math.round(cx - w / 2), dy = Math.round(y + 16 - h / 2) + bob;
     ctx.globalAlpha = a; ctx.drawImage(im, dx, dy, w, h); ctx.globalAlpha = 1;
     if (!G.cleared && Math.sin(G.t * 2 + 1) > .94) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + 6), dy + 1, 3, 1); ctx.fillRect(Math.round(cx + 7), dy, 1, 3); }
@@ -1348,7 +1350,7 @@
     for (const k of G.pick) {
       if (k.gone || hiddenAt(Math.floor((k.x + 4) / T), Math.floor((k.y + 4) / T))) continue;
       const x = k.x - cx, y = k.y - cy + Math.round(Math.sin(G.t * 4 + k.x) * 1.5);
-      if (k.type === 'gem') { if (EXCEL) drawShard(x + 4, y + 4, 10, true); else icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); } else icon(BOLT, x + 1, y + 1, '#F5C842');
+      if (k.type === 'gem') { if (EXCEL) drawShard(x + 4, y + 4, 10, true); else icon(GEM, x + 1, y + 1, '#4C9BE8', '#BFD8FF'); } else { const o = window.HD && window.HD.orb(); if (o) ctx.drawImage(o, Math.round(x + 4 - IW(o) / 2), Math.round(y + 4 - IH(o) / 2)); else icon(BOLT, x + 1, y + 1, '#F5C842'); }
     }
     // てき
     for (const e of G.enemies) {
@@ -1420,8 +1422,8 @@
     // うっすら ひかる ゴールと かけら(見えない所だけ)
     const hid = (px, py) => !cellVisible(Math.floor(px / T), Math.floor(py / T));
     ctx.save(); ctx.globalAlpha = .35 + .2 * Math.sin(G.t * 3);
-    if (EXCEL && hid(G.flag.x + 8, G.flag.y + 8)) { const im = GFXX.floppy(false); ctx.drawImage(im, Math.round(G.flag.x + 8 - im.width / 2 - cx), Math.round(G.flag.y + 8 - im.height / 2 - cy)); }
-    for (const k of G.pick) { if (k.type !== 'gem' || k.got || k.gone || !hid(k.x + 4, k.y + 4)) continue; if (EXCEL) { const im = GFXX.shard(); ctx.drawImage(im, Math.round(k.x + 4 - im.width / 2 - cx), Math.round(k.y + 4 - im.height / 2 - cy)); } else { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(k.x - cx), Math.round(k.y - cy), 8, 8); } }
+    if (EXCEL && hid(G.flag.x + 8, G.flag.y + 8)) { const im = GFXX.floppy(false); ctx.drawImage(im, Math.round(G.flag.x + 8 - IW(im) / 2 - cx), Math.round(G.flag.y + 8 - IH(im) / 2 - cy)); }
+    for (const k of G.pick) { if (k.type !== 'gem' || k.got || k.gone || !hid(k.x + 4, k.y + 4)) continue; if (EXCEL) { const im = GFXX.shard(); ctx.drawImage(im, Math.round(k.x + 4 - IW(im) / 2 - cx), Math.round(k.y + 4 - IH(im) / 2 - cy)); } else { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(k.x - cx), Math.round(k.y - cy), 8, 8); } }
     ctx.restore();
     // ふちの ちかちか: 見えない ところの てきが ちかいとき、あおい枠のふちに あかい しるし
     const fr = fogFrame(), fx0 = fr.x0 * T - cx, fy0 = fr.y0 * T - cy, fx1 = (fr.x1 + 1) * T - cx, fy1 = (fr.y1 + 1) * T - cy;
@@ -1892,7 +1894,7 @@
     items.push([tileSample(() => { const save = G.doors; G.doors = [{ x: 0, y: 0, h: 1, id: 0, open: false, anim: 0 }]; try { drawDoors(0, 0); } finally { G.doors = save; } }), '扉', '対応するスイッチや判定セルで開く。閉じている間は通れず、ブロックも置けない']);
     items.push(['h', '仕掛け・カギ']);
     items.push([tileSample(() => { const save = G.lifts; G.lifts = [{ x: 0, y: 0, w: 16, h: 16, vert: true }]; try { drawLifts(0, 0); } finally { G.lifts = save; } }), 'リフト', '決まった道を往復する足場。乗ると運ばれる。リフトは編集で動かせず、通り道にブロックも置けない。色の性質やフィルターが効き、ガラス製は「いろコピー」が使える']);
-    items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) ctx.drawImage(GFX.lock(), 8, 1); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。編集やフィルターが効かず、寄せるときの仕切りになる。「まもりをはずす」で解除できる']);
+    items.push([tileSample(() => { drawBlock(TL.STONE, 0, 0, 0, true, true, undefined, 0); if (SOLID) drawLock(0, 0); else { ctx.fillStyle = '#1F2A44'; ctx.fillRect(9, 1, 6, 7); icon(LOCK, 10, 2, '#F5C842'); } }), 'カギ（保護）', '保護されたブロック。編集やフィルターが効かず、寄せるときの仕切りになる。「まもりをはずす」で解除できる']);
     items.push([blk(0, .28), '薄い表示', 'フィルターで残す色以外のブロック（ガラスを含む）は薄くなり、通り抜けられる']);
     // 体験版: ステージに でてこない しかけ(磁石・判定セル・リフト)の せつめいは だす (見せない)
     let shown = items;
