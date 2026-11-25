@@ -933,7 +933,7 @@
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
     if (!G.level.tools.length) { UI.toast('このステージでは「なおす」を使えません'); return; }
     if (on && G.fog && G.zoomT > 0) { UI.toast('ズーム中は、なおせません'); return; }
-    E.on = on; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
+    E.on = on; E.pan = false; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
   }
@@ -1492,7 +1492,11 @@
   const FUNNEL = ['1111111', '.11111.', '..111..', '..111..', '...1...'];
   function drawEditOverlay() {
     const E = G.edit, cx = Math.round(G.cam.x), cy = Math.round(G.cam.y);
-    ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.07)' : 'rgba(31,42,68,.35)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); // ゲーム画面だけを、リングを出したときと同じ暗さに
+    if (E.pan) { // 手モード: 黄色いわく と 札で、はっきり しらせる
+      ctx.strokeStyle = '#FFC000'; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
+      ctx.fillStyle = '#FFC000'; ctx.fillRect(W / 2 - 38, 3, 76, 13); ctx.fillStyle = '#000'; ctx.font = 'bold 9px sans-serif'; ctx.textBaseline = 'top'; ctx.textAlign = 'center'; ctx.fillText('✋ 手モード', W / 2, 5); ctx.textAlign = 'left';
+    }
     ctx.fillStyle = EXCEL ? 'rgba(33,115,70,.18)' : 'rgba(255,255,255,.12)';
     for (let x = -(cx % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
     for (let y = -(cy % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
