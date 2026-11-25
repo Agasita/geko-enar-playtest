@@ -397,3 +397,14 @@ body.m-pan #sheet::after{box-shadow:inset 0 0 0 4px #F0A000}
 #ring.menu .mi.cur{border-color:#217346;box-shadow:inset 3px 0 0 #217346}
 #ring.menu .mi.hi,#ring.menu .mi:hover{background:#217346!important;color:#fff!important;border-color:#217346}
 #ring.menu .ring-disc,#ring.menu .ring-center{display:none}
+
+/* 道具のアイコン */
+.ti{flex:none;width:16px;height:16px;vertical-align:-3px}
+.ti.g{display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+#tools button .tn{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#ring .ri .ti{display:block;margin:0 auto 1px}
+#ring .ri .tn{display:block}
+#ring.menu .mi .ti{display:inline-block;margin:0 6px 0 0}
+#ring.menu .mi .tn{display:inline;flex:1 1 auto}
+#ring.menu .mi{justify-content:flex-start}
+#ring.menu .mi small{margin-left:auto}
