@@ -364,7 +364,8 @@ body.tuning #tune-toggle{right:252px}
 
 /* リングコマンド(?ring=1): ながおしで ひらく わっか */
 #ring{position:fixed;inset:0;z-index:80;background:#0000;transition:background .2s;touch-action:none}
-#ring.open{background:#0b1226a0}
+#ring.open{background:#0000}
+body.editing::after{content:'';position:fixed;inset:0;z-index:70;background:#0b1226a0;pointer-events:none} /* 編集中は、リングコマンドを出したときと同じ暗さに */
 #ring.held{pointer-events:none}
 #ring .ring-disc{position:absolute;transform:translate(-50%,-50%) scale(.3);border-radius:50%;border:2px dashed #ffffff55;background:#ffffff0d;opacity:0;transition:transform .25s,opacity .25s}
 #ring.open .ring-disc{transform:translate(-50%,-50%) scale(1);opacity:1}
