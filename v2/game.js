@@ -1135,8 +1135,8 @@
   // みた目: ?gfx=excel(ふつう: Excelふう) / ?gfx=snes(ソリッドばん) / ?gfx=classic(もとのえ)
   // 公開版は Excelふう ひとつだけ。開発用に ?dev=1 を付けると、見た目の切りかえ(?gfx=)と 調整パネルが つかえる
   const DEV = /[?&]dev=1/.test(location.search);
-  const THEME = (DEV && (/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || 'excel';
-  const EXCEL = (THEME === 'excel' || THEME === 'enar32') && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
+  const THEME = (DEV && (/[?&]gfx=(\w+)/.exec(location.search) || [])[1]) || (/[?&]gfx=enar32/.test(location.search) ? 'enar32' : 'excel'); // enar32(32pxの新しい見た目)だけは、公開版でも URLで えらべる
+  const EXCEL =(THEME === 'excel' || THEME === 'enar32') && !!window.GFXX, SNES = THEME === 'snes' && !!window.GFX, SOLID = (EXCEL || SNES) && !!window.GFX;
   const TILES = EXCEL ? window.GFXX : SNES ? window.GFX : null;
   if (EXCEL) document.body.classList.add('theme-excel');
   const IW = (im) => im.__hd ? im.width / 2 : im.width, IH = (im) => im.__hd ? im.height / 2 : im.height; // 32px素材(__hd)は、論理px(16px=1マス)では 半分の大きさ
