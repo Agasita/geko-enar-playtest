@@ -27,6 +27,21 @@
     { id: 'zoom', tab: 'view', name: 'ズーム', mode: 'instant', cost: 4, help: '「ズームする」を押すと、数秒だけ、見える範囲が2倍に広がる（その間は、なおせない）' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
+  // なおす道具の アイコン(Excelのリボンの絵に ちかい、フラットな16px)。ひとつの目で 何の道具か わかるように
+  const SVG = (b) => '<svg class="ti" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' + b + '</svg>';
+  const ICON = {
+    painter: SVG('<path d="M13 2.5L8 8" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M8.2 7.2l1.6 1.6c-.4 2.6-2.4 4.4-6 4.4 1.2-1 .8-2.2 1.2-3.2.5-1.2 2-2.2 3.2-2.8z" fill="#F2B100"/>'),
+    transform: SVG('<path d="M1 12.5L6.2 3.5v9z" fill="#4472C4"/><path d="M15 12.5L9.8 3.5v9z" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><path d="M8 1.5v13" stroke="#7F7F7F" stroke-width="1" stroke-dasharray="1.6 1.4"/>'),
+    sort: SVG('<text x="1" y="7" font-size="7.5" font-weight="700" font-family="Arial,sans-serif" fill="#217346">A</text><text x="1" y="15" font-size="7.5" font-weight="700" font-family="Arial,sans-serif" fill="#C00000">Z</text><path d="M12 2v11M9.3 10.3L12 14l2.7-3.7" fill="none" stroke="#4472C4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'),
+    filter: SVG('<path d="M1 2.5h14L9.7 8.6V14l-3.4-1.6V8.6z" fill="#4472C4"/><path d="M3 4h10" stroke="#B4C7E7" stroke-width="1"/>'),
+    protect: SVG('<path d="M5 7.5V5a3 3 0 0 1 6 0v2.5" fill="none" stroke="#7F7F7F" stroke-width="1.7"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#F2B100"/><circle cx="8" cy="10.6" r="1.1" fill="#7F5F00"/>'),
+    unprotect: SVG('<path d="M5 7.5V5a3 3 0 0 1 5.8-1" fill="none" stroke="#7F7F7F" stroke-width="1.7" stroke-linecap="round"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><circle cx="8" cy="10.6" r="1.1" fill="#2F5597"/>'),
+    printarea: SVG('<path d="M3 1.5h7l3 3v10H3z" fill="#fff" stroke="#7F7F7F"/><rect x="5" y="6" width="6" height="6" fill="#DDEBF7" stroke="#4472C4" stroke-width="1" stroke-dasharray="1.6 1"/>'),
+    zoom: SVG('<circle cx="6.5" cy="6.5" r="4.4" fill="#DDEBF7" stroke="#4472C4" stroke-width="1.6"/><path d="M10 10l4.6 4.6" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M4.6 6.5h3.8M6.5 4.6v3.8" stroke="#4472C4" stroke-width="1.1"/>'),
+    pan: '<span class="ti g">✋</span>',
+    write: SVG('<path d="M2 14l1-3.6 8-8 2.6 2.6-8 8z" fill="#F2B100"/><path d="M11 2.4l1.3-1 2.6 2.6-1 1.3z" fill="#C00000"/><path d="M2 14l1-3.6 2.6 2.6z" fill="#7F7F7F"/>'),
+    undo: '<span class="ti g">↶</span>', redo: '<span class="ti g">↷</span>', done: '<span class="ti g">✔</span>',
+  };
   function newEdit(lv) {
     const first = lv && lv.tools.length ? TOOL_BY[lv.tools[0]] : TOOLS[0];
     return { on: false, tab: first.tab, tool: first.id, opts: { color: 1, tf: 'flipH', sort: 'D', from: 1, to: 2, axis: 'row', fcolor: 2 },
@@ -1534,7 +1549,7 @@
   function updateModeMark() {
     const m = G.mode === 'play' && G.edit.on ? (G.edit.pan ? 'pan' : 'draw') : ''; if (m === modeMark) return; modeMark = m;
     document.body.classList.toggle('m-pan', m === 'pan'); document.body.classList.toggle('m-draw', m === 'draw');
-    const g = $('#rb-g-mode'), i = $('#rb-mode'); if (g) g.style.display = m ? '' : 'none'; if (i) { i.textContent = m === 'pan' ? '✋' : '✎'; i.className = m; i.title = m === 'pan' ? '手モード(画面を動かす)' : '書けるモード'; }
+    const g = $('#rb-g-mode'), i = $('#rb-mode'); if (g) g.style.display = m ? '' : 'none'; if (i) { i.textContent = m === 'pan' ? '✋' : '✎'; i.className = m; i.title = m === 'pan' ? '移動モード(画面を動かす)' : '書き込みモード'; }
   }
   function render() {
     if (!G.level) return;
@@ -1673,15 +1688,16 @@
       return null;
     }
     function build() {
-      items = G.level.tools.map(id => ({ id, label: TOOL_BY[id].name, sub: TOOL_BY[id].cost, cur: E().tool === id && !E().pan, run: () => UI.pickTool(id) }));
-      items.push({ label: '手', sub: '', cur: E().pan, run: () => { E().pan = !E().pan; UI.refreshTools(); } });
-      items.push({ label: 'もどす', sub: '', run: () => undoEdit() });
-      items.push({ label: 'やりなおし', sub: '', run: () => redoEdit() });
-      items.push({ label: 'おわる', sub: '', run: () => setEdit(false) });
+      items = G.level.tools.map(id => ({ id, icon: id, label: TOOL_BY[id].name, sub: TOOL_BY[id].cost, cur: E().tool === id && !E().pan, run: () => UI.pickTool(id) }));
+      items.push({ label: '移動', icon: 'pan', sub: '', cur: E().pan, run: () => { E().pan = true; E().sel = null; UI.refreshTools(); } });
+      items.push({ label: '書き込み', icon: 'write', sub: '', cur: !E().pan, run: () => { E().pan = false; UI.refreshTools(); } });
+      items.push({ label: 'もどす', icon: 'undo', sub: '', run: () => undoEdit() });
+      items.push({ label: 'やりなおし', icon: 'redo', sub: '', run: () => redoEdit() });
+      items.push({ label: 'おわる', icon: 'done', sub: '', run: () => setEdit(false) });
     }
     function open(x, y) {
       build(); sx = x; sy = y; hi = -1; held = true; subOf = null; el.innerHTML = '';
-      const n = items.length, R = n <= 6 ? 86 : n <= 9 ? 108 : 124, m = R + 46;
+      const n = items.length, R = n <= 6 ? 86 : n <= 9 ? 108 : n <= 11 ? 130 : 165, m = R + 46;
       cx0 = Math.max(Math.min(x, innerWidth - m), Math.min(m, innerWidth / 2)); cy0 = Math.max(Math.min(y, innerHeight - m), Math.min(m, innerHeight / 2));
       layout(x, y);
       el.className = 'held' + (MENU ? ' menu' : ''); SFX.editOn(); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
@@ -1699,7 +1715,7 @@
         el.append(col);
         return;
       }
-      const R = n <= 6 ? 86 : n <= 9 ? 108 : 124, cx = cx0, cy = cy0;
+      const R = n <= 6 ? 86 : n <= 9 ? 108 : n <= 11 ? 130 : 165, cx = cx0, cy = cy0;
       el.insertAdjacentHTML('beforeend', '<div class="ring-disc" style="left:' + cx + 'px;top:' + cy + 'px;width:' + (R * 2) + 'px;height:' + (R * 2) + 'px"></div><div class="ring-center" style="left:' + cx + 'px;top:' + cy + 'px">' + (subOf ? TOOL_BY[subOf].name : '') + '</div>');
       items.forEach((it, i) => {
         const a = -Math.PI / 2 + i * 2 * Math.PI / n; it.a = a;
@@ -1708,7 +1724,7 @@
       });
     }
     function fill(b, it) {
-      b.innerHTML = it.label + (it.sub !== undefined && it.sub !== '' ? '<small>' + it.sub + '</small>' : '');
+      b.innerHTML = (it.icon && ICON[it.icon] ? ICON[it.icon] : '') + '<span class="tn">' + it.label + '</span>' + (it.sub !== undefined && it.sub !== '' ? '<small>' + it.sub + '</small>' : '');
       if (it.color !== undefined) { b.style.background = COLORS[it.color].hex; b.style.color = '#1f2a44'; }
     }
     // 道具を えらんだあと、もう1つ えらぶものが あるときの 2だんめ
@@ -1836,7 +1852,7 @@
         const b = document.createElement('button'); b.textContent = TABS.find(t => t.id === id).name; b.className = E.tab === id ? 'sel' : ''; b.onclick = () => UI.pickTab(id); tabs.appendChild(b);
       });
       UI.toolsOfTab(E.tab).forEach((t, i) => {
-        const b = document.createElement('button'); b.innerHTML = '<kbd>' + (i + 1) + '</kbd> ' + t.name + '<small>' + t.cost + '</small>'; b.className = E.tool === t.id && !E.pan ? 'sel' : ''; b.onclick = () => UI.pickTool(t.id); bar.appendChild(b);
+        const b = document.createElement('button'); b.innerHTML = '<kbd>' + (i + 1) + '</kbd>' + (ICON[t.id] || '') + '<span class="tn">' + t.name + '</span><small>' + t.cost + '</small>'; b.className = E.tool === t.id && !E.pan ? 'sel' : ''; b.onclick = () => UI.pickTool(t.id); bar.appendChild(b);
       });
       const chips = (label, items, cur, pick) => {
         const row = document.createElement('div'); row.className = 'chips'; if (label) { const l = document.createElement('span'); l.textContent = label; row.appendChild(l); }
