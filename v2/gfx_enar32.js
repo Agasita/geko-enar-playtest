@@ -8,7 +8,7 @@
   const DEV = /[?&]dev=1/.test(location.search), ON = DEV && /[?&]gfx=enar32/.test(location.search);
   if (!ON) return;
   const BASE = 'assets/enar32/';
-  const HD = window.HD = { ready: false };
+  const HD = window.HD = { ready: false, blocks: ((/[?&]blocks=(concept|gpt)/.exec(location.search) || [])[1]) || null }; // blocks=concept|gpt: 大きい絵から作った 茶・鋼・赤・青 との くらべ用(HD.blocks を かえると、その場で きりかわる)
   const cv = document.getElementById('cv');
   if (cv) { cv.width = 576; cv.height = 360; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.setTransform(2, 0, 0, 2, 0, 0); }
   // HDの絵は、2つの引数(x, y)で描くと、半分の大きさ。そのほかの形は、そのまま。
@@ -17,12 +17,26 @@
     if (im && im.__hd && arguments.length === 3) return _draw.call(this, im, arguments[1], arguments[2], im.width / 2, im.height / 2);
     return _draw.apply(this, arguments);
   };
-  const sheets = {}, atlas = {}, cache = {};
+  const sheets = {}, atlas = {}, cache = {}, cmp = {};
   const NEED = ['block_brown', 'block_red', 'block_blue', 'block_green', 'block_yellow', 'block_cracked', 'block_glass', 'block_steel', 'block_lock', 'hero_enar', 'hero_glide', 'item_floppy', 'item_sigma', 'item_energy'];
   const loadImg = (src) => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
   Promise.all([fetch(BASE + 'atlas.json').then(r => r.json()), ...NEED.map(n => loadImg(BASE + 'sheets/' + n + '.png').then(i => { sheets[n] = i; }))])
     .then(([a]) => { Object.assign(atlas, a); HD.ready = true; })
     .catch((e) => { console.warn('enar32: よみこみに しっぱい', e); });
+  // くらべ用: 大きい絵(コンセプト原画 / GPTの縮小版)から 32pxに切った 1列のシート。HD.blocks で つかう
+  ['concept', 'gpt'].forEach((k) => loadImg('assets/enar32_hires/cmp_' + k + '.png').then((img) => {
+    const n = img.width / 32; cmp[k] = [];
+    for (let i = 0; i < n; i++) { const c = document.createElement('canvas'); c.width = 32; c.height = 32; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, i * 32, 0, 32, 32, 0, 0, 32, 32); c.__hd = true; cmp[k].push(c); }
+  }).catch(() => {}));
+  // gpt: 茶0-3 / 鋼4-6 / 赤7-11(idle,heat0-3) / 青12-16(idle,shine0-3)。concept: 茶0 / 鋼1 / 赤2 / 青3
+  function cmpFrame(kind, s) {
+    const a = cmp[HD.blocks]; if (!a) return null; const g = HD.blocks === 'gpt';
+    if (kind === 'brown') return g ? a[s % 4] : a[0];
+    if (kind === 'steel') return g ? a[4 + (s % 3)] : a[1];
+    if (kind === 'red') return g ? a[7 + [0, 1, 2, 3, 4, 3, 2, 1][Math.floor(now() * 6 + s) % 8]] : a[2];
+    if (kind === 'blue') return g ? a[12 + [0, 0, 0, 1, 2, 3, 4, 0][Math.floor(now() * 4 + s) % 8]] : a[3];
+    return null;
+  }
   // シート(ファイル名)と、コマの名前 → 切り出した canvas(__hd つき)。flip=左右反転
   function frame(sheet, name, flip) {
     const key = sheet + ':' + name + (flip ? 1 : 0); if (cache[key]) return cache[key];
@@ -42,6 +56,7 @@
   X.block = function (t, c, top, bot, seed) {
     if (HD.ready) {
       let f = null; const s = Math.abs(seed || 0);
+      if (HD.blocks && t !== 3 && c <= 2) { const kk = ['brown', 'red', 'blue'][c]; const q = cmpFrame(kk, s); if (q) return q; }
       if (t === 3) f = frame('block_cracked', 'idle_0');                                  // ひび割れ
       else if (c === 4) f = frame('block_yellow', 'idle_0');                              // 黄(もろい)
       else if (c === 0) f = frame('block_brown', 'variant_' + (s % 4));
@@ -69,7 +84,7 @@
     return orig.shard.apply(X, arguments);
   };
   if (S) {
-    S.metal = function () { if (HD.ready) { const f = frame('block_steel', 'variant_0'); if (f) return f; } return orig.metal.apply(S, arguments); };
+    S.metal = function () { if (HD.blocks) { const q = cmpFrame('steel', 0); if (q) return q; } if (HD.ready) { const f = frame('block_steel', 'variant_0'); if (f) return f; } return orig.metal.apply(S, arguments); };
   }
   // ゲームがわから つかう: カギの重ね絵(ブロックと おなじ大きさ)、エナジーの玉
   HD.lock = () => (HD.ready ? frame('block_lock', 'overlay') : null);
