@@ -1492,7 +1492,6 @@
   const FUNNEL = ['1111111', '.11111.', '..111..', '..111..', '...1...'];
   function drawEditOverlay() {
     const E = G.edit, cx = Math.round(G.cam.x), cy = Math.round(G.cam.y);
-    ctx.fillStyle = 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); // ゲーム画面だけを、リングを出したときと同じ暗さに
     if (E.pan) { // 手モード: 黄色いわく と 札で、はっきり しらせる
       ctx.strokeStyle = '#FFC000'; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
       ctx.fillStyle = '#FFC000'; ctx.fillRect(W / 2 - 38, 3, 76, 13); ctx.fillStyle = '#000'; ctx.font = 'bold 9px sans-serif'; ctx.textBaseline = 'top'; ctx.textAlign = 'center'; ctx.fillText('✋ 手モード', W / 2, 5); ctx.textAlign = 'left';
@@ -1538,7 +1537,9 @@
     if (!G.level) return;
     updateRibbon();
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
-    drawBackground(); drawWorld();
+    drawBackground();
+    if (G.edit.on) { ctx.fillStyle = 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); } // 編集中: 背景だけ暗く。ブロックや仕掛けは、明るいまま
+    drawWorld();
     if (G.fog) drawFog();
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
