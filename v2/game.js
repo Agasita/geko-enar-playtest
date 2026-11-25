@@ -1622,7 +1622,7 @@
     return { px, py, tx: clamp(Math.floor(px / T), 0, G.level.w - 1), ty: clamp(Math.floor(py / T), 0, G.level.h - 1) };
   }
   let dragging = false, panLast = null, tapMode = false;
-  const RING = /[?&]ring=1/.test(location.search); // 試験: なおすコマンドを リングコマンドにして、画面ながおしで よびだす。ダブルタップで 手(画面いどう)を きりかえる
+  const RING = /[?&]ring=(1|menu)/.test(location.search); // 試験: なおすコマンドを リングコマンドにして、画面ながおしで よびだす。ダブルタップで 手(画面いどう)を きりかえる
   let downInfo = null, lastTap = { t: 0, x: 0, y: 0 }, pendTap = null;
   const cancelPend = () => { if (pendTap) { clearTimeout(pendTap); pendTap = null; } };
   const wantsRect = () => { const d = toolDef(), E = G.edit; return d && (d.mode === 'rect' || (d.mode === 'two' && E.step === 0) || (d.mode === 'painter' && E.step === 1)); };
@@ -1660,34 +1660,77 @@
   // ---- リングコマンド(聖剣2ふう): ながおしで わっかが ひらく。ゆびを 目あての方向へ うごかして はなすと えらべる ----
   const Ring = (function () {
     const el = document.createElement('div'); el.id = 'ring'; el.className = 'hide'; document.body.append(el);
-    let items = [], sx = 0, sy = 0, hi = -1, held = false;
+    let items = [], sx = 0, sy = 0, hi = -1, held = false, cx0 = 0, cy0 = 0, subOf = null;
     const E = () => G.edit;
+    // ?ring=menu なら、パソコンの右クリックメニューのような たてならびにする(くらべるため)
+    const MENU = /[?&]ring=menu/.test(location.search);
+    // えらんだ道具に、もう1つ えらぶ もの(よせ→ など)が あるなら、その一覧を かえす
+    function optionsOf(id) {
+      const o = E().opts, mk = (list, cur, pick) => list.map(it => ({ label: it.label, color: it.color, cur: cur === it.v, run: () => { pick(it.v); UI.refreshTools(); } }));
+      if (id === 'transform') return mk([{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '90°回転' }], o.tf, v => { o.tf = v; });
+      if (id === 'sort') return mk([{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; });
+      if (id === 'filter') return mk(COLORS.map((c, i) => ({ v: i, label: c.n, color: i })).concat([{ v: null, label: '外す' }]), G.filter, v => runPlan(planFor('filter', { fcolor: v })));
+      return null;
+    }
     function build() {
-      items = G.level.tools.map(id => ({ label: TOOL_BY[id].name, sub: TOOL_BY[id].cost, cur: E().tool === id && !E().pan, run: () => UI.pickTool(id) }));
+      items = G.level.tools.map(id => ({ id, label: TOOL_BY[id].name, sub: TOOL_BY[id].cost, cur: E().tool === id && !E().pan, run: () => UI.pickTool(id) }));
       items.push({ label: '手', sub: '', cur: E().pan, run: () => { E().pan = !E().pan; UI.refreshTools(); } });
       items.push({ label: 'もどす', sub: '', run: () => undoEdit() });
       items.push({ label: 'やりなおし', sub: '', run: () => redoEdit() });
       items.push({ label: 'おわる', sub: '', run: () => setEdit(false) });
     }
     function open(x, y) {
-      build(); sx = x; sy = y; hi = -1; held = true;
-      const n = items.length, R = n <= 6 ? 86 : 108, m = R + 46;
-      const cx = Math.max(Math.min(x, innerWidth - m), Math.min(m, innerWidth / 2)), cy = Math.max(Math.min(y, innerHeight - m), Math.min(m, innerHeight / 2));
-      el.innerHTML = '<div class="ring-disc" style="left:' + cx + 'px;top:' + cy + 'px;width:' + (R * 2) + 'px;height:' + (R * 2) + 'px"></div><div class="ring-center" style="left:' + cx + 'px;top:' + cy + 'px"></div>';
+      build(); sx = x; sy = y; hi = -1; held = true; subOf = null; el.innerHTML = '';
+      const n = items.length, R = n <= 6 ? 86 : n <= 9 ? 108 : 124, m = R + 46;
+      cx0 = Math.max(Math.min(x, innerWidth - m), Math.min(m, innerWidth / 2)); cy0 = Math.max(Math.min(y, innerHeight - m), Math.min(m, innerHeight / 2));
+      layout(x, y);
+      el.className = 'held' + (MENU ? ' menu' : ''); SFX.editOn(); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
+    }
+    // いまの items を ならべる。リング=まるく / メニュー=たてに
+    function layout(x, y, anchor) {
+      const n = items.length;
+      if (MENU) {
+        const col = document.createElement('div'); col.className = 'mcol'; const W = 150, H = n * 40 + 8;
+        let left, top;
+        if (anchor) { left = anchor.right + 6; if (left + W > innerWidth - 4) left = Math.max(4, anchor.left - W - 6); top = Math.max(4, Math.min(anchor.top, innerHeight - H - 4)); }
+        else { left = Math.max(4, Math.min(x, innerWidth - W - 4)); top = Math.max(4, Math.min(y, innerHeight - H - 4)); }
+        col.style.left = left + 'px'; col.style.top = top + 'px'; col.style.width = W + 'px';
+        items.forEach((it, i) => { const b = document.createElement('button'); b.className = 'ri mi' + (it.cur ? ' cur' : ''); b.dataset.i = i; fill(b, it); b.onclick = () => choose(i); it.el = b; col.append(b); });
+        el.append(col);
+        return;
+      }
+      const R = n <= 6 ? 86 : n <= 9 ? 108 : 124, cx = cx0, cy = cy0;
+      el.insertAdjacentHTML('beforeend', '<div class="ring-disc" style="left:' + cx + 'px;top:' + cy + 'px;width:' + (R * 2) + 'px;height:' + (R * 2) + 'px"></div><div class="ring-center" style="left:' + cx + 'px;top:' + cy + 'px">' + (subOf ? TOOL_BY[subOf].name : '') + '</div>');
       items.forEach((it, i) => {
         const a = -Math.PI / 2 + i * 2 * Math.PI / n; it.a = a;
         const b = document.createElement('button'); b.className = 'ri' + (it.cur ? ' cur' : ''); b.style.left = cx + 'px'; b.style.top = cy + 'px'; b.style.setProperty('--x', Math.round(Math.cos(a) * R) + 'px'); b.style.setProperty('--y', Math.round(Math.sin(a) * R) + 'px'); b.style.transitionDelay = (i * 22) + 'ms';
-        b.innerHTML = it.label + (it.sub !== '' ? '<small>' + it.sub + '</small>' : ''); b.onclick = () => choose(i); it.el = b; el.append(b);
+        fill(b, it); b.onclick = () => choose(i); it.el = b; el.append(b);
       });
-      el.className = 'held'; SFX.editOn(); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
+    }
+    function fill(b, it) {
+      b.innerHTML = it.label + (it.sub !== undefined && it.sub !== '' ? '<small>' + it.sub + '</small>' : '');
+      if (it.color !== undefined) { b.style.background = COLORS[it.color].hex; b.style.color = '#1f2a44'; }
+    }
+    // 道具を えらんだあと、もう1つ えらぶものが あるときの 2だんめ
+    function openSub(id, list) {
+      const prev = items.find(it => it.id === id); const r = prev && prev.el ? prev.el.getBoundingClientRect() : null;
+      subOf = id; held = false; hi = -1;
+      if (MENU) { el.querySelectorAll('.mcol').forEach((c, k) => { if (k > 0) c.remove(); }); items = list; layout(0, 0, r && { left: r.left, right: r.right, top: r.top }); }
+      else { el.innerHTML = ''; items = list; layout(0, 0); }
+      el.className = 'open' + (MENU ? ' menu' : '');
     }
     function move(x, y) {
       if (!held) return; const dx = x - sx, dy = y - sy; let k = -1;
-      if (Math.hypot(dx, dy) > 24) { const a = Math.atan2(dy, dx); let best = 9; items.forEach((it, i) => { let d = Math.abs(a - it.a) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; if (d < best) { best = d; k = i; } }); }
+      if (MENU) { const t = document.elementFromPoint(x, y), b = t && t.closest && t.closest('.mi'); k = b ? +b.dataset.i : -1; }
+      else if (Math.hypot(dx, dy) > 24) { const a = Math.atan2(dy, dx); let best = 9; items.forEach((it, i) => { let d = Math.abs(a - it.a) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; if (d < best) { best = d; k = i; } }); }
       if (k !== hi) { hi = k; items.forEach((it, i) => it.el.classList.toggle('hi', i === k)); const c = el.querySelector('.ring-center'); if (c) c.textContent = k >= 0 ? items[k].label : ''; }
     }
-    function choose(i) { const it = items[i]; close(); if (it) { SFX.place(); it.run(); } }
-    function close() { held = false; el.className = 'hide'; el.innerHTML = ''; items = []; }
+    function choose(i) {
+      const it = items[i]; if (!it) { close(); return; }
+      SFX.place(); const list = !subOf && it.id ? optionsOf(it.id) : null; it.run();
+      if (list) openSub(it.id, list); else close();
+    }
+    function close() { held = false; subOf = null; el.className = 'hide'; el.innerHTML = ''; items = []; }
     function release() { if (!held) return; held = false; if (hi >= 0) choose(hi); else el.classList.remove('held'); }
     el.addEventListener('pointerdown', (e) => { if (e.target === el || e.target.classList.contains('ring-disc')) close(); });
     return { open, move, release, close, get isOpen() { return !el.classList.contains('hide'); } };
@@ -1697,6 +1740,7 @@
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
     cv.addEventListener('pointerdown', (e) => {
       if (G.mode !== 'play') return; if (Ring.isOpen) { Ring.close(); return; }
+      if (e.button === 2) { if (!G.edit.on) { setEdit(true); if (!G.edit.on) return; } dragging = false; tapMode = false; panLast = null; G.edit.sel = null; downInfo = null; cancelPend(); Ring.open(e.clientX, e.clientY); return; } // パソコン: 右クリックで すぐ ひらく
       downInfo = { x: e.clientX, y: e.clientY, t: performance.now() }; clearTimeout(lpTimer); lpPointer = e.pointerId;
       try { cv.setPointerCapture(e.pointerId); } catch (_) { /* no-op */ }
       lpTimer = setTimeout(() => {

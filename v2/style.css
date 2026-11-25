@@ -389,3 +389,11 @@ body.m-pan #sheet::after{box-shadow:inset 0 0 0 4px #F0A000}
 #rb-mode{display:inline-flex;align-items:center;justify-content:center;min-width:calc(var(--s)*12px);min-height:calc(var(--s)*10px);padding:0 6px;border-radius:6px;font-size:calc(var(--s)*8px);line-height:1.1;color:#fff}
 #rb-mode.draw{background:#2E75B6}
 #rb-mode.pan{background:#F0A000;color:#000}
+
+/* ?ring=menu: 右クリックメニューふう(たてならび) */
+#ring.menu .mcol{position:absolute;display:flex;flex-direction:column;gap:4px;padding:4px;border-radius:10px;background:#fffffff2;box-shadow:0 6px 18px #0007;border:1px solid #ABABAB}
+#ring.menu .mi,#ring.menu .mi:active{position:static;transform:none;opacity:1;width:100%;min-height:36px;padding:6px 10px;text-align:left;border-radius:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background .1s;box-shadow:none;background:#fff;color:#262626;border:1px solid #D0D0D0;font-size:14px}
+#ring.menu .mi small{opacity:.7;font-size:11px}
+#ring.menu .mi.cur{border-color:#217346;box-shadow:inset 3px 0 0 #217346}
+#ring.menu .mi.hi,#ring.menu .mi:hover{background:#217346!important;color:#fff!important;border-color:#217346}
+#ring.menu .ring-disc,#ring.menu .ring-center{display:none}
