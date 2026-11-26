@@ -1,0 +1,102 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>エナーとふしぎのシート 編集機能・敵キャラ仕様書</title><style>
+@page { size: A4 portrait; margin: 14mm 13mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: "Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP",sans-serif; color:#1F2A44; font-size:9.6pt; line-height:1.6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+h1 { font-size:20pt; margin:0 0 3mm; border-bottom:3px solid #F5C842; padding-bottom:2mm; }
+h2 { font-size:14pt; margin:8mm 0 2.5mm; border-left:5px solid #F5C842; padding-left:3mm; page-break-after:avoid; }
+h3 { font-size:11.5pt; margin:5mm 0 1.5mm; page-break-after:avoid; }
+p { margin:0 0 2mm; } ul { margin:0 0 2mm; padding-left:5mm; } li { margin:0 0 .8mm; }
+table { border-collapse:collapse; width:100%; font-size:8.8pt; margin:1.5mm 0 3mm; page-break-inside:auto; }
+tr { page-break-inside:avoid; }
+th { background:#1F2A44; color:#fff; text-align:left; padding:1.2mm 2mm; font-weight:700; }
+td { padding:1.2mm 2mm; vertical-align:top; border-bottom:1px solid #E3E7F0; }
+tr:nth-child(even) td { background:#F5F7FB; }
+.k { white-space:nowrap; font-weight:700; }
+.muted { color:#6B7590; font-size:8.3pt; }
+.box { border:1px solid #DCE1EE; border-radius:2.5mm; padding:2.5mm 4mm; margin:2mm 0 3mm; background:#FBFCFE; }
+.ok { color:#1F7A4A; font-weight:700; } .ng { color:#B23A2E; font-weight:700; }
+.card { border:1px solid #DCE1EE; border-radius:2.5mm; padding:3mm 4mm 1mm; margin:0 0 4mm; page-break-inside:avoid; }
+.card h3 { margin-top:0; }
+.pb { page-break-before:always; }
+code { background:#EEF1F8; padding:0 1mm; border-radius:1mm; font-size:8.6pt; }
+.cover { text-align:center; padding-top:35mm; page-break-after:always; }
+.cover h1 { font-size:26pt; border:0; } .cover .sub { font-size:12pt; color:#6B7590; }
+</style></head><body>
+<section class="cover"><h1>編集機能・敵キャラ 仕様書</h1><p class="sub">エナーとふしぎのシート（v2）</p><p class="muted">ゲームの実際のコード（v2/game.js・levels.js）から、数値と条件を書き起こしたもの。<br>作成日 2026-11-26 ／ 単位：長さは論理px（1マス＝16px）、時間は秒</p></section>
+
+<h1>1. 共通ルール</h1>
+<h2>1-1 ブロックの種類と「動かせるか」</h2>
+<table><tr><th>種類</th><th>編集で動かせる</th><th>備考</th></tr>
+<tr><td class="k">普通のブロック（茶・赤・青・緑）</td><td class="ok">○</td><td>色に性質がある（茶＝普通／赤＝熱い・触れるとダメージ／青＝氷で滑る／緑＝バネで跳ねる）</td></tr>
+<tr><td class="k">ひび割れ（旧・黄色）</td><td class="ok">○</td><td>乗ると約0.5秒で崩れる。壊れやすい</td></tr>
+<tr><td class="k">ガラス（色なし）</td><td class="ok">○</td><td>「いろコピー」で色が付けられる唯一のブロック。色が付いたものは「色つきガラス」</td></tr>
+<tr><td class="k">磁石（M）</td><td class="ok">○</td><td>「いろコピー」のコピー元にはできない。フィルターの影響を受けない</td></tr>
+<tr><td class="k">保護ブロック（鍵つき）</td><td class="ng">×</td><td>「まもりをはずす」で解除すれば動かせる。フィルターでも消えない。並べ替えの区切りになる</td></tr>
+<tr><td class="k">鋼（はがね）</td><td class="ng">×</td><td>常に壁。並べ替えの区切りになる。範囲外もここで止まる</td></tr>
+<tr><td class="k">トゲ</td><td class="ng">×</td><td>触れると即ミス。編集の対象外</td></tr>
+<tr><td class="k">リフト</td><td class="ng">×</td><td>編集では動かせない。<b>通り道（レール）にはブロックを置けない</b>。ガラス色のリフトは色付けできる</td></tr>
+<tr><td class="k">ドア・判定セル・スイッチ</td><td class="ng">×</td><td>ドア・判定セルは編集の対象外（ドアの位置には、ブロックを置けない）</td></tr>
+<tr><td class="k">にせブロック（敵）</td><td class="ng">×</td><td>ブロックではない。編集もコピーも効かない</td></tr></table>
+
+<h2>1-2 コスト（エナジー）</h2>
+<ul>
+<li>ステージごとに「使える道具」と「コスト上限（energy）」が決まっている。<b>ふつうは回復しない</b>。実験シート（LAB）だけは自動回復あり（上限100）。</li>
+<li>エナジーの玉をとると、コストが15回復する（上限まで）。</li>
+<li>確定した編集ごとに、その道具のコストが引かれる。<b>元に戻す／やり直す</b>は何度でもでき、戻すとコストも全額戻る。</li>
+<li>練習モードでは、コストは無限。</li>
+<li>救済：同じステージで3回失敗すると、コスト上限が1.5倍（切り上げ）になる。クリアすると元に戻る。</li>
+<li>コストを使い切って最小コストを下回ると「もう編集できません」と出る。</li></ul>
+<table><tr><th>道具</th><th>コスト</th><th>道具</th><th>コスト</th></tr>
+<tr><td>いろコピー</td><td>2</td><td>シートをまもる</td><td>4</td></tr>
+<tr><td>かたち</td><td>8</td><td>まもりをはずす</td><td>6</td></tr>
+<tr><td>ならべかえ</td><td>10</td><td>印刷範囲の設定</td><td>6</td></tr>
+<tr><td>フィルター</td><td>8（外す：0）</td><td>ズーム</td><td>4</td></tr></table>
+
+<h2>1-3 編集のしくみ</h2>
+<ul>
+<li>「なおす」に入ると<b>時間が止まる</b>。敵・リフト・判定セルとドアも止まる。編集を終えると動き出し、判定セルとドアの結果もそのときに分かる。</li>
+<li>範囲を選ぶ道具は、ドラッグで矩形を選ぶ。確定の前に、できるかどうか・コスト・変わる場所が先に計算され、できないときは理由が出る（失敗してもコストは減らない）。</li>
+<li>どの道具も、<b>何もないところにブロックは生まれない</b>。あるブロックを動かす・並べる・色を変える・保護する・見えなくする、だけ。（敵の「オートフィル」だけは、ブロックを作る）</li>
+<li>エナー・敵・リフトの通り道・ドアのあるマスには、ブロックを動かして重ねられない（失敗理由：エナーやリフトの通り道が邪魔です）。</li>
+<li>改ページプレビュー（ワールド14）では、<b>見える範囲の外は編集できない</b>。ズーム中も編集できない。</li></ul>
+
+<h2>1-4 エナーのダメージと踏みつけ</h2>
+<ul>
+<li>ライフは3。敵や赤いブロックに触れると1ダメージ。直後の約1.3秒は無敵で、後ろに弾き飛ばされる。</li>
+<li>トゲ・穴・ライフ0・リフトにはさまれる、はミス（ステージを最初から）。</li>
+<li><b>踏みつけ</b>：落ちている最中（下向きの速さが60以上）に、敵の上から重なると、敵に1ダメージ。エナーは上に跳ね返る（速度-240）。タレット・#DIV/0!・循環参照・にせブロックは、踏めない。</li>
+<li>敵ごとの体力（hp）に応じて、踏む回数が決まる（下の表）。</li></ul>
+
+<h1 class="pb">2. 編集機能（8種）</h1>
+<p class="muted">タブ：ホーム／セル／データ／表示。「使うステージ」は levels.js の tools 指定から集計（LAB＝実験シート）。</p>
+<div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M13 2.5L8 8" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M8.2 7.2l1.6 1.6c-.4 2.6-2.4 4.4-6 4.4 1.2-1 .8-2.2 1.2-3.2.5-1.2 2-2.2 3.2-2.8z" fill="#F2B100"/></svg>いろコピー</h3><table><tr><td class="k" style="width:22%">分類</td><td>ホーム／2段階（①コピー元のブロックをタップ ②ガラスの範囲をドラッグ）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>2</td></tr><tr><td class="k" style="width:22%">効果</td><td>コピー元の色を、範囲内の<b>ガラス</b>（色のないセル）に付ける。付けたガラスは「色つきガラス」（見た目に元ガラスのしるし）になり、色の性質（熱い・滑る・バネ）は普通のブロックと同じ。範囲内の<b>ガラス色のリフト</b>にも色が付く（リフトにはしるしが付く）。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>色はコピー元で決まる（opts.color は使わない）</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>コピー元がブロックでない／磁石／ガラス（色なし）。範囲にガラス（またはガラスのリフト）がない。保護されたガラスは対象外。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>3-1 3-2 6-1 7-3 7-6 10-3 11-1 12-2 12-3</td></tr><tr><td class="k" style="width:22%">メモ</td><td>ガラスだけが色を受け取る。茶・赤・青・緑のブロックは色を変えられない。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M1 12.5L6.2 3.5v9z" fill="#4472C4"/><path d="M15 12.5L9.8 3.5v9z" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><path d="M8 1.5v13" stroke="#7F7F7F" stroke-width="1" stroke-dasharray="1.6 1.4"/></svg>かたち</h3><table><tr><td class="k" style="width:22%">分類</td><td>セル／範囲ドラッグ（矩形）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>8</td></tr><tr><td class="k" style="width:22%">効果</td><td>範囲内の動かせるブロックを、左右反転／上下反転／90°回転する。ブロックの色・種類はそのまま移る。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>左右反転(flipH)／上下反転(flipV)／90°回転(rot)。初期値は左右反転。</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>90°回転は<b>正方形</b>のときだけ（それ以外は「正方形で選んでください」）。動かせないセル（鋼・保護）に重なる、範囲外へ出る、エナーやリフトの通り道に重なる、結果が同じ、のとき失敗。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>4-1 4-2 5-3 9-1 9-2 9-4</td></tr><tr><td class="k" style="width:22%">メモ</td><td>範囲内の鋼・保護ブロックは動かず、そこに移る先があると失敗する。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M1.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="3.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="3.5" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/></svg>ならべかえ</h3><table><tr><td class="k" style="width:22%">分類</td><td>データ／範囲ドラッグ（矩形）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>10</td></tr><tr><td class="k" style="width:22%">効果</td><td>範囲内のブロックを、一方向（左・右・上・下）に寄せて詰める。範囲の行（または列）ごとに独立。<b>鋼・保護ブロック・エナーやリフトの通り道</b>で区切られ、区切りの内側だけで詰める。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>←よせ(L)／よせ→(R)／↑よせ(U)／よせ↓(D)。初期値は下。</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>並べ替えても同じ（すでに詰まっている）とき失敗。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>1-2 2-2 3-2 5-2 5-3 8-1〜8-3 9-1 9-3 10-1〜10-4 11-1〜11-3 12-1 12-3 13-4 13-8 13-10 13-11 13-13 14-2</td></tr><tr><td class="k" style="width:22%">メモ</td><td>ブロックの色・種類は保ったまま位置だけが変わる。ひび割れ・磁石も「動かせるブロック」として動く。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M1 2.5h14L9.7 8.6V14l-3.4-1.6V8.6z" fill="#4472C4"/><path d="M3 4h10" stroke="#B4C7E7" stroke-width="1"/></svg>フィルター</h3><table><tr><td class="k" style="width:22%">分類</td><td>データ／即時（色ボタンを選ぶだけ。範囲なし）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>8（「外す」は0）</td></tr><tr><td class="k" style="width:22%">効果</td><td>残す色を選ぶと、<b>ほかの色のブロックが「ない」扱い</b>になり、通り抜けられる（見た目はうすくなる）。保護ブロックと鋼は影響を受けない。色のちがうリフトも通り抜けられる。判定セル（存在・色）も、フィルター後の状態で判定する。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>残す色（茶・赤・青・緑・ひび割れ・ガラス）／外す</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>「すでにその色」「フィルターがかかっていない（外す）」のとき失敗。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>2-1 2-2 3-2 4-2 5-1 7-2 7-4 7-6 8-3 9-2 9-3 9-4 10-2 11-2 11-3</td></tr><tr><td class="k" style="width:22%">メモ</td><td>同時にかかるフィルターは1つ。選び直すと、前のフィルターは置きかわる（そのつどコストがかかる）。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M5 7.5V5a3 3 0 0 1 6 0v2.5" fill="none" stroke="#7F7F7F" stroke-width="1.7"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#F2B100"/><circle cx="8" cy="10.6" r="1.1" fill="#7F5F00"/></svg>シートをまもる</h3><table><tr><td class="k" style="width:22%">分類</td><td>表示／範囲ドラッグ（矩形）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>4</td></tr><tr><td class="k" style="width:22%">効果</td><td>範囲内のブロックを保護する。保護したブロックは、移動・反転・並べ替え・色付けの対象外になり、並べ替えの区切りにもなる。フィルターでも消えない。敵の「並べ替え」「条件つき書式」の対象外にもなる。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>なし</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>保護できるブロックがない（すでに保護済み／ブロックなし）とき失敗。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>5-1 9-3 13-9 13-12</td></tr><tr><td class="k" style="width:22%">メモ</td><td>保護の絵は、ブロックに鍵のしるし。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M5 7.5V5a3 3 0 0 1 5.8-1" fill="none" stroke="#7F7F7F" stroke-width="1.7" stroke-linecap="round"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><circle cx="8" cy="10.6" r="1.1" fill="#2F5597"/></svg>まもりをはずす</h3><table><tr><td class="k" style="width:22%">分類</td><td>表示／範囲ドラッグ（矩形）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>6</td></tr><tr><td class="k" style="width:22%">効果</td><td>範囲内の保護を解除する。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>なし</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>保護されたブロックがないとき失敗。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>5-2 8-2 9-4</td></tr><tr><td class="k" style="width:22%">メモ</td><td>保護の取りはずしは、コストが高め（元に戻すと全額戻る）。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><path d="M3 1.5h7l3 3v10H3z" fill="#fff" stroke="#7F7F7F"/><rect x="5" y="6" width="6" height="6" fill="#DDEBF7" stroke="#4472C4" stroke-width="1" stroke-dasharray="1.6 1"/></svg>印刷範囲の設定</h3><table><tr><td class="k" style="width:22%">分類</td><td>表示／範囲ドラッグ（矩形）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>6</td></tr><tr><td class="k" style="width:22%">効果</td><td>改ページプレビュー（ワールド14）で、いまの見える範囲に重ねて範囲を選ぶと、そこが青い枠のまま<b>ずっと見える</b>ようになる。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>なし</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>40マスより広い／すでに3か所ある／いまの見える範囲と重ならない／改ページプレビューのないステージ、のとき失敗。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>14-2</td></tr><tr><td class="k" style="width:22%">メモ</td><td>見えない所は、ほかの道具でも編集できない（先に範囲を広げてから）。</td></tr></table></div><div class="card"><h3><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:1.5mm"><circle cx="6.5" cy="6.5" r="4.4" fill="#DDEBF7" stroke="#4472C4" stroke-width="1.6"/><path d="M10 10l4.6 4.6" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M4.6 6.5h3.8M6.5 4.6v3.8" stroke="#4472C4" stroke-width="1.1"/></svg>ズーム</h3><table><tr><td class="k" style="width:22%">分類</td><td>表示／即時（「ズームする」ボタン）</td></tr><tr><td class="k" style="width:22%">コスト</td><td>4</td></tr><tr><td class="k" style="width:22%">効果</td><td>5秒間、見える範囲が2倍に広がる。その間は、なおせない（編集に入れない）。</td></tr><tr><td class="k" style="width:22%">オプション</td><td>なし</td></tr><tr><td class="k" style="width:22%">できない・失敗</td><td>改ページプレビューのないステージでは使えない。</td></tr><tr><td class="k" style="width:22%">使うステージ</td><td>14-3</td></tr><tr><td class="k" style="width:22%">メモ</td><td>押すと「5秒」が準備され、編集を終えて時間が動き出してから減りはじめる（編集中は減らない）。ズーム中は編集に入れない。</td></tr></table></div>
+
+<h2>2-9 道具とブロックの組み合わせ表</h2>
+<table><tr><th>道具＼対象</th><th>普通</th><th>ガラス</th><th>ひび割れ</th><th>磁石</th><th>保護</th><th>鋼</th><th>リフト</th></tr>
+<tr><td class="k">いろコピー</td><td>コピー元のみ</td><td class="ok">色が付く</td><td>コピー元のみ</td><td>不可</td><td>対象外</td><td>–</td><td>ガラスのリフトに色</td></tr>
+<tr><td class="k">かたち</td><td class="ok">動く</td><td class="ok">動く</td><td class="ok">動く</td><td class="ok">動く</td><td>止める</td><td>止める</td><td>通り道は不可</td></tr>
+<tr><td class="k">ならべかえ</td><td class="ok">寄る</td><td class="ok">寄る</td><td class="ok">寄る</td><td class="ok">寄る</td><td>区切り</td><td>区切り</td><td>通り道で区切り</td></tr>
+<tr><td class="k">フィルター</td><td>色で消える</td><td>色で消える</td><td>色で消える</td><td>消えない</td><td>消えない</td><td>消えない</td><td>色が違うと消える</td></tr>
+<tr><td class="k">シートをまもる</td><td class="ok">保護</td><td class="ok">保護</td><td class="ok">保護</td><td class="ok">保護</td><td>–</td><td>–</td><td>–</td></tr>
+<tr><td class="k">まもりをはずす</td><td colspan="4" style="text-align:center">保護を解除</td><td class="ok">解除</td><td>–</td><td>–</td></tr></table>
+
+<h1 class="pb">3. 敵キャラクター（12種）</h1>
+<h2>3-1 一覧（数値）</h2>
+<table><tr><th>名前</th><th>type</th><th>動き</th><th>大きさ</th><th>体力</th><th>速さ</th><th>踏める</th></tr><tr><td class="k">てくてく</td><td>walker</td><td>ゆかを歩く</td><td>12×12</td><td>1</td><td>28</td><td>○</td></tr><tr><td class="k">かたいこうら</td><td>guard</td><td>ゆかを歩く</td><td>12×13</td><td>2</td><td>22</td><td>○（2回）</td></tr><tr><td class="k">ふわふわ</td><td>flyer</td><td>空中</td><td>12×10</td><td>1</td><td>–</td><td>○</td></tr><tr><td class="k">塗りつぶし</td><td>bucket</td><td>ゆかを歩く</td><td>14×13</td><td>1</td><td>28</td><td>○</td></tr><tr><td class="k">たまうち</td><td>turret</td><td>固定</td><td>12×12</td><td>3</td><td>–</td><td>×</td></tr><tr><td class="k">#DIV/0!</td><td>div0</td><td>ゆかを歩く</td><td>12×11</td><td>倒せない</td><td>18</td><td>×</td></tr><tr><td class="k">オートフィル</td><td>autofill</td><td>固定</td><td>12×12</td><td>1</td><td>–</td><td>○</td></tr><tr><td class="k">しろい文字</td><td>moji</td><td>ゆかを歩く</td><td>12×12</td><td>1</td><td>36</td><td>○</td></tr><tr><td class="k">条件つき書式</td><td>condfmt</td><td>空中</td><td>14×12</td><td>1</td><td>–</td><td>○</td></tr><tr><td class="k">並べ替え</td><td>shuffler</td><td>空中</td><td>12×12</td><td>2</td><td>–</td><td>○（2回）</td></tr><tr><td class="k">循環参照</td><td>circ</td><td>長方形の道</td><td>12×12</td><td>倒せない</td><td>38</td><td>×</td></tr><tr><td class="k">にせブロック</td><td>fake</td><td>固定（壁）</td><td>14×14</td><td>1</td><td>–</td><td>×（効かない）</td></tr></table>
+<p class="muted">大きさは当たり判定（px）。速さは px/秒。体力「倒せない」は実際には999で、踏んでも倒せない。</p>
+<h2>3-2 共通のふるまい</h2>
+<ul>
+<li>歩く敵（てくてく・かたいこうら・#DIV/0!・しろい文字・塗りつぶし）は、重力で落ち、ふちや壁で折り返す（しろい文字は止まる）。</li>
+<li>敵が出現してから、エナーが約150px以内に近づくと、「てき図鑑」に載る（しろい文字は正体を現したとき／にせブロックは目が開いたとき）。</li>
+<li>非表示にされた行・列にいる敵は、そこにいない扱いになる。</li>
+<li>編集中は、すべての敵が止まる（敵の攻撃・敵の編集的ふるまいも止まる）。</li>
+<li>敵の「ブロックを変えるもの」（条件つき書式・並べ替え・オートフィル・塗りつぶし）は、エナーの編集と同じ盤面を書きかえる。<b>保護ブロックには作用しない</b>。人・敵のいるマスや、リフトの通り道・ドアには、ブロックを作らない。</li></ul>
+<h2>3-3 敵ごとの詳細</h2>
+<div class="card"><h3>てくてく <span class="muted">（type: walker）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>ふちや壁で折り返す。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>2-1 2-2 3-1 3-2 4-1 4-2 5-1〜5-3 6-2 7-1 7-2 7-5 14-1</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>（位置だけ）</td></tr></table></div><div class="card"><h3>かたいこうら <span class="muted">（type: guard）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>歩く向きの正面は盾でふせぐ（攻撃に対して）。ふちや壁で折り返す。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>LAB（実験シート）のみ</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>（位置だけ）</td></tr></table></div><div class="card"><h3>ふわふわ <span class="muted">（type: flyer）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>初期位置を中心に、横にsin波で往復（振れ幅 range、初期30px、周期約5.7秒）、縦に±4px。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>6-2、LAB</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>range</td></tr></table></div><div class="card"><h3>塗りつぶし <span class="muted">（type: bucket）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>ガラスの真ん中で立ちどまり、1秒ごとに足もとのガラスを自分の色で1マス塗る。保護されたガラスは塗れない。倒すと塗ったガラスは元のガラスに戻る。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-12</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>c（色。0茶/1赤/2青/3緑/4ひび）／dir（初期向き）／lim（行ったり来たりの範囲、マス）</td></tr></table></div><div class="card"><h3>たまうち <span class="muted">（type: turret）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>最初1.6秒、その後は2.2秒ごとに弾（4×4、秒速85px）を、エナーの向きに撃つ。撃つ0.5秒前から光る。エナーが150px以内のときだけ撃つ。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>（どのステージでも未使用）</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>（位置だけ）</td></tr></table></div><div class="card"><h3>#DIV/0! <span class="muted">（type: div0）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>ふちや壁で折り返す。触れるとダメージ。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-1 14-1 14-3</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>（位置だけ）</td></tr></table></div><div class="card"><h3>オートフィル <span class="muted">（type: autofill）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>足もと（ゆか）の高さで、向き d の先の最初の空きマスに、ブロックを1つ作る。最初1.5秒、その後 rate（初期2.2秒）ごと。狙うマスが光る。作る色は c、なければ足もとのブロックの色（ガラスは茶）。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-2 13-8 13-10 13-11</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>d（向き ±1）／reach（狙う距離、初期12マス）／cap（範囲内のブロック数の上限）／max（作る総数の上限）／c（色）／rate（秒）</td></tr></table></div><div class="card"><h3>しろい文字 <span class="muted">（type: moji）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>エナーが横46px・縦30px以内に近づくまでは、ほとんど見えず動かない。近づくと正体を現し、エナーの向きに追いかける（ふちでは折り返さず止まる）。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-3</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>（位置だけ）</td></tr></table></div><div class="card"><h3>条件つき書式 <span class="muted">（type: condfmt）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>最初2.4秒、その後4.2秒ごとに、範囲内の普通ブロックの色を変える。変える1秒前から範囲がちかちかする。範囲が複数あるときは、範囲ごとに色の並び（seq）がずれる。ガラス・鋼・保護・磁石・ひび割れは変えない。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-5 13-9</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>ranges（範囲 [x0,y0,x1,y1]）／seq（色の並び。初期 [0,1,2]）</td></tr></table></div><div class="card"><h3>並べ替え <span class="muted">（type: shuffler）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>最初2.4秒、その後4.2秒ごとに、範囲内のブロックを片方向に寄せる（寄せる向きは、そのたび反対になる）。寄せる1秒前から光る。鋼・磁石・ひび割れ・保護で区切られ、人や敵のいる所は動かさない。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-6</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>ranges／axis（x=横に、y=縦に）／dir（最初の向き）</td></tr></table></div><div class="card"><h3>循環参照 <span class="muted">（type: circ）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>指定した範囲（初期 x〜x+3, y〜y+2）のふちを、マスに沿って時計回りに回り続ける。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-7 14-3</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>ranges（最初の1つを道にする）</td></tr></table></div><div class="card"><h3>にせブロック <span class="muted">（type: fake）</span></h3><table><tr><td class="k" style="width:22%">動き</td><td>ブロックに偽装した壁。触れてもダメージはなく、ふめない・編集やコピーもできない。エナーが約64px以内で閉じた目、約30px以内で開いた目を見せる。となりに赤い（熱い）ブロックが来ると、反対側に1マス逃げる（0.5秒）。</td></tr><tr><td class="k" style="width:22%">出るステージ</td><td>13-4 13-13</td></tr><tr><td class="k" style="width:22%">ステージ作成での指定</td><td>c（見た目の色）</td></tr></table></div>
+<h2>3-4 気づいた点（仕様とコードのずれ）</h2>
+<ul>
+<li><b>タレット（たまうち）</b>は実装済みだが、どのステージでも使っていない。</li>
+<li>コードには、<b>ダッシュ・攻撃・ステージ作成用の古い計画関数</b>（移動・入れ替え・消す・色置き換え・行や列の非表示／挿入／削除）が残っている。現在の「なおす」の道具（8種）からは使えない。</li>
+<li>「かたいこうら」の盾は、古い「攻撃」入力に対するもの。現在のエナーには攻撃入力がないので、実際には踏みつけ2回で倒す。</li>
+<li>磁石は「動かせるブロック」として扱われる（かたち・ならべかえで動く）。意図どおりか未確認。</li></ul>
+</body></html>
