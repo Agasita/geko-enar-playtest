@@ -951,7 +951,7 @@
     if (on && G.fog && G.zoomT > 0) { UI.toast('ズーム中は、なおせません'); return; }
     E.on = on; E.did = false; E.pan = false; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
-    $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
+    $('#editbar').classList.toggle('hide', !on); document.body.classList.toggle('editing', on); UI.refreshTools();
   }
 
   // ---- はんいの選びかた(ドラッグ・タップ・キーボード) ----
@@ -1546,12 +1546,11 @@
     const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').innerHTML = mu + '<span class="lbl"> 音</span>'; $('#lb-mute').textContent = mu + ' 音'; }
   }
   // いまのモード(なおす=書ける / 手=画面いどう)を、画面のそとの リボンに アイコンで出し、画面のわくの色もかえる
-  // なおした直後に、おやゆびで すぐ おせる 大きな「終わる」を 出す(リングを ひらいている間は かくれる)
-  const fd = document.createElement('button'); fd.id = 'fastdone'; fd.className = 'hide'; fd.innerHTML = '<span>▶</span> 終わる'; document.body.append(fd);
-  fd.addEventListener('click', () => { if (G.edit.on) setEdit(false); fd.classList.add('hide'); });
+  // 編集中は、「はばたき」ボタンが「終わる」ボタンになる。なおした直後は、ボタンが ゆっくり ふくらんだり ちぢんだりして、めだつ
+  const jumpBtn = document.querySelector('[data-btn="jump"]');
   let modeMark = '';
   function updateModeMark() {
-    const showFd = G.mode === 'play' && G.edit.on && G.edit.did && !Ring.isOpen; if (fd.classList.contains('hide') === showFd) fd.classList.toggle('hide', !showFd);
+    if (jumpBtn) { const ed = G.mode === 'play' && G.edit.on; jumpBtn.classList.toggle('endmode', ed); jumpBtn.classList.toggle('pulse', ed && !!G.edit.did); const t = ed ? '終わる' : 'はばたき'; if (jumpBtn.textContent !== t) jumpBtn.textContent = t; }
     const m = G.mode === 'play' && G.edit.on ? (G.edit.pan ? 'pan' : 'draw') : ''; if (m === modeMark) return; modeMark = m;
     document.body.classList.toggle('m-pan', m === 'pan'); document.body.classList.toggle('m-draw', m === 'draw');
     const g = $('#rb-g-mode'), i = $('#rb-mode'); if (g) g.style.display = m ? '' : 'none'; if (i) { i.textContent = m === 'pan' ? '✋' : '✎'; i.className = m; i.title = m === 'pan' ? '移動モード(画面を動かす)' : '書き込みモード'; }
@@ -1630,7 +1629,7 @@
   // タッチボタン
   document.querySelectorAll('[data-btn]').forEach((b) => {
     const name = b.dataset.btn;
-    b.addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); b.setPointerCapture(e.pointerId); b.classList.add('on'); press(name, true); });
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); if (name === 'jump' && G.mode === 'play' && G.edit.on) { setEdit(false); return; } b.setPointerCapture(e.pointerId); b.classList.add('on'); press(name, true); });
     const up = (e) => { b.classList.remove('on'); press(name, false); };
     b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
     b.addEventListener('contextmenu', (e) => e.preventDefault());
