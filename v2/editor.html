@@ -92,7 +92,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-a</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-b</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
@@ -207,7 +207,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   }
   function fromLevel(lv) {
     const h = lv.front.length;
-    return { w: lv.w, h, front: lv.front.map(r => Array.from(r)), color: lv.color.map(r => r.slice()), lock: (lv.lock || lv.front.map(() => new Array(lv.w).fill(0))).map(r => r.slice()),
+    return { w: lv.w, h, front: lv.front.map(r => Array.from(r).map(c => c === 'c' ? '#' : c)), color: lv.color.map((r, y) => r.map((v, x) => lv.front[y][x] === 'c' ? 4 : v)), lock: (lv.lock || lv.front.map(() => new Array(lv.w).fill(0))).map(r => r.slice()),
       ents: (lv.ents || []).map(e => Object.assign({}, e)), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
       switches: (lv.switches || []).map(s => s.slice()), doors: (lv.doors || []).map(d => d.slice()), judges: (lv.judges || []).map(j => j.slice()),
       lifts: (lv.lifts || []).map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period || 7, phase: l.phase || 0, col: l.col || 0, ctl: l.ctl === undefined ? -1 : l.ctl })), start: lv.start.slice(), flag: lv.flag.slice() };
@@ -328,7 +328,6 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     if (k === 'judge') { L.judges = L.judges.filter(j => !(j[0] === x && j[1] === y)); L.judges.push([x, y, $('#f-jt').value, +$('#f-jc').value || 0, +$('#f-id').value || 0]); return; }
     if (k === 'switch') { L.switches = L.switches.filter(s => !(s[0] === x && s[1] === y)); L.switches.push([x, y, +$('#f-id').value || 0]); return; }
     if (k === 'steel') { eraseAt(x, y); L.front[y][x] = 'S'; return; }
-    if (k === 'crack') { eraseAt(x, y); L.front[y][x] = 'c'; return; }
     const free = L.front[y][x] === '.';
     if (k === 'ent') { if (!free) return; L.ents = L.ents.filter(e => !(e.x === x && e.y === y)); L.ents.push(Object.assign({ type: cur.type, x, y }, cur.opt || {}, (cur.type === 'autofill' && $('#f-afc') && $('#f-afc').value !== '') ? { c: +$('#f-afc').value } : {})); return; }
     if (k === 'gem') { if (free && !L.gems.some(g => g[0] === x && g[1] === y)) { if (L.gems.length >= 5) { msg('かけらは5個までです（ゲームの枠も5個まで）'); return; } L.gems.push([x, y]); } return; }
@@ -504,7 +503,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
     COLORS.forEach((c, i) => { const b = addBtn(p, spIcon(blockIm(i)) + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>道具</small>' + b.innerHTML + ' ▸'; } });
-    addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); addBtn(p, spIcon(crackIm()) + 'ひび割れ壁', { kind: 'crack' }); addBtn(p, '消しゴム', { kind: 'erase' });
+    addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); addBtn(p, '消しゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
     { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">オートフィルが作る色：足もとをまねる</option>' + COLORS.slice(0, 5).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
     ENTS.forEach(e => {

@@ -190,6 +190,7 @@
     const lv = LEVELS[i]; G.levelIdx = i; G.level = lv;
     G.front = lv.front.map(r => Array.from(r).map(c => CH2TILE[c] || 0));
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
+    G.front.forEach((r, y) => r.forEach((t, x) => { if (t === TL.CRACK) { r[x] = TL.STONE; G.col[y][x] = 4; } })); // 旧「ひび割れ壁」('c')は、ひび割れ色のブロックと おなじもの
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
     G.fog = lv.fog || null; G.areas = []; G.zoomT = 0;
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k)); G.fakes = G.enemies.filter(e => e.type === 'fake');
