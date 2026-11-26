@@ -59,6 +59,9 @@ header #cursor{min-width:3.5em}
 #ctx.on{display:flex}
 #ctx button{text-align:left;min-height:38px;width:100%}
 #ctx .cg{color:var(--sub);font-size:11px;border-bottom:1px solid #D4D4D4;margin:3px 0 0}
+@media (max-width:640px){.sep{display:none}#ver{display:none}header{gap:4px;padding:5px 8px}header button{padding:4px 7px}header h1{display:none}.toolbtn{min-width:0}}
+#back .sh{display:none}
+@media (max-width:640px){#back{order:-1;padding:0 4px;font-size:16px}#back .lg{display:none}#back .sh{display:inline}}
 </style>
 </head>
 <body>
@@ -77,9 +80,9 @@ header #cursor{min-width:3.5em}
   <button class="hb" data-pop="p-tools">🧰 使える道具</button>
   <button class="hb" data-pop="p-saved">📂 保存・ひな形</button>
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
-  <a href="index.html">ゲームに戻る</a>
+  <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-g</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-h</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
@@ -177,7 +180,7 @@ header #cursor{min-width:3.5em}
   let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
   let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw';
   const msg = (t) => { $('#msg').textContent = t; };
-  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ 今：動かす（おすと「置く」に）' : '✏ 今：置く（おすと「動かす」に）'; }
+  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ 動かす' : '✏ 置く'; }
 
   // ---- データ ----
   function blank(w, h) {
