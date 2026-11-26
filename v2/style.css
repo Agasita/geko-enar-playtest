@@ -408,3 +408,5 @@ body.m-pan #sheet::after{box-shadow:inset 0 0 0 4px #F0A000}
 #ring.menu .mi .tn{display:inline;flex:1 1 auto}
 #ring.menu .mi{justify-content:flex-start}
 #ring.menu .mi small{margin-left:auto}
+.chip .ti{margin-right:3px}
+.chip{display:inline-flex;align-items:center}
