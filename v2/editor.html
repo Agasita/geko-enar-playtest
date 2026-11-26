@@ -94,7 +94,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-e</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-f</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
@@ -213,7 +213,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   function fromLevel(lv) {
     const h = lv.front.length;
     return { w: lv.w, h, front: lv.front.map(r => Array.from(r).map(c => c === 'c' ? '#' : c)), color: lv.color.map((r, y) => r.map((v, x) => lv.front[y][x] === 'c' ? 4 : v)), lock: (lv.lock || lv.front.map(() => new Array(lv.w).fill(0))).map(r => r.slice()),
-      ents: (lv.ents || []).map(e => Object.assign({}, e)), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
+      ents: (lv.ents || []).map(e => { const o = Object.assign({}, e); if (o.type === 'circ' && o.ranges && o.ranges[0]) { o.x = Math.min(o.ranges[0][0], o.ranges[0][2]); o.y = Math.min(o.ranges[0][1], o.ranges[0][3]); } return o; }), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
       switches: (lv.switches || []).map(s => s.slice()), doors: (lv.doors || []).map(d => d.slice()), judges: (lv.judges || []).map(j => j.slice()),
       lifts: (lv.lifts || []).map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period || 7, phase: l.phase || 0, col: l.col || 0, ctl: l.ctl === undefined ? -1 : l.ctl })), start: lv.start.slice(), flag: lv.flag.slice() };
   }
@@ -348,7 +348,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       const r = [pend[0], pend[1], x, y]; pend = null; const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2; let best = null, bd = 1e9;
       L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
       if (!best) return msg('条件つき書式・並べ替え・循環参照の敵が いません。先に敵を おいてください');
-      if (best.type === 'circ') best.ranges = [r]; else best.ranges = (best.ranges && best.ranges.length ? best.ranges : []).concat([r]);
+      if (best.type === 'circ') { best.ranges = [r]; const n = [Math.min(r[0], r[2]), Math.min(r[1], r[3])]; best.x = n[0]; best.y = n[1]; } else best.ranges = (best.ranges && best.ranges.length ? best.ranges : []).concat([r]);
       msg('はんいを つけました（いちばん近い敵に）。まちがえたら「戻す」'); return;
     }
     if (k === 'start') { L.start = [x, y]; return; }
@@ -384,6 +384,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   const isRg = (e) => !!e && (e.type === 'condfmt' || e.type === 'shuffler' || e.type === 'circ');
   const hasSet = (e) => isRg(e) || (!!e && ['autofill', 'bucket', 'walker', 'guard', 'flyer'].includes(e.type));
   const normR = (r) => [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
+  const syncCirc = (e) => { if (e && e.type === 'circ' && e.ranges && e.ranges[0]) { const n = normR(e.ranges[0]); e.x = n[0]; e.y = n[1]; } }; // 循環参照は、みちの 左上の かどに いる
   const ensureRanges = (e) => { if (!e.ranges || !e.ranges.length) e.ranges = rangesOf(e).map(r => r.slice()); };
   function handlesOf(e, r) { const n = normR(r), o = []; for (const sx of [0, 1]) for (const sy of [0, 1]) o.push(e.type === 'circ' ? { sx, sy, px: n[sx ? 2 : 0] * T + T / 2, py: n[sy ? 3 : 1] * T + T / 2 } : { sx, sy, px: sx ? (n[2] + 1) * T : n[0] * T, py: sy ? (n[3] + 1) * T : n[1] * T }); return o; }
   function pickDown(e, c) {
@@ -399,13 +400,13 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   }
   function rangeDrag(c) {
     const r = selEnt.ranges[down.i]; if (!r) return;
-    if (down.what === 'rh') { let [x0, y0, x1, y1] = r; const cx = Math.max(0, Math.min(L.w - 1, c[0])), cy = Math.max(0, Math.min(L.h - 1, c[1])); if (down.sx) x1 = Math.max(cx, x0); else x0 = Math.min(cx, x1); if (down.sy) y1 = Math.max(cy, y0); else y0 = Math.min(cy, y1); selEnt.ranges[down.i] = [x0, y0, x1, y1]; }
-    else { const r0 = down.r0; const dx = Math.max(-r0[0], Math.min(L.w - 1 - r0[2], c[0] - down.c0[0])), dy = Math.max(-r0[1], Math.min(L.h - 1 - r0[3], c[1] - down.c0[1])); selEnt.ranges[down.i] = [r0[0] + dx, r0[1] + dy, r0[2] + dx, r0[3] + dy]; }
+    if (down.what === 'rh') { let [x0, y0, x1, y1] = r; const cx = Math.max(0, Math.min(L.w - 1, c[0])), cy = Math.max(0, Math.min(L.h - 1, c[1])); if (down.sx) x1 = Math.max(cx, x0); else x0 = Math.min(cx, x1); if (down.sy) y1 = Math.max(cy, y0); else y0 = Math.min(cy, y1); selEnt.ranges[down.i] = [x0, y0, x1, y1]; syncCirc(selEnt); }
+    else { const r0 = down.r0; const dx = Math.max(-r0[0], Math.min(L.w - 1 - r0[2], c[0] - down.c0[0])), dy = Math.max(-r0[1], Math.min(L.h - 1 - r0[3], c[1] - down.c0[1])); selEnt.ranges[down.i] = [r0[0] + dx, r0[1] + dy, r0[2] + dx, r0[3] + dy]; syncCirc(selEnt); }
   }
   const EP_KINDS = COLORS.map((c, i) => ['c' + i, c[0] + 'ブロックに']).concat([['steel', '鋼に'], ['erase', '消す（空きにする）']]);
   EP_KINDS.forEach(k => { const o = document.createElement('option'); o.value = k[0]; o.textContent = k[1]; $('#ep-k').appendChild(o); });
   // 敵ごとの設定。num=数 / opt=数(からでも よい) / sel=えらぶ / lim=行き来のはんい / seq=色のじゅんばん
-  const CS = [['', '足もとを まねる']].concat(COLORS.slice(0, 5).map((c, i) => [String(i), c[0]])), CS0 = CS.slice(1);
+  const CS = [['', '足もとを まねる']].concat(COLORS.slice(0, 6).map((c, i) => [String(i), c[0]])), CS0 = COLORS.slice(0, 5).map((c, i) => [String(i), c[0]]);
   const FIELDS = {
     condfmt: [{ t: 'num', k: 'every', nm: '色が かわる 間隔', def: 4.2, mn: 1, mx: 20, st: .1, un: '秒' }, { t: 'seq' }],
     shuffler: [{ t: 'num', k: 'every', nm: '切りかえの 間隔', def: 4.2, mn: 1, mx: 20, st: .1, un: '秒' }],
@@ -513,6 +514,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     const menu = $('#ctx'); let timer = null, sx = 0, sy = 0;
     const items = () => [
       ['道具を選ぶ', () => drawer(true)],
+      ['🧽 消しゴム', () => { if (eraserBtn) eraserBtn.click(); }],
       ['🔲 敵のはんいを直す', () => { if (pickBtn) pickBtn.click(); }],
       [mode === 'draw' ? '✋ 動かすに する' : '✏ 置くに する', () => $('#b-mode').click()],
       ['—', '編集'], ['▶ 試しに遊ぶ', () => $('#b-test').click()], ['保存', () => $('#b-save').click()], ['↶ 戻す', () => $('#b-undo').click()],
@@ -546,16 +548,16 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>道具</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'pick') { selEnt = null; selR = -1; } showEnt(); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
   $('#b-tool').onclick = () => drawer(true); $('#d-x').onclick = () => drawer(false); $('#scrim').onclick = () => drawer(false);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
-  let pickBtn = null;
+  let pickBtn = null, eraserBtn = null;
   function addBtn(box, html, v) { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => setCur(b, v); box.appendChild(b); return b; }
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
     COLORS.forEach((c, i) => { const b = addBtn(p, spIcon(blockIm(i)) + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>道具</small>' + b.innerHTML + ' ▸'; } });
-    addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); addBtn(p, '消しゴム', { kind: 'erase' });
+    addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); eraserBtn = addBtn(p, '消しゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
-    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">オートフィルが作る色：足もとをまねる</option>' + COLORS.slice(0, 5).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
+    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">オートフィルが作る色：足もとをまねる</option>' + COLORS.slice(0, 6).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
     ENTS.forEach(e => {
-      if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
+      if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(entIm('autofill5'), 1) + 'ガラスのオートフィル' + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0], c: 5 } })); return; }
       if (e[0] === 'bucket') { COLORS.slice(0, 5).forEach((c, i) => addBtn(p2, spIcon(entIm('bucket' + i), 1) + e[1] + '（' + c[0] + '）', { kind: 'ent', type: 'bucket', opt: { c: i } })); return; }
       if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
       addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });

@@ -468,7 +468,7 @@
     for (let k = 1; k <= (e.reach || 12); k++) { const x = tx0 + d * k; if (!inb(x, ty)) break; if (isBlockT(G.front[ty][x])) n++; }
     return n;
   }
-  const AF_COL = ['#C9A15E', '#E8563F', '#6FD6E8', '#58B368', '#F5C842'];
+  const AF_COL = ['#C9A15E', '#E8563F', '#6FD6E8', '#58B368', '#F5C842', '#DCEBF3'];
   // 条件つき書式: はんいの ブロックの いろを かえる(ガラス・鋼・カギは そのまま)
   function formatRange(r, col) {
     let n = 0;
