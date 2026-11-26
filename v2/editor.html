@@ -47,6 +47,18 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
 #scrim{position:fixed;inset:0;z-index:19;background:#0002;display:none}
 #scrim.on{display:block}
 #wrap{max-height:76vh}
+.sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
+header button.hb{font-size:13px}
+header button.hb.open{background:var(--sel);border-color:var(--green);box-shadow:inset 0 -3px 0 var(--green)}
+header #cursor{min-width:3.5em}
+.pop{display:none;position:fixed;z-index:6;left:8px;right:8px;max-height:calc(100vh - 80px);overflow:auto;background:#fff;border:1px solid var(--green);box-shadow:0 6px 18px #0004;padding:8px 12px}
+.pop.on{display:block}
+.pop .ph{color:var(--green);font-weight:700;font-size:13px;margin-bottom:6px;border-bottom:1px solid #D4D4D4}
+
+#ctx{display:none;position:fixed;z-index:30;max-height:calc(100vh - 8px);overflow:auto;min-width:190px;background:#fff;border:1px solid var(--green);box-shadow:0 6px 18px #0005;padding:4px;flex-direction:column;gap:3px}
+#ctx.on{display:flex}
+#ctx button{text-align:left;min-height:38px;width:100%}
+#ctx .cg{color:var(--sub);font-size:11px;border-bottom:1px solid #D4D4D4;margin:3px 0 0}
 </style>
 </head>
 <body>
@@ -56,11 +68,21 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   <button id="b-test" class="go">▶ 試しに遊ぶ</button>
   <button id="b-undo">↶ 戻す</button>
   <button id="b-new">新しく</button>
+  <span class="sep"></span>
+  <button id="b-tool" class="toolbtn" title="置くものを えらぶ"></button>
+  <button id="b-mode" style="font-weight:700" title="「動かす」にしている間は、さわってもブロックは置かれません"></button>
+  <span class="sep"></span>
+  <button class="hb" data-pop="p-set">⚙ ステージ設定</button>
+  <button class="hb" data-pop="p-hint">💬 ヒント</button>
+  <button class="hb" data-pop="p-tools">🧰 使える道具</button>
+  <button class="hb" data-pop="p-saved">📂 保存・ひな形</button>
+  <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html">ゲームに戻る</a>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-f</span>
+  <span class="lbl" id="cursor"></span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-g</span>
 </header>
 <main>
-  <details class="fs"><summary>ステージの設定（名前・大きさ・コスト）</summary>
+  <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
     <div class="row"><span class="lbl">名前</span><input id="f-name" type="text" value="マイステージ" size="16">
       <span class="lbl">横(マス)</span><input id="f-w" type="number" min="20" max="160" value="60" style="width:70px">
       <span class="lbl">縦(マス)</span><input id="f-h" type="number" min="12" max="60" value="12" style="width:70px">
@@ -69,14 +91,14 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
       <span class="lbl">エナジー回復（1秒あたり）</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">（0＝回復なし。回復があるときは「エナジーの玉」も置く）</span>
       <span class="lbl">目標コスト（ムダなしの基準）</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
       <span class="lbl">背景の色</span><select id="f-theme"></select></div>
-  </details>
+  </div>
 
-  <details class="fs"><summary>ヒント（その場所に来たときに出る言葉）</summary>
+  <div class="pop" id="p-hint"><div class="ph">ヒント（その場所に来たときに出る言葉）</div>
     <table id="hints"></table>
     <div class="row" style="margin-top:4px"><button id="b-hint">ヒントを増やす</button><span class="lbl">「横」は、何マス目で出すか。シートの上にカーソルを合わせると、数字が出ます</span></div>
-  </details>
+  </div>
 
-  <div class="row" id="toolbar"><button id="b-tool" class="toolbtn"></button><button id="b-mode" style="font-weight:700"></button><span class="lbl" id="cursor"></span><span class="lbl">「動かす」にしている間は、さわってもブロックは置かれません</span></div>
+  
   <aside id="drawer" aria-label="どうぐ">
     <div class="dh"><b>道具を選ぶ</b><button id="d-x">×</button></div>
     <div class="dg">ブロック</div><div class="row pal" id="pal"></div>
@@ -102,25 +124,40 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   <div id="wrap"><canvas id="cv"></canvas></div>
   <div id="msg"></div>
 
-  <details open><summary>使える道具（このステージで使えるもの）</summary><div class="tools" id="tools"></div></details>
+  <div class="pop" id="p-tools"><div class="ph">使える道具（このステージで使えるもの）</div><div class="tools" id="tools"></div></div>
 
-  <details><summary>保存したステージ ／ ゲームのステージからひな形を読みこむ</summary>
+  <div class="pop" id="p-saved"><div class="ph">保存したステージ ／ ゲームのステージからひな形を読みこむ</div>
     <div class="row" style="margin-top:6px"><select id="s-saved"></select><button id="b-load">読みこむ</button><button id="b-del" class="warn">消す</button></div>
     <div class="row" style="margin-top:6px"><select id="s-base"></select><button id="b-base">ひな形にする</button></div>
-  </details>
+  </div>
 
-  <details><summary>書き出し ／ 読みこみ（ほかの人にわたす・バックアップ）</summary>
+  <div class="pop" id="p-exp"><div class="ph">書き出し ／ 読みこみ（ほかの人にわたす・バックアップ）</div>
     <div class="row" style="margin:6px 0"><button id="b-exp">書き出す（JSONファイルをダウンロード）</button><button id="b-file">ファイルから読みこむ</button><input type="file" id="f-file" accept=".json,application/json,text/plain" style="display:none"><button id="b-imp">下の欄の中身を読みこむ</button></div>
     <div id="dl-area" class="row" style="margin:6px 0"></div>
     <textarea id="t-json" placeholder="書き出したデータ(JSON)がここにも出ます。データをはりつけて「下の欄の中身を読みこむ」を押すこともできます"></textarea>
-  </details>
+  </div>
 </main>
+<div id="ctx" role="menu"></div>
 <div id="scrim"></div>
 <script>document.write('<script src="levels.js?t='+Date.now()+'"><\/script>')</script>
 <script src="gfx_snes.js"></script><script src="gfx_excel.js"></script>
 <script>
 (function () {
   'use strict';
+
+  // ---- ヘッダーの ボタンで、せっていパネルを ひらく(1つだけ) ----
+  (function () {
+    const hdr = document.querySelector('header'), pops = [...document.querySelectorAll('.pop')], btns = [...document.querySelectorAll('header .hb')];
+    const close = () => { pops.forEach(p => p.classList.remove('on')); btns.forEach(b => b.classList.remove('open')); };
+    btns.forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation(); const p = document.getElementById(b.dataset.pop), was = p.classList.contains('on'); close();
+      if (!was) { p.style.top = hdr.getBoundingClientRect().bottom + 'px'; p.classList.add('on'); b.classList.add('open'); }
+    }));
+    document.addEventListener('click', (e) => { if (!e.target.closest('.pop') && !e.target.closest('header')) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    window.__closePops = close;
+    window.__openPop = (id) => { close(); const p = document.getElementById(id), b = btns.find(x => x.dataset.pop === id); p.style.top = hdr.getBoundingClientRect().bottom + 'px'; p.classList.add('on'); if (b) b.classList.add('open'); };
+  })();
   const T = 20, KEY = 'geko-enar-v2-custom';
   const COLORS = [['茶色', '#C9A15E', '#E8CFA0', '#735630'], ['赤', '#E8563F', '#F7A08F', '#A8403F'], ['青', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['緑', '#58B368', '#8FD18A', '#3F8F52'], ['ひび割れ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
   const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす']];
@@ -308,7 +345,7 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
     L.lifts.push({ x, y, w, dx: dx || 1, dy: 0, period: 7, phase: 0, col: 0, ctl: -1 }); sel = L.lifts.length - 1; showLift();
   }
   cv.addEventListener('pointerdown', (e) => {
-    if (mode !== 'draw') return; e.preventDefault(); cv.setPointerCapture(e.pointerId); pushUndo();
+    if (mode !== 'draw' || e.button === 2) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); pushUndo();
     const c = cellOf(e);
     if (cur.kind === 'lift') {
       const h = liftHit(e);
@@ -352,6 +389,34 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
   $('#b-hint').onclick = () => { const c = $('#cursor').textContent.match(/\((\d+)/); meta.hints.push({ x: c ? +c[1] : 0, text: '' }); drawHints(); draw(); };
 
   // ---- パレット ----
+
+  // ---- ステージ画面を 長押し / 右クリック: せっていや 道具の メニュー(画面は おしだされない) ----
+  (function () {
+    const menu = $('#ctx'); let timer = null, sx = 0, sy = 0;
+    const items = () => [
+      ['道具を選ぶ', () => drawer(true)],
+      [mode === 'draw' ? '✋ 動かすに する' : '✏ 置くに する', () => $('#b-mode').click()],
+      ['—', '編集'], ['▶ 試しに遊ぶ', () => $('#b-test').click()], ['保存', () => $('#b-save').click()], ['↶ 戻す', () => $('#b-undo').click()],
+      ['—', '設定'], ['⚙ ステージ設定', () => window.__openPop('p-set')], ['💬 ヒント', () => window.__openPop('p-hint')], ['🧰 使える道具', () => window.__openPop('p-tools')],
+      ['—', 'ファイル'], ['📂 保存・ひな形', () => window.__openPop('p-saved')], ['⇅ 書き出し', () => window.__openPop('p-exp')], ['新しく', () => $('#b-new').click()],
+    ];
+    const hide = () => menu.classList.remove('on');
+    function open(x, y) {
+      menu.innerHTML = '';
+      items().forEach(([t, fn]) => { if (t === '—') { const d = document.createElement('div'); d.className = 'cg'; d.textContent = fn; menu.append(d); return; } const b = document.createElement('button'); b.textContent = t; b.onclick = (e) => { e.stopPropagation(); hide(); fn(); }; menu.append(b); });
+      menu.classList.add('on'); const r = menu.getBoundingClientRect();
+      menu.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px'; menu.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
+    }
+    cv.addEventListener('contextmenu', (e) => { e.preventDefault(); if (down) { down = null; undo(); } open(e.clientX, e.clientY); });
+    cv.addEventListener('pointerdown', (e) => {
+      if (e.button === 2) return; clearTimeout(timer); sx = e.clientX; sy = e.clientY;
+      timer = setTimeout(() => { timer = null; if (down) { down = null; last = null; undo(); } open(sx, sy); }, 520); // 置くモードでは、さわった瞬間に置いてしまうので、メニューを ひらくときは もどす
+    });
+    cv.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) { clearTimeout(timer); timer = null; } });
+    const end = () => { clearTimeout(timer); timer = null; }; cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    document.addEventListener('pointerdown', (e) => { if (menu.classList.contains('on') && !e.target.closest('#ctx')) hide(); }, true);
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+  })();
   function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').classList.toggle('on', open); }
   function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>道具</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
   $('#b-tool').onclick = () => drawer(true); $('#d-x').onclick = () => drawer(false); $('#scrim').onclick = () => drawer(false);
