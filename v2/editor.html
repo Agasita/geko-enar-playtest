@@ -55,7 +55,8 @@ details.fs{background:#fff;border:1px solid var(--line);padding:4px 10px}
 header button.hb{font-size:13px}
 #b-bgm.off{opacity:.55;text-decoration:line-through}
 header button.hb.open{background:var(--sel);border-color:var(--green);box-shadow:inset 0 -3px 0 var(--green)}
-header #cursor{min-width:3.5em}
+header #cursor{position:fixed;left:6px;top:auto;bottom:6px;z-index:4;min-width:3.5em;padding:1px 7px;background:#fffd;border:1px solid var(--line);border-radius:4px;pointer-events:none}
+header #cursor:empty{display:none}
 .pop{display:none;position:fixed;z-index:6;left:8px;right:8px;max-height:calc(100vh - 80px);overflow:auto;background:#fff;border:1px solid var(--green);box-shadow:0 6px 18px #0004;padding:8px 12px}
 .pop.on{display:block}
 .pop .ph{color:var(--green);font-weight:700;font-size:13px;margin-bottom:6px;border-bottom:1px solid #D4D4D4}
@@ -94,7 +95,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-h</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-i</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
