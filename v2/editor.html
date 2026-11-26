@@ -94,7 +94,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-g</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-h</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
@@ -140,9 +140,9 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     <div id="ep-par" class="row"></div>
     <div id="ep-rg">
     <div class="row"><button id="ep-add">＋ はんいを足す</button><button id="ep-del" class="warn">選んだはんいを消す</button><button id="ep-rst">はんいを初期に戻す</button></div>
-    <div class="row"><span class="lbl">はんいの中のブロックを</span><select id="ep-k"></select><button id="ep-do">まとめて変える</button></div>
+    <div class="row" id="ep-blk"><span class="lbl">はんいの中のブロックを</span><select id="ep-k"></select><button id="ep-do">まとめて変える</button></div>
     </div>
-    <div class="lbl">シートの上で、敵（ノイズ・ガード・フライヤー・オートフィル・塗りつぶし・条件つき書式・並べ替え・循環参照）をタップして選びます。選ぶと、その1体だけの設定（色・速さ・間隔・きょり・行き来のはんい）が出ます。選んだ敵のはんいが色つきで出ます（太い線＝いま選んでいるはんい）。四隅の□をドラッグ＝広げる・せばめる、はんいの中をドラッグ＝動かす、ほかのはんいをタップ＝そのはんいを選ぶ。循環参照は、四角形の道すじ（1つだけ）です。</div>
+    <div class="lbl" id="ep-hint"></div>
   </fieldset></div>
 
   <div id="wrap"><canvas id="cv"></canvas></div>
@@ -442,10 +442,12 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     const p = $('#ep'), ok = hasSet(selEnt) && L.ents.includes(selEnt) && cur.kind === 'pick'; p.classList.toggle('on', ok); if (!ok) { buildPar.last = null; return; }
     const nm = (ENTS.find(q => q[0] === selEnt.type) || [0, ''])[1], rg = isRg(selEnt); $('#ep-rg').style.display = rg ? '' : 'none';
     if (buildPar.last !== selEnt) { buildPar.last = selEnt; buildPar(); }
-    if (!rg) { $('#ep-t').textContent = '選んだ敵：' + nm; return; }
+    if (!rg) { $('#ep-t').textContent = '選んだ敵：' + nm; $('#ep-hint').textContent = '点線で出ているのが、この敵が動く・ねらうはんいです。数を変えると、画面の点線も変わります。'; return; }
     const rs = rangesOf(selEnt);
     $('#ep-t').textContent = '選んだ敵：' + nm + '（はんい ' + rs.length + 'か所。いま ' + (selR + 1) + '番め）';
-    $('#ep-add').disabled = selEnt.type === 'circ'; $('#ep-del').disabled = selEnt.type === 'circ' || rs.length <= 1;
+    const circ = selEnt.type === 'circ'; $('#ep-add').style.display = $('#ep-del').style.display = $('#ep-blk').style.display = circ ? 'none' : ''; $('#ep-del').disabled = rs.length <= 1;
+    $('#ep-hint').textContent = circ ? '四隅の□をドラッグ＝道すじの広さを変える、道すじの中をドラッグ＝ぜんたいを動かす。敵は、道すじの左上の角から まわりはじめます（道すじは1つだけ）。'
+      : '四隅の□をドラッグ＝広げる・せばめる、はんいの中をドラッグ＝動かす、ほかのはんいをタップ＝そのはんいを選ぶ。選んだはんいは太い線で出ます。';
   }
   $('#ep-add').onclick = () => { if (!selEnt || selEnt.type === 'circ') return; pushUndo(); ensureRanges(selEnt); const e = selEnt; selEnt.ranges.push([Math.max(0, e.x - 2), Math.min(L.h - 1, e.y + 1), Math.min(L.w - 1, e.x + 2), Math.min(L.h - 1, e.y + 2)]); selR = selEnt.ranges.length - 1; showEnt(); draw(); };
   $('#ep-del').onclick = () => { if (!selEnt || selEnt.type === 'circ') return; ensureRanges(selEnt); if (selEnt.ranges.length <= 1) return; pushUndo(); selEnt.ranges.splice(selR, 1); selR = 0; showEnt(); draw(); };
