@@ -1681,7 +1681,7 @@
   // ---- リングコマンド(聖剣2ふう): ながおしで わっかが ひらく。ゆびを 目あての方向へ うごかして はなすと えらべる ----
   const Ring = (function () {
     const el = document.createElement('div'); el.id = 'ring'; el.className = 'hide'; document.body.append(el);
-    let items = [], sx = 0, sy = 0, hi = -1, held = false, cx0 = 0, cy0 = 0, subOf = null;
+    let items = [], mainItems = [], sx = 0, sy = 0, hi = -1, held = false, cx0 = 0, cy0 = 0, subOf = null;
     const E = () => G.edit;
     // ?ring=menu なら、パソコンの右クリックメニューのような たてならびにする(くらべるため)
     const MENU = /[?&]ring=menu/.test(location.search);
@@ -1705,7 +1705,7 @@
       build(); sx = x; sy = y; hi = -1; held = true; subOf = null; el.innerHTML = '';
       const n = items.length, R = n <= 6 ? 86 : n <= 9 ? 108 : n <= 11 ? 130 : 165, m = R + 46;
       cx0 = Math.max(Math.min(x, innerWidth - m), Math.min(m, innerWidth / 2)); cy0 = Math.max(Math.min(y, innerHeight - m), Math.min(m, innerHeight / 2));
-      layout(x, y);
+      mainItems = items; layout(x, y);
       el.className = 'held' + (MENU ? ' menu' : ''); SFX.editOn(); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
     }
     // いまの items を ならべる。リング=まるく / メニュー=たてに
@@ -1717,7 +1717,7 @@
         if (anchor) { left = anchor.right + 6; if (left + W > innerWidth - 4) left = Math.max(4, anchor.left - W - 6); top = Math.max(4, Math.min(anchor.top, innerHeight - H - 4)); }
         else { left = Math.max(4, Math.min(x, innerWidth - W - 4)); top = Math.max(4, Math.min(y, innerHeight - H - 4)); }
         col.style.left = left + 'px'; col.style.top = top + 'px'; col.style.width = W + 'px';
-        items.forEach((it, i) => { const b = document.createElement('button'); b.className = 'ri mi' + (it.cur ? ' cur' : ''); b.dataset.i = i; fill(b, it); b.onclick = () => choose(i); it.el = b; col.append(b); });
+        items.forEach((it, i) => { const b = document.createElement('button'); b.className = 'ri mi' + (it.cur ? ' cur' : ''); b.dataset.i = i; fill(b, it); b.onclick = () => pick(it); it.el = b; col.append(b); });
         el.append(col);
         return;
       }
@@ -1726,7 +1726,7 @@
       items.forEach((it, i) => {
         const a = -Math.PI / 2 + i * 2 * Math.PI / n; it.a = a;
         const b = document.createElement('button'); b.className = 'ri' + (it.cur ? ' cur' : ''); b.style.left = cx + 'px'; b.style.top = cy + 'px'; b.style.setProperty('--x', Math.round(Math.cos(a) * R) + 'px'); b.style.setProperty('--y', Math.round(Math.sin(a) * R) + 'px'); b.style.transitionDelay = (i * 22) + 'ms';
-        fill(b, it); b.onclick = () => choose(i); it.el = b; el.append(b);
+        fill(b, it); b.onclick = () => pick(it); it.el = b; el.append(b);
       });
     }
     function fill(b, it) {
@@ -1735,7 +1735,7 @@
     }
     // 道具を えらんだあと、もう1つ えらぶものが あるときの 2だんめ
     function openSub(id, list) {
-      const prev = items.find(it => it.id === id); const r = prev && prev.el ? prev.el.getBoundingClientRect() : null;
+      const prev = mainItems.find(it => it.id === id); const r = prev && prev.el ? prev.el.getBoundingClientRect() : null;
       subOf = id; held = false; hi = -1;
       if (MENU) { el.querySelectorAll('.mcol').forEach((c, k) => { if (k > 0) c.remove(); }); items = list; layout(0, 0, r && { left: r.left, right: r.right, top: r.top }); }
       else { el.innerHTML = ''; items = list; layout(0, 0); }
@@ -1748,9 +1748,10 @@
       else if (Math.hypot(dx, dy) > 24) { const a = Math.atan2(dy, dx); let best = 9; items.forEach((it, i) => { let d = Math.abs(a - it.a) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; if (d < best) { best = d; k = i; } }); }
       if (k !== hi) { hi = k; items.forEach((it, i) => it.el.classList.toggle('hi', i === k)); const c = el.querySelector('.ring-center'); if (c) c.textContent = k >= 0 ? items[k].label : ''; }
     }
-    function choose(i) {
-      const it = items[i]; if (!it) { close(); return; }
-      SFX.place(); const list = !subOf && it.id ? optionsOf(it.id) : null; it.run();
+    // 項目を えらぶ。小項目を もつ大項目は、とじずに 小項目を ひらく(小項目を えらんだときに はじめて とじる)
+    function pick(it) {
+      if (!it) { close(); return; }
+      SFX.place(); const list = it.id ? optionsOf(it.id) : null; it.run();
       if (list) openSub(it.id, list); else close();
     }
     function close() { held = false; subOf = null; el.className = 'hide'; el.innerHTML = ''; items = []; }
