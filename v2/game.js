@@ -932,7 +932,7 @@
     if (!plan.ok) { E.msg = plan.msg; SFX.bad(); return false; }
     if (!practice && plan.cost > G.energy) { E.msg = 'エナジー不足（' + plan.cost + '）'; SFX.bad(); return false; }
     E.undo.push({ state: snapshot(), cost: plan.cost }); E.redo.length = 0;
-    plan.run(); G.mgs = []; if (!practice) G.energy -= plan.cost; G.spent += plan.cost; E.msg = ''; SFX.place();
+    plan.run(); G.mgs = []; if (!practice) G.energy -= plan.cost; G.spent += plan.cost; E.msg = ''; E.did = true; SFX.place();
     if (!practice && !G.regen && G.energy < minCost()) UI.toast('コストを使い切り、もう編集できません。Rで最初から', 3500);
     return true;
   }
@@ -949,7 +949,7 @@
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
     if (!G.level.tools.length) { UI.toast('このステージでは「なおす」を使えません'); return; }
     if (on && G.fog && G.zoomT > 0) { UI.toast('ズーム中は、なおせません'); return; }
-    E.on = on; E.pan = false; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
+    E.on = on; E.did = false; E.pan = false; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); $('#touch').classList.toggle('hide', on); document.body.classList.toggle('editing', on); UI.refreshTools();
   }
@@ -1546,8 +1546,12 @@
     const mu = $('#btn-mute').textContent; if (RB.mute !== mu) { RB.mute = mu; $('#rb-mute').innerHTML = mu + '<span class="lbl"> 音</span>'; $('#lb-mute').textContent = mu + ' 音'; }
   }
   // いまのモード(なおす=書ける / 手=画面いどう)を、画面のそとの リボンに アイコンで出し、画面のわくの色もかえる
+  // なおした直後に、おやゆびで すぐ おせる 大きな「終わる」を 出す(リングを ひらいている間は かくれる)
+  const fd = document.createElement('button'); fd.id = 'fastdone'; fd.className = 'hide'; fd.innerHTML = '<span>▶</span> 終わる'; document.body.append(fd);
+  fd.addEventListener('click', () => { if (G.edit.on) setEdit(false); fd.classList.add('hide'); });
   let modeMark = '';
   function updateModeMark() {
+    const showFd = G.mode === 'play' && G.edit.on && G.edit.did && !Ring.isOpen; if (fd.classList.contains('hide') === showFd) fd.classList.toggle('hide', !showFd);
     const m = G.mode === 'play' && G.edit.on ? (G.edit.pan ? 'pan' : 'draw') : ''; if (m === modeMark) return; modeMark = m;
     document.body.classList.toggle('m-pan', m === 'pan'); document.body.classList.toggle('m-draw', m === 'draw');
     const g = $('#rb-g-mode'), i = $('#rb-mode'); if (g) g.style.display = m ? '' : 'none'; if (i) { i.textContent = m === 'pan' ? '✋' : '✎'; i.className = m; i.title = m === 'pan' ? '移動モード(画面を動かす)' : '書き込みモード'; }
