@@ -411,10 +411,12 @@ body.m-pan #sheet::after{box-shadow:inset 0 0 0 4px #F0A000}
 .chip .ti{margin-right:3px}
 .chip{display:inline-flex;align-items:center}
 
-/* 編集中は、はばたきボタンが「終わる」ボタン(なおした直後は、ゆっくり ふくらむ・ちぢむ) */
-body.editing #touch .pad{display:none}
-body.editing #pane #touch{position:absolute;right:0;bottom:0;left:auto;width:auto;height:auto;flex:none;padding:0}
-body.editing #pane #touch .acts{margin:0}
+/* 編集中は、はばたきボタンが「終わる」ボタンになり、下の列(元に戻す・やり直す・移動)の右はしに ならぶ。なおした直後は、ゆっくり ふくらむ・ちぢむ */
+body.editing #touch{display:none!important}
 @media (hover:none),(pointer:coarse){body.editing #e-done{display:none}}
-@keyframes endpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-#touch .b-jump.pulse{animation:endpulse 1.1s ease-in-out infinite}
+@media (hover:hover) and (pointer:fine){#editfoot .b-jump{display:none}}
+@keyframes endpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+#editfoot .b-jump.pulse{animation:endpulse 1.1s ease-in-out infinite}
+body.editing #editfoot{flex-wrap:wrap}
+body.editing #editbar{overflow-x:hidden}
+#editfoot button.b-jump.done{order:-1;flex:1 1 100%;min-height:max(40px,calc(var(--s)*14px));margin:3px 6px 4px;font-size:max(15px,calc(var(--s)*6px))!important;text-align:center;justify-content:center}

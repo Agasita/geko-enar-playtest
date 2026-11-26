@@ -1550,7 +1550,9 @@
   const jumpBtn = document.querySelector('[data-btn="jump"]');
   let modeMark = '';
   function updateModeMark() {
-    if (jumpBtn) { const ed = G.mode === 'play' && G.edit.on; jumpBtn.classList.toggle('endmode', ed); jumpBtn.classList.toggle('pulse', ed && !!G.edit.did); const t = ed ? '終わる' : 'はばたき'; if (jumpBtn.textContent !== t) jumpBtn.textContent = t; }
+    if (jumpBtn) { const ed = G.mode === 'play' && G.edit.on; jumpBtn.classList.toggle('endmode', ed); jumpBtn.classList.toggle('done', ed);
+      const foot = $('#editfoot'), acts = document.querySelector('#touch .acts');
+      if (ed && jumpBtn.parentNode !== foot) foot.insertBefore(jumpBtn, $('#e-done')); else if (!ed && acts && jumpBtn.parentNode !== acts) acts.append(jumpBtn); jumpBtn.classList.toggle('pulse', ed && !!G.edit.did); const t = ed ? '終わる' : 'はばたき'; if (jumpBtn.textContent !== t) jumpBtn.textContent = t; }
     const m = G.mode === 'play' && G.edit.on ? (G.edit.pan ? 'pan' : 'draw') : ''; if (m === modeMark) return; modeMark = m;
     document.body.classList.toggle('m-pan', m === 'pan'); document.body.classList.toggle('m-draw', m === 'draw');
     const g = $('#rb-g-mode'), i = $('#rb-mode'); if (g) g.style.display = m ? '' : 'none'; if (i) { i.textContent = m === 'pan' ? '✋' : '✎'; i.className = m; i.title = m === 'pan' ? '移動モード(画面を動かす)' : '書き込みモード'; }
