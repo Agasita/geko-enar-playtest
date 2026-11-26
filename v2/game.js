@@ -220,8 +220,8 @@
   }
   function makeEnemy(e, k) {
     const base = { type: e.type, x: e.x * T, y: e.y * T, k, dead: false, frozen: 0, t: Math.random() * 6, flash: 0, stun: 0 };
-    if (e.type === 'walker') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, vx: -28, hp: 1, dir: -1, x: base.x + 2, y: base.y + 4 });
-    if (e.type === 'guard') return Object.assign(base, { w: 12, h: 13, ox: 2, oy: 3, vx: -22, hp: 2, dir: -1, x: base.x + 2, y: base.y + 3 });
+    if (e.type === 'walker') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, vx: -28, hp: 1, dir: -1, spdc: e.spdc || 0, lim: e.lim || null, x: base.x + 2, y: base.y + 4 });
+    if (e.type === 'guard') return Object.assign(base, { w: 12, h: 13, ox: 2, oy: 3, vx: -22, hp: 2, dir: -1, spdc: e.spdc || 0, lim: e.lim || null, x: base.x + 2, y: base.y + 3 });
     if (e.type === 'flyer') return Object.assign(base, { w: 12, h: 10, ox: 2, oy: 5, hp: 1, bx: base.x + 2, by: base.y + 5, range: e.range || 30, x: base.x + 2, y: base.y + 5 });
     if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 13, ox: 1, oy: 2, vx: -24, hp: 1, spdc: e.spdc || 0, ptime: e.ptime || 1, dir: e.dir || -1, c: e.c === undefined ? 0 : e.c, lim: e.lim || null, painted: [], pt: 0, x: base.x + 1, y: base.y + 2 }); // 塗りつぶし: あるきながら、足もとの ガラスを 1マスずつ ぬる。たおすと、ぬった ガラスは もとに もどる
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
@@ -584,7 +584,7 @@
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake' || e.type === 'bucket') {
         // おもさとあるぎょう(縁やかべで折り返す)
         if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // にせブロックは その場に ある
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : (e.type === 'bucket' && e.spdc) ? e.spdc * T : 28;
+        const spd = e.spdc ? e.spdc * T : e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
         if (e.lim) { const mc = (e.x + e.w / 2) / T; if (mc < e.lim[0] + .5) e.dir = 1; else if (mc > e.lim[1] + .5) e.dir = -1; } // 行ったり来たりの はんい(マス)
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
