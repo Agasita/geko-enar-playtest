@@ -420,3 +420,19 @@ body.editing #touch{display:none!important}
 body.editing #editfoot{flex-wrap:wrap}
 body.editing #editbar{overflow-x:hidden}
 #editfoot button.b-jump.done{order:-1;flex:1 1 100%;min-height:max(40px,calc(var(--s)*14px));margin:3px 6px 4px;font-size:max(15px,calc(var(--s)*6px))!important;text-align:center;justify-content:center}
+
+/* タイトルの「せってい」 */
+#opt-panel{position:fixed;inset:0;z-index:200;background:#000a;display:flex;align-items:center;justify-content:center;padding:12px}
+#opt-panel.hide{display:none}
+#opt-panel .op-box{background:#fff;color:#262626;border:2px solid #217346;max-width:640px;width:100%;max-height:92vh;overflow:auto;padding:12px 16px;font-size:14px;line-height:1.5}
+#opt-panel h2{margin:0 0 8px;font-size:16px;color:#217346}
+#opt-panel h2 small{font-size:11px;color:#595959;font-weight:400}
+#opt-panel .op-row{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;padding:5px 0;border-bottom:1px solid #E1E1E1}
+#opt-panel .op-row>b{flex:0 0 7.5em;color:#217346}
+#opt-panel .op-row>span{display:flex;flex-wrap:wrap;gap:2px 12px}
+#opt-panel .op-row small{flex:1 1 100%;color:#595959;font-size:11px;padding-left:7.5em}
+#opt-panel label{white-space:nowrap}
+#opt-panel .op-now{font-size:12px;color:#595959;background:#F3F3F3;padding:4px 8px;margin:8px 0;word-break:break-all}
+#opt-panel .op-btns{display:flex;gap:8px;flex-wrap:wrap}
+#opt-panel .op-btns button{min-height:40px;padding:0 14px}
+#opt-panel .op-btns .big{background:#217346;color:#fff;border:1px solid #185C37;font-weight:700}
