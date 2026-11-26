@@ -6,6 +6,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#1f2a44">
 <title>エナーとふしぎのシート</title>
+<script>
+/* タイトルの「せってい」で えらんだものを、URLのパラメータと おなじ あつかいにする(URLに ないものだけ おぎなう) */
+(function () { try { var o = JSON.parse(localStorage.getItem('geko-enar-opts') || 'null'); if (!o) return; var q = new URLSearchParams(location.search), ch = false;
+  Object.keys(o).forEach(function (k) { if (o[k] && !q.has(k)) { q.set(k, o[k]); ch = true; } });
+  if (ch) history.replaceState(null, '', location.pathname + '?' + q.toString() + location.hash); } catch (e) { /* ignore */ } })();
+</script>
 <script>if(!/[?&]gfx=(snes|classic)/.test(location.search))document.documentElement.style.background='#D9D9D9'</script>
 <script>document.write('<link rel="stylesheet" href="style.css?t='+Date.now()+'">')</script>
 <noscript><link rel="stylesheet" href="style.css"></noscript>
@@ -82,6 +88,7 @@
       <button id="btn-play" class="big">遊ぶ</button>
       <button id="btn-guide" class="ghost">ブロック図鑑</button>
       <button id="btn-opening" class="ghost">オープニング</button>
+      <button id="btn-opts" class="ghost">⚙ せってい（見た目・操作・ステージ）</button>
       <p class="keys">© 2026 Agasita</p>
       <a class="oldlink" href="../">旧バージョン（Pyxel版）はこちら</a>
     </section>
@@ -132,6 +139,51 @@
 <script>
 // まいかいあたらしいファイルを読み込む（スマホで古いキャッシュがのこらないように）。じゅんばんどおりに実ぎょうされる。
 (function () { var t = Date.now(); ['sprites.js', 'levels.js'].concat(/[?&]uc=1/.test(location.search) ? ['levels_uc.js'] : []).concat(/[?&]pz=1/.test(location.search) ? ['levels_pz.js'] : []).concat(['gfx_snes.js', 'gfx_excel.js', 'gfx_enar32.js', 'music_data.js', 'music.js', 'game.js']).forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+</script>
+
+<div id="opt-panel" class="hide" role="dialog" aria-label="せってい">
+  <div class="op-box">
+    <h2>せってい <small>（えらんで「この設定で はじめる」。URLを わけなくて いい）</small></h2>
+    <div class="op-row"><b>ステージ</b><span id="o-set"></span></div>
+    <div class="op-row"><b>なおす の 操作</b><span id="o-ring"></span></div>
+    <div class="op-row"><b>見た目</b><span id="o-gfx"></span></div>
+    <div class="op-row"><b>画面の大きさ</b><span id="o-ts"></span><small>新しい見た目のとき。1マスの大きさ（px）</small></div>
+    <div class="op-row"><b>ブロックの絵</b><span id="o-blk"></span><small>新しい見た目のとき。チェック＝320pxの絵に もどす</small></div>
+    <div class="op-row"><b>開発用</b><span id="o-dev"></span></div>
+    <p id="o-now" class="op-now"></p>
+    <div class="op-btns"><button id="o-go" class="big">この設定で はじめる</button><button id="o-reset" class="ghost">ぜんぶ もどす</button><button id="o-close" class="ghost">とじる</button></div>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); }, q = new URLSearchParams(location.search), KEY = 'geko-enar-opts';
+  var KEYS = ['uc', 'pz', 'ring', 'gfx', 'ts', 'blocks', 'brown', 'steel', 'lava', 'ice', 'dev'];
+  var cur = {}; KEYS.forEach(function (k) { if (q.has(k)) cur[k] = q.get(k); });
+  var sel = {}; KEYS.forEach(function (k) { sel[k] = cur[k] || ''; });
+  // 1つえらぶ(ラジオ) / チェック
+  function radios(box, key, list) { var el = $(box); el.innerHTML = ''; list.forEach(function (it) { var l = document.createElement('label'), r = document.createElement('input'); r.type = 'radio'; r.name = key; r.checked = (sel[key] || '') === it[0]; r.onchange = function () { sel[key] = it[0]; now(); }; l.append(r, ' ' + it[1]); el.append(l); }); }
+  function checks(box, list) { var el = $(box); el.innerHTML = ''; list.forEach(function (it) { var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = !!sel[it[0]]; c.onchange = function () { sel[it[0]] = c.checked ? it[2] : ''; now(); }; l.append(c, ' ' + it[1]); el.append(l); }); }
+  function now() { var a = []; KEYS.forEach(function (k) { if (sel[k]) a.push(k + '=' + sel[k]); }); $('#o-now').textContent = 'いまの えらび：' + (a.length ? a.join('  ') : '（ぜんぶ ふつう）'); }
+  function build() {
+    radios('#o-set', 'set', [['', '通常（54面）'], ['uc', 'ユースケース60案（U01〜U60）'], ['pz', 'パズル検証13面（P01〜P13）']]);
+    // ステージセットは uc / pz の どちらか
+    var setEl = $('#o-set'); setEl.querySelectorAll('input').forEach(function (r, i) { r.checked = i === 0 ? (!sel.uc && !sel.pz) : i === 1 ? !!sel.uc : !!sel.pz; r.onchange = function () { sel.uc = i === 1 ? '1' : ''; sel.pz = i === 2 ? '1' : ''; now(); }; });
+    radios('#o-ring', 'ring', [['', 'ふつう（下の ボタン）'], ['1', 'リングコマンド（長押し）'], ['menu', '右クリックメニューふう（長押し）']]);
+    radios('#o-gfx', 'gfx', [['', 'Excel風（ふつう）'], ['enar32', '新しい見た目（32px）']].concat(sel.dev ? [['snes', 'SNES風（開発）'], ['classic', 'クラシック（開発）']] : []));
+    radios('#o-ts', 'ts', [['', 'ふつう（32）'], ['40', '40'], ['48', '48'], ['64', '大（64・おすすめ）'], ['80', 'さらに大（80）']]);
+    checks('#o-blk', [['brown', '土', '320'], ['steel', '鋼', '320'], ['lava', 'マグマ', '320'], ['ice', '氷', '320']]);
+    var d = $('#o-dev'); d.innerHTML = ''; var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = !!sel.dev; c.onchange = function () { sel.dev = c.checked ? '1' : ''; if (!c.checked && (sel.gfx === 'snes' || sel.gfx === 'classic')) sel.gfx = ''; build(); }; l.append(c, ' 調整パネル・開発用の見た目を出す（?dev=1）'); d.append(l);
+    now();
+  }
+  function go() { var o = {}; KEYS.forEach(function (k) { if (sel[k]) o[k] = sel[k]; }); try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* ignore */ }
+    var qq = new URLSearchParams(location.search); KEYS.forEach(function (k) { qq.delete(k); }); Object.keys(o).forEach(function (k) { qq.set(k, o[k]); }); // 画面のURLも、えらんだとおりに そろえる
+    var s = qq.toString(); location.href = location.pathname + (s ? '?' + s : ''); }
+  var btn = $('#btn-opts'); if (!btn) return;
+  btn.onclick = function () { build(); $('#opt-panel').classList.remove('hide'); };
+  $('#o-close').onclick = function () { $('#opt-panel').classList.add('hide'); };
+  $('#o-go').onclick = go;
+  $('#o-reset').onclick = function () { KEYS.forEach(function (k) { sel[k] = ''; }); try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ } build(); };
+})();
 </script>
 </body>
 </html>
