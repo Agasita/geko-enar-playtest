@@ -32,7 +32,8 @@
   const ICON = {
     painter: SVG('<path d="M13 2.5L8 8" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M8.2 7.2l1.6 1.6c-.4 2.6-2.4 4.4-6 4.4 1.2-1 .8-2.2 1.2-3.2.5-1.2 2-2.2 3.2-2.8z" fill="#F2B100"/>'),
     transform: SVG('<path d="M1 12.5L6.2 3.5v9z" fill="#4472C4"/><path d="M15 12.5L9.8 3.5v9z" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><path d="M8 1.5v13" stroke="#7F7F7F" stroke-width="1" stroke-dasharray="1.6 1.4"/>'),
-    sort: SVG('<text x="1" y="7" font-size="7.5" font-weight="700" font-family="Arial,sans-serif" fill="#217346">A</text><text x="1" y="15" font-size="7.5" font-weight="700" font-family="Arial,sans-serif" fill="#C00000">Z</text><path d="M12 2v11M9.3 10.3L12 14l2.7-3.7" fill="none" stroke="#4472C4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'),
+    sort: SVG('<path d="M1.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="3.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="3.5" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/>'),
+    alignL: SVG('<path d="M1.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="3.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="3.5" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/>'), alignR: SVG('<path d="M14.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="1.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="6" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/>'), alignU: SVG('<path d="M1.5 1.5h13" stroke="#4472C4" stroke-width="1.5"/><rect x="3" y="3.5" width="2.6" height="11" fill="#8FAADC"/><rect x="6.9" y="3.5" width="2.6" height="6.5" fill="#8FAADC"/><rect x="10.8" y="3.5" width="2.6" height="9" fill="#8FAADC"/>'), alignD: SVG('<path d="M1.5 14.5h13" stroke="#4472C4" stroke-width="1.5"/><rect x="3" y="1.5" width="2.6" height="11" fill="#8FAADC"/><rect x="6.9" y="6" width="2.6" height="6.5" fill="#8FAADC"/><rect x="10.8" y="3.5" width="2.6" height="9" fill="#8FAADC"/>'),
     filter: SVG('<path d="M1 2.5h14L9.7 8.6V14l-3.4-1.6V8.6z" fill="#4472C4"/><path d="M3 4h10" stroke="#B4C7E7" stroke-width="1"/>'),
     protect: SVG('<path d="M5 7.5V5a3 3 0 0 1 6 0v2.5" fill="none" stroke="#7F7F7F" stroke-width="1.7"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#F2B100"/><circle cx="8" cy="10.6" r="1.1" fill="#7F5F00"/>'),
     unprotect: SVG('<path d="M5 7.5V5a3 3 0 0 1 5.8-1" fill="none" stroke="#7F7F7F" stroke-width="1.7" stroke-linecap="round"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><circle cx="8" cy="10.6" r="1.1" fill="#2F5597"/>'),
@@ -1681,9 +1682,9 @@
     const MENU = /[?&]ring=menu/.test(location.search);
     // えらんだ道具に、もう1つ えらぶ もの(よせ→ など)が あるなら、その一覧を かえす
     function optionsOf(id) {
-      const o = E().opts, mk = (list, cur, pick) => list.map(it => ({ label: it.label, color: it.color, cur: cur === it.v, run: () => { pick(it.v); UI.refreshTools(); } }));
+      const o = E().opts, mk = (list, cur, pick) => list.map(it => ({ label: it.label, icon: it.icon, color: it.color, cur: cur === it.v, run: () => { pick(it.v); UI.refreshTools(); } }));
       if (id === 'transform') return mk([{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '90°回転' }], o.tf, v => { o.tf = v; });
-      if (id === 'sort') return mk([{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; });
+      if (id === 'sort') return mk([{ v: 'L', label: '←よせ', icon: 'alignL' }, { v: 'R', label: 'よせ→', icon: 'alignR' }, { v: 'U', label: '↑よせ', icon: 'alignU' }, { v: 'D', label: 'よせ↓', icon: 'alignD' }], o.sort, v => { o.sort = v; });
       if (id === 'filter') return mk(COLORS.map((c, i) => ({ v: i, label: c.n, color: i })).concat([{ v: null, label: '外す' }]), G.filter, v => runPlan(planFor('filter', { fcolor: v })));
       return null;
     }
@@ -1736,6 +1737,7 @@
       el.className = 'open' + (MENU ? ' menu' : '');
     }
     function move(x, y) {
+      return; // 指が はなれるまでは、ハイライトも しない
       if (!held) return; const dx = x - sx, dy = y - sy; let k = -1;
       if (MENU) { const t = document.elementFromPoint(x, y), b = t && t.closest && t.closest('.mi'); k = b ? +b.dataset.i : -1; }
       else if (Math.hypot(dx, dy) > 24) { const a = Math.atan2(dy, dx); let best = 9; items.forEach((it, i) => { let d = Math.abs(a - it.a) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; if (d < best) { best = d; k = i; } }); }
@@ -1747,7 +1749,7 @@
       if (list) openSub(it.id, list); else close();
     }
     function close() { held = false; subOf = null; el.className = 'hide'; el.innerHTML = ''; items = []; }
-    function release() { if (!held) return; held = false; if (hi >= 0) choose(hi); else el.classList.remove('held'); }
+    function release() { if (!held) return; held = false; hi = -1; items.forEach(it => it.el && it.el.classList.remove('hi')); el.classList.remove('held'); } // ひらいたときの指が はなれるまでは、えらべない(すべって ふれても はんのうしない)
     el.addEventListener('pointerdown', (e) => { if (e.target === el || e.target.classList.contains('ring-disc')) close(); });
     return { open, move, release, close, get isOpen() { return !el.classList.contains('hide'); } };
   })();
@@ -1856,13 +1858,13 @@
       });
       const chips = (label, items, cur, pick) => {
         const row = document.createElement('div'); row.className = 'chips'; if (label) { const l = document.createElement('span'); l.textContent = label; row.appendChild(l); }
-        items.forEach(it => { const c = document.createElement('button'); c.className = 'chip' + (cur === it.v ? ' sel' : ''); c.textContent = it.label || ''; if (it.color !== undefined) { c.style.background = COLORS[it.color].hex; c.title = COLORS[it.color].n + ': ' + COLORS[it.color].fx; c.textContent = it.label || COLORS[it.color].n; c.style.color = '#1f2a44'; } c.onclick = () => pick(it.v); row.appendChild(c); });
+        items.forEach(it => { const c = document.createElement('button'); c.className = 'chip' + (cur === it.v ? ' sel' : ''); c.textContent = it.label || ''; if (it.icon) c.innerHTML = ICON[it.icon] + '<span class="tn">' + it.label + '</span>'; if (it.color !== undefined) { c.style.background = COLORS[it.color].hex; c.title = COLORS[it.color].n + ': ' + COLORS[it.color].fx; c.textContent = it.label || COLORS[it.color].n; c.style.color = '#1f2a44'; } c.onclick = () => pick(it.v); row.appendChild(c); });
         opts.appendChild(row);
       };
       const colorItems = COLORS.map((c, i) => ({ v: i, color: i }));
       const o = E.opts, id = E.tool;
       if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '90°回転' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
-      else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ' }, { v: 'R', label: 'よせ→' }, { v: 'U', label: '↑よせ' }, { v: 'D', label: 'よせ↓' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
+      else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ', icon: 'alignL' }, { v: 'R', label: 'よせ→', icon: 'alignR' }, { v: 'U', label: '↑よせ', icon: 'alignU' }, { v: 'D', label: 'よせ↓', icon: 'alignD' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '外す' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
       else if (id === 'zoom') chips('', [{ v: 1, label: 'ズームする' }], null, v => { runPlan(planFor('zoom', {})); UI.refreshTools(); });
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' + (RING ? '（ダブルタップで もどる）' : '') : (E.msg || E.hint || (d ? d.help : ''));
