@@ -131,7 +131,7 @@
 </div>
 <script>
 // まいかいあたらしいファイルを読み込む（スマホで古いキャッシュがのこらないように）。じゅんばんどおりに実ぎょうされる。
-(function () { var t = Date.now(); ['sprites.js', 'levels.js'].concat(/[?&]uc=1/.test(location.search) ? ['levels_uc.js'] : []).concat(['gfx_snes.js', 'gfx_excel.js', 'gfx_enar32.js', 'music_data.js', 'music.js', 'game.js']).forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
+(function () { var t = Date.now(); ['sprites.js', 'levels.js'].concat(/[?&]uc=1/.test(location.search) ? ['levels_uc.js'] : []).concat(/[?&]pz=1/.test(location.search) ? ['levels_pz.js'] : []).concat(['gfx_snes.js', 'gfx_excel.js', 'gfx_enar32.js', 'music_data.js', 'music.js', 'game.js']).forEach(function (f) { document.write('<script src="' + f + '?t=' + t + '"><\/script>'); }); })();
 </script>
 </body>
 </html>
