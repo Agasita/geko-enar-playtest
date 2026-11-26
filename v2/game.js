@@ -223,7 +223,7 @@
     if (e.type === 'walker') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, vx: -28, hp: 1, dir: -1, x: base.x + 2, y: base.y + 4 });
     if (e.type === 'guard') return Object.assign(base, { w: 12, h: 13, ox: 2, oy: 3, vx: -22, hp: 2, dir: -1, x: base.x + 2, y: base.y + 3 });
     if (e.type === 'flyer') return Object.assign(base, { w: 12, h: 10, ox: 2, oy: 5, hp: 1, bx: base.x + 2, by: base.y + 5, range: e.range || 30, x: base.x + 2, y: base.y + 5 });
-    if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 13, ox: 1, oy: 2, vx: -24, hp: 1, dir: e.dir || -1, c: e.c === undefined ? 0 : e.c, lim: e.lim || null, painted: [], pt: 0, x: base.x + 1, y: base.y + 2 }); // 塗りつぶし: あるきながら、足もとの ガラスを 1マスずつ ぬる。たおすと、ぬった ガラスは もとに もどる
+    if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 13, ox: 1, oy: 2, vx: -24, hp: 1, spdc: e.spdc || 0, ptime: e.ptime || 1, dir: e.dir || -1, c: e.c === undefined ? 0 : e.c, lim: e.lim || null, painted: [], pt: 0, x: base.x + 1, y: base.y + 2 }); // 塗りつぶし: あるきながら、足もとの ガラスを 1マスずつ ぬる。たおすと、ぬった ガラスは もとに もどる
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
@@ -231,9 +231,9 @@
     if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, gx: Math.round(base.x / T), gy: Math.round(base.y / T), mv: 0, x: base.x + 1, y: base.y + 2 }); // にせブロック: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
-    if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, cd: 2.4, step: 0, seq: e.seq || [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // 条件つき書式: はんいの ブロックの いろを かってに かえる
-    if (e.type === 'shuffler') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 2, cd: 2.4, sdir: e.dir || (e.axis === 'y' ? -1 : 1), axis: e.axis || 'x', ranges: rg([e.x - 3, e.y + 1, e.x + 3, e.y + 1]), tele: 0, x: base.x + 2, y: base.y + 2 }); // 並べ替え: はんいの ブロックを かたほうへ よせて ならべなおす
-    if (e.type === 'circ') { const lp = rg([e.x, e.y, e.x + 3, e.y + 2])[0]; if (lp.x1 === lp.x0) lp.x1++; if (lp.y1 === lp.y0) lp.y1++; return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 999, loop: lp, dir: 1, t: 0, x: lp.x0 * T + 2, y: lp.y0 * T + 2 }); } // 循環参照: マスに そって、直角に まがりながら ぐるぐる まわる。たおせない
+    if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), step: 0, seq: e.seq && e.seq.length ? e.seq : [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // 条件つき書式: はんいの ブロックの いろを かってに かえる
+    if (e.type === 'shuffler') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 2, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), sdir: e.dir || (e.axis === 'y' ? -1 : 1), axis: e.axis || 'x', ranges: rg([e.x - 3, e.y + 1, e.x + 3, e.y + 1]), tele: 0, x: base.x + 2, y: base.y + 2 }); // 並べ替え: はんいの ブロックを かたほうへ よせて ならべなおす
+    if (e.type === 'circ') { const lp = rg([e.x, e.y, e.x + 3, e.y + 2])[0]; if (lp.x1 === lp.x0) lp.x1++; if (lp.y1 === lp.y0) lp.y1++; return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 999, spdc: e.spdc || 0, loop: lp, dir: 1, t: 0, x: lp.x0 * T + 2, y: lp.y0 * T + 2 }); } // 循環参照: マスに そって、直角に まがりながら ぐるぐる まわる。たおせない
     if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
     return base;
   }
@@ -584,7 +584,7 @@
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake' || e.type === 'bucket') {
         // おもさとあるぎょう(縁やかべで折り返す)
         if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // にせブロックは その場に ある
-        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
+        const spd = e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : (e.type === 'bucket' && e.spdc) ? e.spdc * T : 28;
         if (e.lim) { const mc = (e.x + e.w / 2) / T; if (mc < e.lim[0] + .5) e.dir = 1; else if (mc > e.lim[1] + .5) e.dir = -1; } // 行ったり来たりの はんい(マス)
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
@@ -594,18 +594,18 @@
         const bkOn = e.type === 'bucket' && paintableAt(bkx, bky) && Math.abs((e.x + e.w / 2) - (bkx * T + T / 2)) <= 2; // ガラスの まんなかに きたら 立ちどまる
         if (e.type === 'fake') { /* あるかない */ } else if (bkOn) { /* 塗るあいだは 立ちどまる */ } else if (!floorAhead || wall) { if (e.type !== 'moji') e.dir = -e.dir; } else moveX(e, e.dir * spd * dt);
         if (e.type === 'bucket') { // 立ちどまって、足もとが ちかちか してから ぬる。ぬりおわったら また すすむ
-          if (bkOn) { e.pt += dt; e.ptc = [bkx, bky]; if (e.pt >= 1) { paintCell(e, bkx, bky); e.pt = 0; } } else e.pt = 0;
+          if (bkOn) { e.pt += dt; e.ptc = [bkx, bky]; if (e.pt >= e.ptime) { paintCell(e, bkx, bky); e.pt = 0; } } else e.pt = 0;
         }
       } else if (e.type === 'condfmt' || e.type === 'shuffler') {
-        e.cd -= dt; e.tele = e.cd < 1 ? 1 : 0; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
+        e.cd -= dt; e.tele = e.cd < Math.min(1, e.every / 2) ? 1 : 0; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         if (e.cd <= 0) {
-          e.cd = 4.2; let n = 0;
+          e.cd = e.every; let n = 0;
           if (e.type === 'condfmt') { e.step++; e.ranges.forEach((r, k) => { n += formatRange(r, e.seq[(e.step + k) % e.seq.length]); }); }
           else { e.ranges.forEach(r => { n += slideRange(r, e.axis, e.sdir); }); e.sdir = -e.sdir; }
           if (n) SFX.place();
         }
       } else if (e.type === 'circ') {
-        const q = loopPos(e.loop, e.t * 38); e.x = q.x + 2; e.y = q.y + 2; e.dir = q.dir;
+        const q = loopPos(e.loop, e.t * (e.spdc ? e.spdc * T : 38)); e.x = q.x + 2; e.y = q.y + 2; e.dir = q.dir;
       } else if (e.type === 'flyer') {
         const px = e.x;
         e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
@@ -1395,7 +1395,7 @@
       if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4; ctx.drawImage(s, x, y); ctx.globalAlpha = 1;
       if (e.type === 'guard' && !EXCEL) { ctx.fillStyle = '#4C9BE8'; ctx.fillRect(Math.round(e.x - cx) + (e.dir > 0 ? e.w - 1 : -3), Math.round(e.y - cy), 4, e.h); }
       if (e.type === 'autofill' && e.cd < .8 && e.made < e.max && fillWindowCount(e) < e.cap) { const tg = fillTarget(e); if (tg) { ctx.globalAlpha = .35 + .3 * Math.sin(e.t * 18); ctx.fillStyle = e.c !== undefined ? AF_COL[e.c] : '#70AD47'; ctx.fillRect(tg[0] * T - cx, tg[1] * T - cy, T, T); ctx.globalAlpha = 1; ctx.strokeStyle = e.c !== undefined ? AF_COL[e.c] : '#217346'; ctx.lineWidth = 1; ctx.strokeRect(tg[0] * T - cx + .5, tg[1] * T - cy + .5, T - 1, T - 1); } }
-      if (e.type === 'bucket' && e.pt > 0 && e.ptc) { const bl = .5 + .5 * Math.sin(e.t * 26); ctx.globalAlpha = .25 + .35 * bl * (e.pt / 1 + .4); ctx.fillStyle = AF_COL[e.c] || '#fff'; ctx.fillRect(e.ptc[0] * T - cx, e.ptc[1] * T - cy, T, T); ctx.globalAlpha = 1; }
+      if (e.type === 'bucket' && e.pt > 0 && e.ptc) { const bl = .5 + .5 * Math.sin(e.t * 26); ctx.globalAlpha = .25 + .35 * bl * (e.pt / e.ptime + .4); ctx.fillStyle = AF_COL[e.c] || '#fff'; ctx.fillRect(e.ptc[0] * T - cx, e.ptc[1] * T - cy, T, T); ctx.globalAlpha = 1; }
       if (e.type === 'turret' && e.tele) { ctx.fillStyle = '#FFE27A'; ctx.fillRect(Math.round(e.x - cx) + 4, Math.round(e.y - cy) - 4, 4, 2); }
     }
     for (const b of G.bullets) dotRect(b.x - cx, b.y - cy, 4, 4, '#E8563F');
