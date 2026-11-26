@@ -69,7 +69,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
   <h1>エナー<i>と</i>ふしぎのシート</h1>
   <p class="sub" id="coverSub">ゲームガイド（v2）</p>
   <p class="lead">世界は「表計算シート」、ブロックは「色つきのセル」。<br>Excelの機能を、遊びに使うと？ エナーが、こわれたシートを直しに行きます。</p>
-  <p class="toc">しくみ／世界観／オープニング／編集道具／使い方／ブロック／敵キャラ／組み合わせ／改ページプレビュー／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
+  <p class="toc">しくみ／世界観／オープニング／編集道具／使い方／ブロック／敵キャラ／組み合わせ／改ページプレビュー／リングコマンド（試験）／新しい見た目（試験）／ワールドと窓／ステージ一覧／採点／ステージ作成／見送った案／課題</p>
 </section>
 
 <!-- 2 しくみ -->
@@ -109,6 +109,7 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
         <li>4つの目標：クリア／かけらを全部／ノーミス／ムダなし（コスト目標以下）</li>
         <li>チェックポイントの旗で、落ちても途中から再開</li>
         <li>エナジーの玉をとると、「なおす」のコストが15回復</li>
+        <li>試験中：長押しで開く「リングコマンド」（?ring=1）と、32pxの新しい見た目（?gfx=enar32）。詳しくは、後ろのページ</li>
         <li>公開用の版では、調整パネルを隠し、見た目は「Excel風」だけ（開発用に ?dev=1 で戻せる）</li>
       </ul>
     </div>
@@ -389,6 +390,80 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
   <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※画像は実際のステージでの実行例</span><span class="pn"></span></div>
 </section>
 
+<!-- 12c リングコマンド(試験) -->
+<section class="page">
+  <h1>なおす操作の試験機能（リングコマンド）</h1>
+  <p>スマホで、片手で「なおす」を使いやすくするための試験です。URLの最後に <b>?ring=1</b>（円形の「リング」）または <b>?ring=menu</b>（右クリックメニューふうの縦ならび）を付けると試せます。付けなければ、これまで通りです。</p>
+  <div class="cols c2">
+    <div>
+      <h2>使い方</h2>
+      <table>
+        <tr><th style="width:30%">操作</th><th>内容</th></tr>
+        <tr><td>呼び出す</td><td>画面を<b>長押し</b>（約0.5秒）。「なおす」に入っていなければ、入ってから開く。パソコンでは<b>右クリック</b>でもすぐ開く</td></tr>
+        <tr><td>えらぶ</td><td>開いた指を<b>いちど離してから</b>、ボタンをタップ。長押しの指が滑って触れても、反応しない</td></tr>
+        <tr><td>2段目</td><td>「ならべかえ」「かたち」「フィルター」をえらぶと、同じ場所に2段目が開き、「よせ→」「左右反転」「色」などを選ぶ（リングの外をタップで閉じる）</td></tr>
+        <tr><td>移動／書き込み</td><td>リングの「移動」で画面を動かすモード、「書き込み」でふつうの編集にもどる。<b>画面のダブルタップ</b>でも切りかえ（「なおす」の中だけ有効）。「なおす」に入るときは、必ず書き込みモード</td></tr>
+        <tr><td>サッと終わる</td><td>道具を使ってステージが変わった直後に、右側に大きな<b>「▶ 終わる」</b>ボタンが出る（リングを開いている間は隠れる）</td></tr>
+      </table>
+      <h2 style="margin-top:4mm">編集中の見た目</h2>
+      <ul>
+        <li>背景だけ暗くなり、ブロックや仕掛けは明るいまま（リングを開いたときは画面全体が暗くなる）</li>
+        <li>書き込みモード：画面に<b>青い枠</b>、上のリボンの「モード」欄に青い✎</li>
+        <li>移動モード：画面に<b>橙の枠</b>、リボンの「モード」欄に橙の✋</li>
+        <li>編集中は、判定セルと扉が<b>動かない</b>。結果は、編集を終えてから分かる（試行錯誤ができないように）</li>
+      </ul>
+    </div>
+    <div>
+      <h2>道具のアイコン（Excelのリボンふう）</h2>
+      <table class="small">
+        <tr><th style="width:42%">道具</th><th>絵の意味</th></tr>
+        <tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M13 2.5L8 8" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M8.2 7.2l1.6 1.6c-.4 2.6-2.4 4.4-6 4.4 1.2-1 .8-2.2 1.2-3.2.5-1.2 2-2.2 3.2-2.8z" fill="#F2B100"/></svg><b>いろコピー</b></td><td>書式のコピー（ブラシ）</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M1 12.5L6.2 3.5v9z" fill="#4472C4"/><path d="M15 12.5L9.8 3.5v9z" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><path d="M8 1.5v13" stroke="#7F7F7F" stroke-width="1" stroke-dasharray="1.6 1.4"/></svg><b>かたち</b></td><td>反転・回転（向かい合う三角）</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M1.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="3.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="3.5" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/></svg><b>ならべかえ</b></td><td>揃え（左揃えなどの、線と棒）</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M1 2.5h14L9.7 8.6V14l-3.4-1.6V8.6z" fill="#4472C4"/><path d="M3 4h10" stroke="#B4C7E7" stroke-width="1"/></svg><b>フィルター</b></td><td>フィルター（じょうご）</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M5 7.5V5a3 3 0 0 1 6 0v2.5" fill="none" stroke="#7F7F7F" stroke-width="1.7"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#F2B100"/><circle cx="8" cy="10.6" r="1.1" fill="#7F5F00"/></svg><b>シートをまもる</b></td><td>鍵をかけた錠前</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M5 7.5V5a3 3 0 0 1 5.8-1" fill="none" stroke="#7F7F7F" stroke-width="1.7" stroke-linecap="round"/><rect x="2.8" y="7" width="10.4" height="7.5" rx="1.2" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><circle cx="8" cy="10.6" r="1.1" fill="#2F5597"/></svg><b>まもりをはずす</b></td><td>鍵が開いた錠前</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M3 1.5h7l3 3v10H3z" fill="#fff" stroke="#7F7F7F"/><rect x="5" y="6" width="6" height="6" fill="#DDEBF7" stroke="#4472C4" stroke-width="1" stroke-dasharray="1.6 1"/></svg><b>印刷範囲の設定</b></td><td>点線の枠のあるページ</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><circle cx="6.5" cy="6.5" r="4.4" fill="#DDEBF7" stroke="#4472C4" stroke-width="1.6"/><path d="M10 10l4.6 4.6" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M4.6 6.5h3.8M6.5 4.6v3.8" stroke="#4472C4" stroke-width="1.1"/></svg><b>ズーム</b></td><td>虫めがね</td></tr>
+      </table>
+      <h2 style="margin-top:4mm">2段目と、モードのアイコン</h2>
+      <table class="small">
+        <tr><th style="width:42%">項目</th><th>意味</th></tr>
+        <tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M1.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="3.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="3.5" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/></svg><b>←よせ</b></td><td>左に揃える</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M14.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="1.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="6" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/></svg><b>よせ→</b></td><td>右に揃える</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M1.5 1.5h13" stroke="#4472C4" stroke-width="1.5"/><rect x="3" y="3.5" width="2.6" height="11" fill="#8FAADC"/><rect x="6.9" y="3.5" width="2.6" height="6.5" fill="#8FAADC"/><rect x="10.8" y="3.5" width="2.6" height="9" fill="#8FAADC"/></svg><b>↑よせ</b></td><td>上に揃える</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M1.5 14.5h13" stroke="#4472C4" stroke-width="1.5"/><rect x="3" y="1.5" width="2.6" height="11" fill="#8FAADC"/><rect x="6.9" y="6" width="2.6" height="6.5" fill="#8FAADC"/><rect x="10.8" y="3.5" width="2.6" height="9" fill="#8FAADC"/></svg><b>よせ↓</b></td><td>下に揃える</td></tr><tr><td><span style="display:inline-block;width:6mm;margin-right:2mm;text-align:center">✋</span><b>移動</b></td><td>手のひら。画面をドラッグで動かす</td></tr><tr><td><svg viewBox="0 0 16 16" style="width:6mm;height:6mm;vertical-align:middle;margin-right:2mm"><path d="M2 14l1-3.6 8-8 2.6 2.6-8 8z" fill="#F2B100"/><path d="M11 2.4l1.3-1 2.6 2.6-1 1.3z" fill="#C00000"/><path d="M2 14l1-3.6 2.6 2.6z" fill="#7F7F7F"/></svg><b>書き込み</b></td><td>鉛筆。ブロックを直す（ふつうの編集）</td></tr>
+      </table>
+      <p class="muted" style="margin-top:2mm">リング／メニューでは、このほかに「もどす」「やりなおし」「おわる」が出る。</p>
+    </div>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※試験機能。操作感はスマホ実機で確認中</span><span class="pn"></span></div>
+</section>
+
+<!-- 12d 新しい見た目(enar32) -->
+<section class="page">
+  <h1>新しい見た目（?gfx=enar32）と、ワールド1の練り直し</h1>
+  <div class="cols c2">
+    <div>
+      <h2>32pxの絵の見た目</h2>
+      <p>URLに <b>?gfx=enar32</b> を付けると、ブロックなどを、細かい絵（1マス32px）で描く新しい見た目になります（付けなければ、Excel風のまま）。ゲームの座標や動きは同じで、絵だけが細かくなります。</p>
+      <ul>
+        <li>ブロックは、いただいた32pxの絵に置きかえ済み：<b>土（茶）・鋼・マグマ（赤）・氷（青）</b></li>
+        <li>それ以外（緑・ガラス・ひび割れなど）は、320pxの絵から縮めたもの。黄色のブロックとカギは、前の素材のまま</li>
+        <li>置きかえた絵を、前の320px版に戻すとき：<b>&amp;brown=320 / &amp;steel=320 / &amp;lava=320 / &amp;ice=320</b></li>
+        <li>画面の大きさ：<b>&amp;ts=64</b> で1マス64px（画面 1152×720。おすすめ）、<b>&amp;ts=80</b> で 1440×900。ふつうは32（576×360）</li>
+        <li>敵・背景・リボンなどは、まだExcel風の絵のまま</li>
+        <li>マグマの動き（光のゆらぎ）と氷のきらめきは、1枚絵のため止まって見える</li>
+      </ul>
+    </div>
+    <div>
+      <h2>ワールド1（通常グラフィック版）の練り直し</h2>
+      <p>ワールド1は、1ステージにつき編集機能を<b>1つずつ</b>使う構成にします。敵は出ません。いま決まっているのは、ステージ1だけです。</p>
+      <div class="card">
+        <h2>1-1（横20×縦12）</h2>
+        <ul>
+          <li>はばたきだけでクリアできる（道具・コストなし）</li>
+          <li>スタートは左下、ゴールは右上</li>
+          <li>かけらは2つ：1つは簡単にとれる。もう1つは、足場の少ないジャンプでとりにいく</li>
+          <li>ヒントの吹き出しは、はじめ・途中・ゴール前の3か所</li>
+        </ul>
+      </div>
+      <p class="muted" style="margin-top:3mm">1-2 以降は、これからリングコマンドの試用URLで練り直す予定。</p>
+    </div>
+  </div>
+  <div class="foot"><span>エナーとふしぎのシート ゲームガイド　※試験中の見た目と構成</span><span class="pn"></span></div>
+</section>
+
 <!-- 13 ワールドと窓 -->
 <section class="page">
   <h1>ワールドと、窓の景色</h1>
@@ -493,6 +568,8 @@ figcaption { font-size: 8pt; color: #6B7590; margin-top: 1mm; }
       <ul>
         <li>人が遊んだときの難しさ（特に、塗りつぶしの塗る時間・歩く速さと、にせブロックの面の分かりやすさ）</li>
         <li>スマホ実機での、画面の収まりと、エディターの押しやすさ</li>
+        <li>リングコマンドの操作感（長押しの長さ、2段目の押しやすさ、「▶ 終わる」の位置）と、リング／メニューのどちらがよいか</li>
+        <li>新しい見た目での、実際に歩いたときの見やすさ（氷と背景・ガラスの区別、マグマや氷が止まって見えること）</li>
         <li>オートフィルの間隔を2.2秒にそろえたあとの、13-10・13-11の遊びごこち</li>
         <li>効果音と、窓を含めた動きの滑らかさ</li>
       </ul>
