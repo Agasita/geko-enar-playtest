@@ -29,8 +29,12 @@ fieldset,details{background:#fff;border:1px solid var(--line);border-radius:0;pa
 legend,summary{color:var(--green);font-weight:700;cursor:pointer;font-size:13px}
 .tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 8px}
 #msg{background:var(--note);border:1px solid #000;padding:2px 8px;min-height:1.8em}
-#lp{display:none}
+#lp,#ep{display:none}
 #lp.on{display:block}
+#ep.on{display:block;position:fixed;left:8px;right:8px;bottom:8px;z-index:5;background:#fff;box-shadow:0 4px 16px #0005;max-height:45vh;overflow:auto}
+#ep fieldset{margin:0}
+#ep .row{margin:3px 0}
+#ep button[disabled]{opacity:.4}
 #lp .row{margin:3px 0}
 #lp input[type=number]{width:64px}
 textarea{width:100%;height:90px;font-size:11px}
@@ -88,7 +92,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-i</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-13-a</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
@@ -128,6 +132,12 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       <span class="lbl">リフトを動かす判定セル</span><select id="l-ctl"><option value="-1">なし（ずっと動く）</option><option value="0">1 赤</option><option value="1">2 青</option><option value="2">3 緑</option><option value="3">4 黄</option></select>
       <button id="l-del" class="warn">このリフトを消す</button></div>
     <div class="lbl">シートの上では、■（始まり）をドラッグ＝移動、●（終わり）をドラッグ＝動く道、右はしの▮をドラッグ＝長さ。縦か横の、どちらか一方向にだけ動けます。</div>
+  </fieldset></div>
+
+  <div id="ep"><fieldset><legend id="ep-t">選んだ敵</legend>
+    <div class="row"><button id="ep-add">＋ はんいを足す</button><button id="ep-del" class="warn">選んだはんいを消す</button><button id="ep-rst">はんいを初期に戻す</button></div>
+    <div class="row"><span class="lbl">はんいの中のブロックを</span><select id="ep-k"></select><button id="ep-do">まとめて変える</button></div>
+    <div class="lbl">シートの上で、敵をタップして選びます。選んだ敵のはんいが色つきで出ます（太い線＝いま選んでいるはんい）。四隅の□をドラッグ＝広げる・せばめる、はんいの中をドラッグ＝動かす、ほかのはんいをタップ＝そのはんいを選ぶ。循環参照は、四角形の道すじ（1つだけ）です。</div>
   </fieldset></div>
 
   <div id="wrap"><canvas id="cv"></canvas></div>
@@ -183,7 +193,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   let pend = null;
   const blockIm = (c) => GFXX.block(0, c), crackIm = () => GFXX.block(3, 0);
   const cv = $('#cv'), ctx = cv.getContext('2d');
-  let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
+  let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, selEnt = null, selR = -1, undoStack = [];
   let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw';
   const msg = (t) => { $('#msg').textContent = t; };
   function setMode(m) { mode = m; document.body.dataset.mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ 動かす' : '✏ 置く'; }
@@ -204,7 +214,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   }
   const snap = () => JSON.stringify({ L, meta: collectMeta() });
   function pushUndo() { undoStack.push(snap()); if (undoStack.length > 60) undoStack.shift(); }
-  function undo() { const s = undoStack.pop(); if (!s) return msg('戻せるものがありません'); const d = JSON.parse(s); L = d.L; H = L.h; applyMeta(d.meta); sel = -1; fit(); showLift(); }
+  function undo() { const s = undoStack.pop(); if (!s) return msg('戻せるものがありません'); const d = JSON.parse(s); L = d.L; H = L.h; applyMeta(d.meta); sel = -1; selEnt = null; selR = -1; fit(); showLift(); showEnt(); }
   function collectMeta() {
     return { name: $('#f-name').value.trim() || 'マイステージ', energy: Math.max(0, Math.min(100, +$('#f-energy').value || 0)), regen: Math.max(0, +$('#f-regen').value || 0), par: Math.max(0, +$('#f-par').value || 0), theme: +$('#f-theme').value || 0,
       hints: meta.hints.map(h => ({ x: h.x, text: h.text })), tools: [...document.querySelectorAll('#tools input:checked')].map(i => i.dataset.t) };
@@ -254,6 +264,14 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       rangesOf(e).forEach(r => { const x0 = Math.min(r[0], r[2]), y0 = Math.min(r[1], r[3]), x1 = Math.max(r[0], r[2]), y1 = Math.max(r[1], r[3]);
         if (e.type === 'circ') ctx.strokeRect(x0 * T + T / 2, y0 * T + T / 2, Math.max(1, x1 - x0) * T, Math.max(1, y1 - y0) * T); else ctx.strokeRect(x0 * T + 1, y0 * T + 1, (x1 - x0 + 1) * T - 2, (y1 - y0 + 1) * T - 2); });
       ctx.setLineDash([]); ctx.lineWidth = 1;
+    }
+    if (cur.kind === 'pick' && selEnt && L.ents.includes(selEnt)) { // 選んだ敵の はんい(色つき)と、四隅の つかみ
+      const e = selEnt, col = e.type === 'condfmt' ? '#7030A0' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B', rs = rangesOf(e);
+      rs.forEach((r, i) => { const n = normR(r), on = i === selR;
+        ctx.fillStyle = col; ctx.globalAlpha = on ? .22 : .1; if (e.type === 'circ') ctx.fillRect(n[0] * T + T / 2, n[1] * T + T / 2, Math.max(1, n[2] - n[0]) * T, Math.max(1, n[3] - n[1]) * T); else ctx.fillRect(n[0] * T, n[1] * T, (n[2] - n[0] + 1) * T, (n[3] - n[1] + 1) * T); ctx.globalAlpha = 1;
+        if (on) { ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.setLineDash([]); if (e.type === 'circ') ctx.strokeRect(n[0] * T + T / 2, n[1] * T + T / 2, Math.max(1, n[2] - n[0]) * T, Math.max(1, n[3] - n[1]) * T); else ctx.strokeRect(n[0] * T + 1.5, n[1] * T + 1.5, (n[2] - n[0] + 1) * T - 3, (n[3] - n[1] + 1) * T - 3); ctx.lineWidth = 1;
+          handlesOf(e, r).forEach(h => { ctx.fillStyle = '#fff'; ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.fillRect(h.px - 5, h.py - 5, 10, 10); ctx.strokeRect(h.px - 5, h.py - 5, 10, 10); ctx.lineWidth = 1; }); } });
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.strokeRect(e.x * T - 1, e.y * T - 1, T + 2, T + 2); ctx.lineWidth = 1;
     }
     for (const e of L.ents) {
       const px = e.x * T, py = e.y * T;
@@ -353,9 +371,53 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     const w = 3; x = Math.max(0, Math.min(L.w - w, x)); const dx = x + w + 4 <= L.w - 0 ? 4 : -Math.min(4, x);
     L.lifts.push({ x, y, w, dx: dx || 1, dy: 0, period: 7, phase: 0, col: 0, ctl: -1 }); sel = L.lifts.length - 1; showLift();
   }
+  // ---- 選ぶ: 敵を えらんで、はんいを つかんで なおす ----
+  const isRg = (e) => !!e && (e.type === 'condfmt' || e.type === 'shuffler' || e.type === 'circ');
+  const normR = (r) => [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
+  const ensureRanges = (e) => { if (!e.ranges || !e.ranges.length) e.ranges = rangesOf(e).map(r => r.slice()); };
+  function handlesOf(e, r) { const n = normR(r), o = []; for (const sx of [0, 1]) for (const sy of [0, 1]) o.push(e.type === 'circ' ? { sx, sy, px: n[sx ? 2 : 0] * T + T / 2, py: n[sy ? 3 : 1] * T + T / 2 } : { sx, sy, px: sx ? (n[2] + 1) * T : n[0] * T, py: sy ? (n[3] + 1) * T : n[1] * T }); return o; }
+  function pickDown(e, c) {
+    const p = pos(e); down = { what: 'none' };
+    if (isRg(selEnt) && L.ents.includes(selEnt)) {
+      const rs = rangesOf(selEnt);
+      if (selR >= 0 && selR < rs.length) for (const h of handlesOf(selEnt, rs[selR])) if (Math.hypot(p[0] - h.px, p[1] - h.py) < 11) { ensureRanges(selEnt); selEnt.ranges[selR] = normR(selEnt.ranges[selR]); down = { what: 'rh', i: selR, sx: h.sx, sy: h.sy }; return; }
+      const order = rs.map((_, i) => i).sort((a, b) => (b === selR) - (a === selR));
+      for (const i of order) { const n = normR(rs[i]); if (c[0] >= n[0] && c[0] <= n[2] && c[1] >= n[1] && c[1] <= n[3] && !L.ents.some(q => isRg(q) && q.x === c[0] && q.y === c[1])) { ensureRanges(selEnt); selEnt.ranges[i] = normR(selEnt.ranges[i]); selR = i; down = { what: 'rm', i, c0: c, r0: selEnt.ranges[i].slice() }; showEnt(); return; } }
+    }
+    const hit = L.ents.find(q => isRg(q) && q.x === c[0] && q.y === c[1]);
+    selEnt = hit || null; selR = hit ? 0 : -1; showEnt();
+  }
+  function rangeDrag(c) {
+    const r = selEnt.ranges[down.i]; if (!r) return;
+    if (down.what === 'rh') { let [x0, y0, x1, y1] = r; const cx = Math.max(0, Math.min(L.w - 1, c[0])), cy = Math.max(0, Math.min(L.h - 1, c[1])); if (down.sx) x1 = Math.max(cx, x0); else x0 = Math.min(cx, x1); if (down.sy) y1 = Math.max(cy, y0); else y0 = Math.min(cy, y1); selEnt.ranges[down.i] = [x0, y0, x1, y1]; }
+    else { const r0 = down.r0; const dx = Math.max(-r0[0], Math.min(L.w - 1 - r0[2], c[0] - down.c0[0])), dy = Math.max(-r0[1], Math.min(L.h - 1 - r0[3], c[1] - down.c0[1])); selEnt.ranges[down.i] = [r0[0] + dx, r0[1] + dy, r0[2] + dx, r0[3] + dy]; }
+  }
+  const EP_KINDS = COLORS.map((c, i) => ['c' + i, c[0] + 'ブロックに']).concat([['steel', '鋼に'], ['erase', '消す（空きにする）']]);
+  EP_KINDS.forEach(k => { const o = document.createElement('option'); o.value = k[0]; o.textContent = k[1]; $('#ep-k').appendChild(o); });
+  function showEnt() {
+    const p = $('#ep'), ok = isRg(selEnt) && L.ents.includes(selEnt) && cur.kind === 'pick'; p.classList.toggle('on', ok); if (!ok) return;
+    const rs = rangesOf(selEnt), nm = (ENTS.find(q => q[0] === selEnt.type) || [0, ''])[1];
+    $('#ep-t').textContent = '選んだ敵：' + nm + '（はんい ' + rs.length + 'か所。いま ' + (selR + 1) + '番め）';
+    $('#ep-add').disabled = selEnt.type === 'circ'; $('#ep-del').disabled = selEnt.type === 'circ' || rs.length <= 1;
+  }
+  $('#ep-add').onclick = () => { if (!selEnt || selEnt.type === 'circ') return; pushUndo(); ensureRanges(selEnt); const e = selEnt; selEnt.ranges.push([Math.max(0, e.x - 2), Math.min(L.h - 1, e.y + 1), Math.min(L.w - 1, e.x + 2), Math.min(L.h - 1, e.y + 2)]); selR = selEnt.ranges.length - 1; showEnt(); draw(); };
+  $('#ep-del').onclick = () => { if (!selEnt || selEnt.type === 'circ') return; ensureRanges(selEnt); if (selEnt.ranges.length <= 1) return; pushUndo(); selEnt.ranges.splice(selR, 1); selR = 0; showEnt(); draw(); };
+  $('#ep-rst').onclick = () => { if (!selEnt) return; pushUndo(); delete selEnt.ranges; selR = 0; showEnt(); draw(); };
+  $('#ep-do').onclick = () => {
+    if (!selEnt) return; const r = rangesOf(selEnt)[selR]; if (!r) return; pushUndo(); const n = normR(r), k = $('#ep-k').value; let cnt = 0;
+    for (let y = n[1]; y <= n[3]; y++) for (let x = n[0]; x <= n[2]; x++) {
+      if (!inb(x, y)) continue; if (selEnt.type === 'circ' && x > n[0] && x < n[2] && y > n[1] && y < n[3]) continue; // 循環参照は、四角の ふち(みち)だけ
+      const t = L.front[y][x]; if (t !== '#' && t !== 'S' && t !== 'c') continue;
+      if (k === 'erase') { L.front[y][x] = '.'; L.color[y][x] = 0; L.lock[y][x] = 0; cnt++; }
+      else if (k === 'steel') { if (t === '#') { L.front[y][x] = 'S'; L.color[y][x] = 0; cnt++; } }
+      else { if (t === '#') { L.color[y][x] = +k.slice(1); cnt++; } }
+    }
+    msg(cnt + 'マス 変えました。まちがえたら「戻す」'); draw();
+  };
   cv.addEventListener('pointerdown', (e) => {
     if (mode !== 'draw' || e.button === 2) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); pushUndo();
     const c = cellOf(e);
+    if (cur.kind === 'pick') { pickDown(e, c); draw(); return; }
     if (cur.kind === 'lift') {
       const h = liftHit(e);
       if (h) { sel = h[0]; down = { what: h[1], ox: c[0] - L.lifts[sel].x, oy: c[1] - L.lifts[sel].y }; showLift(); }
@@ -370,6 +432,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     if (!down) return;
     if (down.what === 'door') { const y0 = Math.min(down.y0, c[1]), y1 = Math.max(down.y0, c[1]); down.d[1] = Math.max(0, y0); down.d[2] = Math.max(1, Math.min(L.h, y1) - down.d[1] + 1); draw(); return; }
     if (down.what === 'paint') { if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag' || cur.kind === 'range') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } }
+    else if (down.what === 'rh' || down.what === 'rm') { rangeDrag(c); draw(); }
     else if (down.what !== 'none') { liftDrag(c); draw(); }
   });
   const up = () => { down = null; last = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
@@ -404,6 +467,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     const menu = $('#ctx'); let timer = null, sx = 0, sy = 0;
     const items = () => [
       ['道具を選ぶ', () => drawer(true)],
+      ['🔲 敵のはんいを直す', () => { if (pickBtn) pickBtn.click(); }],
       [mode === 'draw' ? '✋ 動かすに する' : '✏ 置くに する', () => $('#b-mode').click()],
       ['—', '編集'], ['▶ 試しに遊ぶ', () => $('#b-test').click()], ['保存', () => $('#b-save').click()], ['↶ 戻す', () => $('#b-undo').click()],
       ['—', '設定'], ['⚙ ステージ設定', () => window.__openPop('p-set')], ['💬 ヒント', () => window.__openPop('p-hint')], ['🧰 使える道具', () => window.__openPop('p-tools')],
@@ -432,9 +496,10 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
   })();
   function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').classList.toggle('on', open); }
-  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>道具</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
+  function setCur(btn, v) { document.querySelectorAll('.pal button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); cur = v; setMode('draw'); $('#b-tool').innerHTML = '<small>道具</small>' + btn.innerHTML + ' ▸'; drawer(false); if (v.kind !== 'pick') { selEnt = null; selR = -1; } showEnt(); if (v.kind !== 'lift') { sel = -1; showLift(); draw(); } }
   $('#b-tool').onclick = () => drawer(true); $('#d-x').onclick = () => drawer(false); $('#scrim').onclick = () => drawer(false);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
+  let pickBtn = null;
   function addBtn(box, html, v) { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => setCur(b, v); box.appendChild(b); return b; }
   (function () {
     const p = $('#pal'), p2 = $('#pal2');
@@ -448,6 +513,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
       addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });
     });
+    pickBtn = addBtn(p2, '<span class="sw" style="background:none;border:2px solid #7030A0"></span>選ぶ（敵のはんいを直す・ブロックを変える）', { kind: 'pick' });
     addBtn(p2, '<span class="sw" style="background:none;border:1px dashed #7030A0"></span>はんい（2か所をクリック）', { kind: 'range' });
     COLORS.forEach((c, i) => { if (i === 5) return; addBtn(p2, spIcon(blockIm(i)) + 'にせブロック（' + c[0] + '）', { kind: 'ent', type: 'fake', opt: { c: i } }); });
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
