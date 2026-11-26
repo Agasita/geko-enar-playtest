@@ -62,6 +62,12 @@ header #cursor{min-width:3.5em}
 @media (max-width:640px){.sep{display:none}#ver{display:none}header{gap:4px;padding:5px 8px}header button{padding:4px 7px}header h1{display:none}.toolbtn{min-width:0}}
 #back .sh{display:none}
 @media (max-width:640px){#back{order:-1;padding:0 4px;font-size:16px}#back .lg{display:none}#back .sh{display:inline}}
+
+#wrap{border:3px solid var(--line)}
+body[data-mode=draw] #wrap{border-color:#2E75B6;box-shadow:0 0 0 1px #2E75B6}
+body[data-mode=scroll] #wrap{border-color:#F0A000;box-shadow:0 0 0 1px #F0A000}
+body[data-mode=draw] #b-mode{background:#2E75B6;border-color:#1F4E79;color:#fff}
+body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#262626}
 </style>
 </head>
 <body>
@@ -82,7 +88,7 @@ header #cursor{min-width:3.5em}
   <button class="hb" data-pop="p-exp">⇅ 書き出し</button>
   <a href="index.html" id="back" title="ゲームに戻る"><span class="lg">ゲームに戻る</span><span class="sh">◀</span></a>
   <span class="lbl" id="cursor"></span>
-  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-h</span>
+  <span class="lbl" id="ver" style="margin-left:auto">版 2026-12-12-i</span>
 </header>
 <main>
   <div class="pop" id="p-set"><div class="ph">ステージの設定（名前・大きさ・コスト）</div>
@@ -180,7 +186,7 @@ header #cursor{min-width:3.5em}
   let L = null, H = 12, meta = { hints: [], theme: 0 }, cur = { kind: 'block', color: 0 }, editingId = null, down = null, last = null, sel = -1, undoStack = [];
   let mode = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 'scroll' : 'draw';
   const msg = (t) => { $('#msg').textContent = t; };
-  function setMode(m) { mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ 動かす' : '✏ 置く'; }
+  function setMode(m) { mode = m; document.body.dataset.mode = m; cv.style.touchAction = m === 'scroll' ? 'auto' : 'none'; $('#b-mode').textContent = m === 'scroll' ? '✋ 動かす' : '✏ 置く'; }
 
   // ---- データ ----
   function blank(w, h) {
@@ -404,10 +410,15 @@ header #cursor{min-width:3.5em}
       ['—', 'ファイル'], ['📂 保存・ひな形', () => window.__openPop('p-saved')], ['⇅ 書き出し', () => window.__openPop('p-exp')], ['新しく', () => $('#b-new').click()],
     ];
     const hide = () => menu.classList.remove('on');
+    // ひらいたときの指が はなれる(+すこし まつ)まで、えらべない。ゆびが ボタンの上に のっていても はんのうしない
+    let pdown = false, armed = true;
+    document.addEventListener('pointerdown', () => { pdown = true; }, true);
+    const rel = () => { pdown = false; if (!armed) setTimeout(() => { armed = true; }, 450); };
+    document.addEventListener('pointerup', rel, true); document.addEventListener('pointercancel', rel, true);
     function open(x, y) {
       menu.innerHTML = '';
-      items().forEach(([t, fn]) => { if (t === '—') { const d = document.createElement('div'); d.className = 'cg'; d.textContent = fn; menu.append(d); return; } const b = document.createElement('button'); b.textContent = t; b.onclick = (e) => { e.stopPropagation(); hide(); fn(); }; menu.append(b); });
-      menu.classList.add('on'); const r = menu.getBoundingClientRect();
+      items().forEach(([t, fn]) => { if (t === '—') { const d = document.createElement('div'); d.className = 'cg'; d.textContent = fn; menu.append(d); return; } const b = document.createElement('button'); b.textContent = t; b.onclick = (e) => { e.stopPropagation(); if (!armed) return; hide(); fn(); }; menu.append(b); });
+      armed = !pdown; if (armed) { armed = false; setTimeout(() => { armed = true; }, 450); } menu.classList.add('on'); const r = menu.getBoundingClientRect();
       menu.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px'; menu.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
     }
     cv.addEventListener('contextmenu', (e) => { e.preventDefault(); if (down) { down = null; undo(); } open(e.clientX, e.clientY); });
