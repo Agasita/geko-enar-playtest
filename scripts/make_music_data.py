@@ -123,12 +123,16 @@ MEL_C = ["e6 - c6 - a5 - c6 e6", "f6 - c6 - a5 - c6 -", "e6 - g6 - e6 - c6 -", "
          "f6 - e6 - c6 - a5 -", "g5 - b5 - d6 - b5 g5", "a5 - e6 - a6 - - -", "g#5 - b5 - d6 - e6 -"]
 PROG_C = ['Am', 'F', 'C', 'G', 'Am', 'F', 'Dm', 'E7', 'F', 'G', 'Am', 'Am', 'F', 'G', 'Am', 'E7']
 
-# ================= ステージ制作（チップチューン・スロー・おだやか） 66BPM  Aマイナー / 主旋律=矩形波 =================
-MEL_EDIT = ["e5 - a5 - c6 - b5 -", "a5 - f5 - a5 - c6 -", "e6 - c6 - g5 - e5 -", "d5 - g5 - b5 - d6 -",
-            "c6 - b5 - a5 - e5 -", "f5 - a5 - c6 - a5 -", "b5 - g5 - d5 - g5 b5", "e5 - - - g5 - b5 -",
-            "a5 - c6 - f6 - e6 c6", "d6 - b5 - g5 - b5 d6", "c6 - e6 - a5 - c6 -", "e6 - - - c6 - g5 -",
-            "a5 - c6 - a5 - f5 -", "g5 - b5 - d6 - b5 -", "e5 - g5 - c6 - e6 -", "d6 - - - b5 - r r"]
-PROG_EDIT = ['Am', 'F', 'C', 'G', 'Am', 'F', 'G', 'Em', 'F', 'G', 'Am', 'C', 'F', 'G', 'C', 'G']
+# ================= ステージ制作（チップチューン・あかるい・スタッカート） 84BPM  Cメジャー / 主旋律=矩形波 =================
+MEL_EDIT = ["g5 - e5 g5 c6 - g5 e5", "d5 - g5 b5 d6 - b5 g5", "c6 - a5 c6 e6 - c6 a5", "b5 - g5 b5 e6 - d6 b5",
+            "a5 - c6 f6 e6 - c6 a5", "g5 - c6 e6 g6 - e6 c6", "d6 - a5 d6 f6 - d6 a5", "b5 d6 g6 - f6 d6 b5 -",
+            "e6 - c6 e6 g6 - e6 c6", "d6 - b5 d6 g6 - d6 b5", "a5 c6 e6 c6 a5 c6 e6 -", "f6 - c6 a5 c6 - f6 -",
+            "d6 - f6 a6 f6 - d6 a5", "g5 b5 d6 g6 d6 b5 g5 -", "c6 - e6 - g6 - e6 c6", "d6 - b5 - g5 - r r"]
+PROG_EDIT = ['C', 'G', 'Am', 'Em', 'F', 'C', 'Dm', 'G', 'C', 'G', 'Am', 'F', 'Dm', 'G', 'C', 'G']
+
+
+def short(notes, cap):  # 音を みじかく きる(スタッカート)
+    return [(s, min(l, cap), m) for s, l, m in notes]
 
 
 def track(bpm, steps, voices, echo=False, gain=1.0):
@@ -158,9 +162,10 @@ def build():
     T['stageC'] = track(112, 256, [('p25', .15, melody(MEL_C)), ('p12', .05, arps(PROG_C, step=1, pat3=(0, 1, 2, 1), pat4=(0, 1, 2, 3))),
                                    ('pad', .02, pads(PROG_C)), ('tri', .30, bass(PROG_C, pat=((0, 4, 0), (4, 4, 0), (8, 4, 0), (12, 2, 7), (14, 2, 0)))),
                                    ('kick', .18, k), ('snare', .12, s), ('hat', .04, h)], echo=True, gain=1.35)
-    # --- ステージ制作（ドラムなし。矩形波の主旋律 + やわらかい矩形波アルペジオ + 三角波ベース）
-    T['editor'] = track(66, 256, [('p25', .13, melody(MEL_EDIT)), ('p12', .05, arps(PROG_EDIT, step=4, pat3=(0, 1, 2, 1), pat4=(0, 1, 2, 3))),
-                                  ('pad', .018, pads(PROG_EDIT)), ('tri', .26, bass(PROG_EDIT, pat=((0, 6, 0), (8, 6, 7))))], echo=True, gain=1.3)
+    # --- ステージ制作（矩形波の主旋律・ぜんぶ みじかく きる。やわらかい ドラム つき）
+    k, s_, h = drums(16, kick=(0, 8), snare=(), hat=4)
+    T['editor'] = track(84, 256, [('p25', .14, short(melody(MEL_EDIT), 1)), ('p12', .06, short(arps(PROG_EDIT, step=2, pat3=(0, 1, 2, 1), pat4=(0, 1, 2, 3)), 1)),
+                                  ('tri', .28, short(bass(PROG_EDIT, pat=((0, 2, 0), (4, 2, 7), (8, 2, 0), (12, 2, 7))), 2)), ('hat', .035, h), ('kick', .13, k)], echo=True, gain=1.3)
     J = {}
     n = note
     J['clear'] = track(150, 16, [('p25', .17, [(0, 1, n('g5')), (1, 1, n('c6')), (2, 1, n('e6')), (3, 1, n('g6')), (4, 8, n('c7'))]),
