@@ -24,12 +24,14 @@
     { id: 'protect', tab: 'view', name: 'シートをまもる', mode: 'rect', cost: 4, help: '範囲内のブロックを保護する。保護したブロックは編集できない' },
     { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: '選んだ範囲の保護を解除する' },
     { id: 'printarea', tab: 'view', name: '印刷範囲の設定', mode: 'rect', cost: 6, help: '範囲を選ぶと、そこが青い枠のまま、ずっと見えるようになる（いまの見える範囲に、重ねて選ぶ。40マスまで・3か所まで）' },
+    { id: 'peek', tab: 'view', name: '小窓', mode: 'rect', cost: 6, help: '範囲を選ぶと、その場所が小さな窓になって、画面のすみに映る（動いているところが見える）。窓は1つだけ。選びなおすと、入れかわる。見るだけで、窓の中は直せない' },
     { id: 'zoom', tab: 'view', name: 'ズーム', mode: 'instant', cost: 4, help: '「ズームする」を押すと、数秒だけ、見える範囲が2倍に広がる（その間は、なおせない）' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   // なおす道具の アイコン(Excelのリボンの絵に ちかい、フラットな16px)。ひとつの目で 何の道具か わかるように
   const SVG = (b) => '<svg class="ti" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' + b + '</svg>';
   const ICON = {
+    peek: SVG('<rect x="1.5" y="2" width="13" height="12" rx="1" fill="#fff" stroke="#7F7F7F"/><path d="M8 2v12M1.5 8h13" stroke="#4472C4" stroke-width="1.2"/><rect x="9" y="3" width="5" height="4" fill="#F5C842"/>'),
     painter: SVG('<path d="M13 2.5L8 8" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M8.2 7.2l1.6 1.6c-.4 2.6-2.4 4.4-6 4.4 1.2-1 .8-2.2 1.2-3.2.5-1.2 2-2.2 3.2-2.8z" fill="#F2B100"/>'),
     transform: SVG('<path d="M1 12.5L6.2 3.5v9z" fill="#4472C4"/><path d="M15 12.5L9.8 3.5v9z" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><path d="M8 1.5v13" stroke="#7F7F7F" stroke-width="1" stroke-dasharray="1.6 1.4"/>'),
     sort: SVG('<path d="M1.5 1.5v13" stroke="#4472C4" stroke-width="1.5"/><rect x="3.5" y="3" width="11" height="2.6" fill="#8FAADC"/><rect x="3.5" y="6.9" width="6.5" height="2.6" fill="#8FAADC"/><rect x="3.5" y="10.8" width="9" height="2.6" fill="#8FAADC"/>'),
@@ -192,7 +194,7 @@
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.front.forEach((r, y) => r.forEach((t, x) => { if (t === TL.CRACK) { r[x] = TL.STONE; G.col[y][x] = 4; } })); // 旧「ひび割れ壁」('c')は、ひび割れ色のブロックと おなじもの
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
-    G.fog = lv.fog || null; G.areas = []; G.zoomT = 0;
+    G.fog = lv.fog || null; G.areas = []; G.zoomT = 0; G.inset = null;
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k)); G.fakes = G.enemies.filter(e => e.type === 'fake');
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = []; G.under = {};
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
@@ -907,6 +909,9 @@
         if (n > 40) return fail('ひろすぎます（40マスまで）', { rects: [r] });
         if ((G.areas || []).length >= 3) return fail('これ以上は、設定できません（3か所まで）');
         return { ok: true, cost: costOf('printarea'), rects: [r], run() { G.areas.push({ x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }); SFX.place(); } }; }
+      case 'peek': { const r = a.rect, w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
+        if (w > 18 || h > 11) return fail('ひろすぎます（横18・縦11マスまで）', { rects: [r] });
+        return { ok: true, cost: costOf('peek'), rects: [r], run() { G.inset = { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }; SFX.place(); } }; }
       case 'zoom': if (!G.fog) return fail('このステージでは、使えません'); return { ok: true, cost: costOf('zoom'), run() { G.zoomT = 5; } };
       case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.front[sy][sx] === TL.MAGNET) return fail('磁石はコピーできません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
@@ -926,7 +931,7 @@
       hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, lc: G.lifts.map(L => L.col), lm: G.lifts.map(L => !!L.mark),
       en: G.enemies.map(e => ({ e, x: e.x, y: e.y, bx: e.bx, dead: e.dead })), pick: G.pick.map(k => ({ k, x: k.x, gone: !!k.gone })),
       checks: G.checks.map(c => ({ c, x: c.x, gone: !!c.gone })), flagX: G.flag.x, resp: { x: G.respawn.x, y: G.respawn.y }, px: G.p.x,
-      areas: (G.areas || []).map(r => Object.assign({}, r)), zt: G.zoomT || 0,
+      areas: (G.areas || []).map(r => Object.assign({}, r)), zt: G.zoomT || 0, inset: G.inset ? Object.assign({}, G.inset) : null,
     };
   }
   function restoreSnap(s) {
@@ -937,7 +942,7 @@
     for (const o of s.pick) { o.k.x = o.x; o.k.gone = o.gone; }
     for (const o of s.checks) { o.c.x = o.x; o.c.gone = o.gone; }
     G.flag.x = s.flagX; G.respawn = { x: s.resp.x, y: s.resp.y }; G.p.x = s.px;
-    G.areas = (s.areas || []).map(r => Object.assign({}, r)); G.zoomT = s.zt || 0;
+    G.areas = (s.areas || []).map(r => Object.assign({}, r)); G.zoomT = s.zt || 0; G.inset = s.inset ? Object.assign({}, s.inset) : null;
   }
   function runPlan(plan) {
     const E = G.edit;
@@ -1582,8 +1587,21 @@
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
     if (G.xpl && G.xpl.on) drawXplOverlay();
+    drawInset();
     drawHUD();
     if (G.p.dead) drawMiss();
+  }
+  // 小窓: えらんだ はんいを、すみに 0.5ばいで うつす(うごいている ようすが 見える)。見るだけ
+  function drawInset() {
+    const I = G.inset; if (!I) return;
+    const k = .5, rx = I.x0 * T, ry = I.y0 * T, rw = (I.x1 - I.x0 + 1) * T, rh = (I.y1 - I.y0 + 1) * T, bw = Math.round(rw * k), bh = Math.round(rh * k), bx = W - bw - 5, by = 5;
+    const sv = { x: G.cam.x, y: G.cam.y, sx: G.sx };
+    ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
+    ctx.beginPath(); ctx.rect(bx, by, bw, bh); ctx.clip(); ctx.translate(bx, by); ctx.scale(k, k);
+    G.cam.x = rx; G.cam.y = ry; G.sx = 0;
+    try { drawBackground(); drawWorld(); } finally { G.cam.x = sv.x; G.cam.y = sv.y; G.sx = sv.sx; ctx.restore(); }
+    ctx.strokeStyle = '#F5C842'; ctx.lineWidth = 2; ctx.strokeRect(bx - 1, by - 1, bw + 2, bh + 2);
+    ctx.save(); ctx.strokeStyle = 'rgba(245,200,66,.9)'; ctx.lineWidth = 1; ctx.setLineDash([3, 2]); ctx.strokeRect(Math.round(rx - sv.x) + .5, Math.round(ry - sv.y) + .5, rw - 1, rh - 1); ctx.restore(); // うつしている はんい
   }
   // 「ミス…」の画面: くらくなって、よこからバンドが すべりこみ、文字が ぽんと はずむ
   function drawMiss() {
@@ -2092,7 +2110,7 @@
     ['ゴールを めざそう', ['← → で あるく。「はばたき」（Z / Space）で ジャンプ。空中で ながおしすると、ふわりと はばたく', 'ステージの おくの <b>フロッピー</b>が ゴール。さわると クリア', 'ライフは 3つ。てきや 赤（あつい）ブロックに ふれると ダメージ。あなや トゲ、ライフ0は ミス（さいしょから やりなおし）', 'てきは <b>上から ふむ</b>と たおせる。ふめない てきも いる（くわしくは、？せつめい や てき図鑑）']],
     ['「なおす」で せかいを かえる', ['<b>なおす</b>（Eキー / 「なおす」ボタン）を おすと、<b>時間が とまる</b>', '上の どうぐを えらんで、はんいを ドラッグ（いどうなどは、いきさきを タップ）', 'つかうと <b>コスト</b>が へる。「もどす」で コストも もとに もどる', '<b>終わる</b>を おすと、時間が うごきだす', '<small>ブロックは あたらしく うまれない。あるものを うごかす・ならべる・かえる・かくす だけ</small>']],
     ['コストと ほうしゅう', ['ステージごとに、つかえる どうぐと <b>コストの上限</b>が きまっている。ふつうは かいふくしない', '<b>エナジーの たま</b>を とると、コストが すこし かいふくする', 'ねらうのは 4つ：クリア／かけらを ぜんぶ／ノーミス／ムダなし（もくひょうコスト いか）', 'チェックポイントの はたを とおると、おちても とちゅうから はじめられる']],
-    ['どうぐの しゅるい', TOOLS.map(t => '<b>' + t.name + '</b>（コスト ' + t.cost + '）…' + t.help)],
+    ['どうぐの しゅるい', TOOLS.filter(t => LEVELS.some(l => (l.tools || []).includes(t.id))).map(t => '<b>' + t.name + '</b>（コスト ' + t.cost + '）…' + t.help)],
     ['ブロックの いろ', COLORS.map(k => '<b>' + k.n + '</b>…' + k.fx).concat(['<small>赤と 青が となりあうと、おたがいを うちけしあう。くわしくは「ブロック図鑑」</small>'])],
     ['わからなく なったら', ['あそんでいる とちゅうで <b>「？ せつめい」</b>（Hキー）を おすと、時間が とまる。ブロック・てき・しかけを タップすると、その せつめいが でる（ドラッグで 画面を うごかせる）', '<b>ブロック図鑑</b>：ブロックや しかけの いちらん', '<b>てき図鑑</b>：であった てきの せつめいと、たおしかた', '<b>ステージを作る</b>：じぶんで ステージを つくれる']],
   ];

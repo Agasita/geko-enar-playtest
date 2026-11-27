@@ -42,7 +42,7 @@
   // add(番号, 名前, 設定)。 meta: 難しさ(★)・使う仕掛け・ねらい・解法の手順(PDFに のせる)
   function add(n, name, o) {
     const id = 'P' + String(n).padStart(2, '0'), p = PAL[(n - 1) % PAL.length];
-    L.push(make({ id, name, world: 31, w: o.w, tools: o.tools, energy: o.energy, fog: o.fog, pan: o.pan, bg: p[0], bg2: p[1], par: o.par || o.energy,
+    L.push(make({ id, name, world: 31, w: o.w, h: o.h, tools: o.tools, energy: o.energy, fog: o.fog, pan: o.pan, bg: p[0], bg2: p[1], par: o.par || o.energy,
       hints: o.hints || [], solution: [{ edits: o.edits || [] }], meta: { star: o.star, tags: o.tags, aim: o.aim, steps: o.steps, note: o.note || '', bot: o.bot || {} }, build: o.build }));
   }
 
@@ -130,6 +130,13 @@
     steps: ['P11と同じ手順（保護 → ↑よせ）。✋で動かせる範囲に注意'],
     build(m) { m.floor(); m.ceil(2); m.S(0, 7, 9, 9); m.S(13, 7, 20, 9); m.pit(10, 12); m.blk(11, 6); m.blk(11, 8); m.blk(11, 9); m.blk(10, 9); m.blk(12, 9); m.blk(12, 8); m.start = [3, 6]; m.flag = [18, 6]; },
     edits: [{ tool: 'protect', rect: F(11, 6, 11, 6) }, { tool: 'sort', rect: F(10, 2, 12, 9), opts: { sort: 'U' } }] });
+
+  // お試し: 「小窓」。深い穴の底は、画面の外で見えない。底では、リフトが 針の上を 行き来している。小窓で そこを うつして、リフトが 下に きた ときを ねらって、とびこむ
+  add(15, '見えない穴の底（小窓のお試し）', { w: 24, h: 26, tools: ['peek'], energy: 12, star: 3, tags: ['小窓', '落下', 'リフト', 'トゲ'], hints: [{ x: 1, text: '穴の底は、画面の下。「小窓」で そこを うつして、リフトの うごきを 見よう' }],
+    aim: '深い穴の底にある、動くリフトの上に、とびこむ面。なおす中に✋で底を見られるが、止まっているので、リフトの動きは分からない。小窓なら、動きが見える。',
+    steps: ['「なおす」で「小窓」を選び、穴の底（リフトのあたり）を囲む', '終わって、小窓でリフトの位置を見ながら、穴の左のふちから落ちる', 'リフトの上に降りて、右へ運ばれ、右の通路から旗へ'],
+    build(m) { m.floor(); m.ceil(2); m.S(0, 8, 7, 25); m.S(15, 3, 23, 18); m.S(15, 22, 23, 25); for (let x = 8; x <= 14; x++) m.set(x, 23, '^'); m.lift(8, 22, 3, 4, 0, 5, 0, 0); m.start = [3, 7]; m.flag = [21, 21]; },
+    edits: [{ tool: 'peek', rect: F(8, 20, 14, 23) }] });
 
   window.LEVELS_PZ = L; window.LEVELS = L;
 })();
