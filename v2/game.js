@@ -294,6 +294,7 @@
   function liftAt(L, t) { const s = .5 - .5 * Math.cos(2 * Math.PI * t / L.period); return { x: L.ax + (L.bx - L.ax) * s, y: L.ay + (L.by - L.ay) * s }; }
   const liftOn = (L) => !L.gone && (G.filter === null || L.col === G.filter); // フィルターでいろがちがうリフトは、とおりぬけられる(うすくなる)
   function onLift(L) { const p = G.p; return liftOn(L) && p.ground && p.x + p.w > L.x && p.x < L.x + L.w && Math.abs(p.y + p.h - L.y) <= 2.5; }
+  const ONLIFT = { walker: 1, guard: 1, div0: 1, moji: 1, bucket: 1 }; // リフトに のって、いっしょに はこばれる てき(重さのある ある行の てき)
   function updateLifts(dt) {
     const p = G.p;
     for (const L of G.lifts) {
@@ -301,9 +302,12 @@
       const n = liftAt(L, L.t), dx = n.x - L.x, dy = n.y - L.y, ride = !p.dead && onLift(L);
       // きいろ(もろい)のリフトは、のると0.5びょうでくずれて、しばらくきえる
       if (L.gone > 0) { L.gone -= dt; if (L.gone <= 0) { L.gone = 0; L.stand = 0; } } else if (L.col === 4) { L.stand = ride ? L.stand + dt : Math.max(0, L.stand - dt); if (L.stand > .5) { L.gone = 2.6; spawnParts(L.x + L.w / 2, L.y + 6, 12, '#F5C842', 60); SFX.hit(); } }
+      const riders = liftOn(L) ? G.enemies.filter(e => !e.dead && !e.hidden && ONLIFT[e.type] && e.x + e.w > L.x && e.x < L.x + L.w && Math.abs(e.y + e.h - L.y) <= 2.5) : []; // リフトに のっている てき
       if (ride && dy <= 0) { moveY(p, dy); moveX(p, dx); }
+      if (dy <= 0) for (const e of riders) { moveY(e, dy); moveX(e, dx); }
       L.x = n.x; L.y = n.y;
       if (ride && dy > 0) { moveY(p, dy); moveX(p, dx); }
+      if (dy > 0) for (const e of riders) { moveY(e, dy); moveX(e, dx); }
       if (!ride && !p.dead && liftOn(L) && overlap(p.x, p.y, p.w, p.h, L.x, L.y, L.w, L.h)) { // よこやしたからあたったら、おしだす
         // あたった ひとを おしだす。おした さきが かべや ゆかの なかなら「はさまれた」: にげばが あっても ミス(1ミス)
         const to = Math.abs(dy) >= Math.abs(dx) ? [p.x, dy < 0 ? L.y - p.h : L.y + L.h] : [dx > 0 ? L.x + L.w : L.x - p.w, p.y];
@@ -615,7 +619,7 @@
         if (e.lim) { const mc = (e.x + e.w / 2) / T; if (mc < e.lim[0] + .5) e.dir = 1; else if (mc > e.lim[1] + .5) e.dir = -1; } // 行ったり来たりの はんい(マス)
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         const ahead = e.dir > 0 ? e.x + e.w + 2 : e.x - 2;
-        const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T));
+        const floorAhead = solidCell(Math.floor(ahead / T), Math.floor((e.y + e.h + 2) / T)) || G.lifts.some(L => liftOn(L) && ahead >= L.x && ahead < L.x + L.w && Math.abs(e.y + e.h - L.y) <= 4); // リフトの上も ゆか
         const wall = boxHitsSolid(e.x + e.dir * 2, e.y, e.w, e.h - 1);
         const bkx = Math.floor((e.x + e.w / 2) / T), bky = Math.floor((e.y + e.h + 1) / T);
         const bkOn = e.type === 'bucket' && paintableAt(bkx, bky) && Math.abs((e.x + e.w / 2) - (bkx * T + T / 2)) <= 2; // ガラスの まんなかに きたら 立ちどまる
