@@ -25,12 +25,16 @@
     { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: '選んだ範囲の保護を解除する' },
     { id: 'printarea', tab: 'view', name: '印刷範囲の設定', mode: 'rect', cost: 6, help: '範囲を選ぶと、そこが青い枠のまま、ずっと見えるようになる（いまの見える範囲に、重ねて選ぶ。40マスまで・3か所まで）' },
     { id: 'peek', tab: 'view', name: '小窓', mode: 'rect', cost: 6, help: '範囲を選ぶと、その場所が小さな窓になって、画面のすみに映る（動いているところが見える）。窓は1つだけ。選びなおすと、入れかわる。見るだけで、窓の中は直せない' },
+    { id: 'splitv', tab: 'view', name: '上下分割', mode: 'rect', cost: 8, help: '範囲を選ぶと、遊ぶ画面が上下に割れる。上半分は、えらんだ場所を映しつづけ、下半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
+    { id: 'splith', tab: 'view', name: '左右分割', mode: 'rect', cost: 8, help: '範囲を選ぶと、遊ぶ画面が左右に割れる。左半分は、えらんだ場所を映しつづけ、右半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
     { id: 'zoom', tab: 'view', name: 'ズーム', mode: 'instant', cost: 4, help: '「ズームする」を押すと、数秒だけ、見える範囲が2倍に広がる（その間は、なおせない）' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
   // なおす道具の アイコン(Excelのリボンの絵に ちかい、フラットな16px)。ひとつの目で 何の道具か わかるように
   const SVG = (b) => '<svg class="ti" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' + b + '</svg>';
   const ICON = {
+    splitv: SVG('<rect x="1.5" y="2" width="13" height="12" rx="1" fill="#fff" stroke="#7F7F7F"/><path d="M1.5 8h13" stroke="#4472C4" stroke-width="1.6"/>'),
+    splith: SVG('<rect x="1.5" y="2" width="13" height="12" rx="1" fill="#fff" stroke="#7F7F7F"/><path d="M8 2v12" stroke="#4472C4" stroke-width="1.6"/>'),
     peek: SVG('<rect x="1.5" y="2" width="13" height="12" rx="1" fill="#fff" stroke="#7F7F7F"/><path d="M8 2v12M1.5 8h13" stroke="#4472C4" stroke-width="1.2"/><rect x="9" y="3" width="5" height="4" fill="#F5C842"/>'),
     painter: SVG('<path d="M13 2.5L8 8" stroke="#7F7F7F" stroke-width="2.2" stroke-linecap="round"/><path d="M8.2 7.2l1.6 1.6c-.4 2.6-2.4 4.4-6 4.4 1.2-1 .8-2.2 1.2-3.2.5-1.2 2-2.2 3.2-2.8z" fill="#F2B100"/>'),
     transform: SVG('<path d="M1 12.5L6.2 3.5v9z" fill="#4472C4"/><path d="M15 12.5L9.8 3.5v9z" fill="#B4C7E7" stroke="#4472C4" stroke-width=".8"/><path d="M8 1.5v13" stroke="#7F7F7F" stroke-width="1" stroke-dasharray="1.6 1.4"/>'),
@@ -194,7 +198,7 @@
     G.col = lv.color.map(r => r.slice()); G.lock = lv.lock.map(r => r.slice());
     G.front.forEach((r, y) => r.forEach((t, x) => { if (t === TL.CRACK) { r[x] = TL.STONE; G.col[y][x] = 4; } })); // 旧「ひび割れ壁」('c')は、ひび割れ色のブロックと おなじもの
     G.hideRow = new Set(); G.hideCol = new Set(); G.filter = null; G.regen = lv.regen || 0; G.maxE = lv.regen ? 100 : lv.energy; // じっけんシートいがいは、ステージごとの「コストじょうげん」だけ。かいふくしない
-    G.fog = lv.fog || null; G.areas = []; G.zoomT = 0; G.inset = null;
+    G.fog = lv.fog || null; G.areas = []; G.zoomT = 0; G.inset = null; G.split = null;
     G.enemies = lv.ents.map((e, k) => makeEnemy(e, k)); G.fakes = G.enemies.filter(e => e.type === 'fake');
     G.lifts = (lv.lifts || []).map(l => makeLift(l)); G.crumb = {}; G.mgs = []; G.under = {};
     G.switches = (lv.switches || []).map(s => ({ x: s[0], y: s[1], id: s[2] || 0, on: false }));
@@ -240,8 +244,17 @@
     if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
     return base;
   }
+  // 画面分割(上下/左右)の ときの、エナーの画面と、もう1つの画面の 大きさと 場所
+  function splitGeom() {
+    const S = G.split; if (!S || G.edit.on) return null;
+    return S.dir === 'v' ? { pw: W, ph: H / 2, e: { ox: 0, oy: H / 2 }, o: { ox: 0, oy: 0 } } : { pw: W / 2, ph: H, e: { ox: W / 2, oy: 0 }, o: { ox: 0, oy: 0 } };
+  }
+  function camTarget() {
+    const lv = G.level, g = splitGeom(), vw = g ? g.pw : W, vh = g ? g.ph : H;
+    return { x: clamp(G.p.x - vw / 2 + G.p.face * 22, 0, Math.max(0, lv.w * T - vw)), y: clamp(G.p.y - vh * .6, 0, Math.max(0, lv.h * T - vh)) };
+  }
   function snapCam() {
-    const lv = G.level; G.cam.x = Math.round(clamp(G.p.x - W / 2, 0, lv.w * T - W)); G.cam.y = Math.round(clamp(G.p.y - H * .6, 0, Math.max(0, lv.h * T - H)));
+    const t = camTarget(); G.cam.x = Math.round(t.x); G.cam.y = Math.round(t.y);
   }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   // ✋で画面を うごかせる はんい。ステージに pan(マス) が あれば、エナーが いる ところの 画面から、その マスぶんまで。ないときは ぜんたい
@@ -912,6 +925,8 @@
       case 'peek': { const r = a.rect, w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
         if (w > 18 || h > 11) return fail('ひろすぎます（横18・縦11マスまで）', { rects: [r] });
         return { ok: true, cost: costOf('peek'), rects: [r], run() { G.inset = { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }; SFX.place(); } }; }
+      case 'splitv': case 'splith': { const r = a.rect;
+        return { ok: true, cost: costOf(tool), rects: [r], run() { G.split = { dir: tool === 'splitv' ? 'v' : 'h', cx: (r.x0 + r.x1 + 1) / 2 * T, cy: (r.y0 + r.y1 + 1) / 2 * T }; SFX.place(); } }; }
       case 'zoom': if (!G.fog) return fail('このステージでは、使えません'); return { ok: true, cost: costOf('zoom'), run() { G.zoomT = 5; } };
       case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.front[sy][sx] === TL.MAGNET) return fail('磁石はコピーできません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
@@ -931,7 +946,7 @@
       hideRow: [...G.hideRow], hideCol: [...G.hideCol], filter: G.filter, lc: G.lifts.map(L => L.col), lm: G.lifts.map(L => !!L.mark),
       en: G.enemies.map(e => ({ e, x: e.x, y: e.y, bx: e.bx, dead: e.dead })), pick: G.pick.map(k => ({ k, x: k.x, gone: !!k.gone })),
       checks: G.checks.map(c => ({ c, x: c.x, gone: !!c.gone })), flagX: G.flag.x, resp: { x: G.respawn.x, y: G.respawn.y }, px: G.p.x,
-      areas: (G.areas || []).map(r => Object.assign({}, r)), zt: G.zoomT || 0, inset: G.inset ? Object.assign({}, G.inset) : null,
+      areas: (G.areas || []).map(r => Object.assign({}, r)), zt: G.zoomT || 0, inset: G.inset ? Object.assign({}, G.inset) : null, split: G.split ? Object.assign({}, G.split) : null,
     };
   }
   function restoreSnap(s) {
@@ -942,7 +957,7 @@
     for (const o of s.pick) { o.k.x = o.x; o.k.gone = o.gone; }
     for (const o of s.checks) { o.c.x = o.x; o.c.gone = o.gone; }
     G.flag.x = s.flagX; G.respawn = { x: s.resp.x, y: s.resp.y }; G.p.x = s.px;
-    G.areas = (s.areas || []).map(r => Object.assign({}, r)); G.zoomT = s.zt || 0; G.inset = s.inset ? Object.assign({}, s.inset) : null;
+    G.areas = (s.areas || []).map(r => Object.assign({}, r)); G.zoomT = s.zt || 0; G.inset = s.inset ? Object.assign({}, s.inset) : null; G.split = s.split ? Object.assign({}, s.split) : null;
   }
   function runPlan(plan) {
     const E = G.edit;
@@ -1158,7 +1173,7 @@
     // ヒント
     for (const h of G.level.hints) if (!G.hintShown[h.x] && G.p.x / T >= h.x) { G.hintShown[h.x] = true; UI.toast(h.text, 4200); }
     // カメラ
-    const tx = clamp(G.p.x - W / 2 + G.p.face * 22, 0, G.level.w * T - W), ty = clamp(G.p.y - H * .6, 0, Math.max(0, G.level.h * T - H));
+    const ct = camTarget(), tx = ct.x, ty = ct.y;
     if (!G.p.dead) { G.cam.x += (tx - G.cam.x) * Math.min(1, dt * 7); G.cam.y += (ty - G.cam.y) * Math.min(1, dt * 5); } // ミスのあいだは カメラを とめる
     if (G.cleared) G.clearT += dt;
     input.jumpP = input.atkP = input.dashP = input.editP = false;
@@ -1579,10 +1594,12 @@
     if (!G.level) return;
     updateRibbon(); updateModeMark();
     G.sx = (G.shake && !G.edit.on) ? (Math.random() - .5) * G.shake : 0;
+    const sg = splitGeom();
+    if (sg) drawSplit(sg); else {
     drawBackground();
     if (G.edit.on) { ctx.fillStyle = 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); } // 編集中: 背景だけ暗く。ブロックや仕掛けは、明るいまま
     drawWorld();
-    if (G.fog) drawFog();
+    if (G.fog) drawFog(); }
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
@@ -1590,6 +1607,18 @@
     drawInset();
     drawHUD();
     if (G.p.dead) drawMiss();
+  }
+  // 画面分割: 1つは エナーを追い、もう1つは えらんだ場所を、うごかずに うつす
+  function drawSplit(g) {
+    const lv = G.level, S = G.split, sv = { x: G.cam.x, y: G.cam.y };
+    const other = { x: clamp(S.cx - g.pw / 2, 0, Math.max(0, lv.w * T - g.pw)), y: clamp(S.cy - g.ph / 2, 0, Math.max(0, lv.h * T - g.ph)) };
+    const panes = [{ p: g.o, cam: other }, { p: g.e, cam: sv }];
+    for (const q of panes) {
+      ctx.save(); ctx.beginPath(); ctx.rect(q.p.ox, q.p.oy, g.pw, g.ph); ctx.clip(); ctx.translate(q.p.ox, q.p.oy);
+      G.cam.x = Math.round(q.cam.x); G.cam.y = Math.round(q.cam.y);
+      try { drawBackground(); drawWorld(); if (G.fog) drawFog(); } finally { G.cam.x = sv.x; G.cam.y = sv.y; ctx.restore(); }
+    }
+    ctx.fillStyle = '#F5C842'; if (S.dir === 'v') ctx.fillRect(0, H / 2 - 1, W, 2); else ctx.fillRect(W / 2 - 1, 0, 2, H);
   }
   // 小窓: えらんだ はんいを、すみに 0.5ばいで うつす(うごいている ようすが 見える)。見るだけ
   function drawInset() {
