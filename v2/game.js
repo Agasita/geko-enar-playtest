@@ -242,6 +242,16 @@
     const lv = G.level; G.cam.x = Math.round(clamp(G.p.x - W / 2, 0, lv.w * T - W)); G.cam.y = Math.round(clamp(G.p.y - H * .6, 0, Math.max(0, lv.h * T - H)));
   }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // ✋で画面を うごかせる はんい。ステージに pan(マス) が あれば、エナーが いる ところの 画面から、その マスぶんまで。ないときは ぜんたい
+  function panBounds() {
+    const lv = G.level, p = G.p, N = lv.pan, b = { lx: 0, hx: Math.max(0, lv.w * T - W), ly: 0, hy: Math.max(0, lv.h * T - H) };
+    if (typeof N === 'number' && N >= 0) {
+      const bx = clamp(p.x - W / 2, 0, b.hx), by = clamp(p.y - H * .6, 0, b.hy);
+      b.lx = Math.max(b.lx, bx - N * T); b.hx = Math.min(b.hx, bx + N * T); b.ly = Math.max(b.ly, by - N * T); b.hy = Math.min(b.hy, by + N * T);
+    }
+    return b;
+  }
+  const panLimited = () => typeof G.level.pan === 'number' && G.level.pan >= 0;
 
   // ===== 衝突 =====
   const inb = (tx, ty) => tx >= 0 && ty >= 0 && tx < G.level.w && ty < G.level.h;
@@ -951,6 +961,7 @@
     const E = G.edit; if (G.mode !== 'play' || G.cleared || G.p.dead) return;
     if (!G.level.tools.length) { UI.toast('このステージでは「なおす」を使えません'); return; }
     if (on && G.fog && G.zoomT > 0) { UI.toast('ズーム中は、なおせません'); return; }
+    if (on && panLimited()) { const pb = panBounds(); G.cam.x = clamp(G.cam.x, pb.lx, pb.hx); G.cam.y = clamp(G.cam.y, pb.ly, pb.hy); } // ✋の はんいが せまい ステージ
     E.on = on; E.did = false; E.pan = false; E.sel = null; E.kb = null; E.msg = ''; E.step = 0; E.src = null; E.srcCell = null;
     if (on) { SFX.editOn(); E.cursor = [Math.floor((G.p.x + 5) / T), Math.floor((G.p.y + 7) / T)];  } else SFX.editOff();
     $('#editbar').classList.toggle('hide', !on); document.body.classList.toggle('editing', on); UI.refreshTools();
@@ -1662,7 +1673,7 @@
   });
   cv.addEventListener('pointermove', (e) => {
     const E = G.edit; if (G.mode !== 'play' || !E.on) return;
-    if (panLast) { const s = cv.getBoundingClientRect().width / W; G.cam.x = clamp(G.cam.x - (e.clientX - panLast.x) / s, 0, G.level.w * T - W); G.cam.y = clamp(G.cam.y - (e.clientY - panLast.y) / s, 0, Math.max(0, G.level.h * T - H)); panLast = { x: e.clientX, y: e.clientY }; return; }
+    if (panLast) { const s = cv.getBoundingClientRect().width / W; const pb = panBounds(); G.cam.x = clamp(G.cam.x - (e.clientX - panLast.x) / s, pb.lx, pb.hx); G.cam.y = clamp(G.cam.y - (e.clientY - panLast.y) / s, pb.ly, pb.hy); panLast = { x: e.clientX, y: e.clientY }; return; }
     const w = toWorld(e); E.hover = [w.tx, w.ty]; if (!dragging) { E.cursor = [w.tx, w.ty]; return; }
     if (E.sel) { E.sel.x1 = w.tx; E.sel.y1 = w.ty; }
   });
@@ -2146,6 +2157,7 @@
   function setExplain(on) {
     const X = G.xpl; if (on === X.on) return;
     if (on) { if (G.mode !== 'play' || G.cleared || G.p.dead) return; if (G.edit.on) setEdit(false); }
+    if (on && panLimited()) { const pb = panBounds(); G.cam.x = clamp(G.cam.x, pb.lx, pb.hx); G.cam.y = clamp(G.cam.y, pb.ly, pb.hy); }
     X.on = on; X.hit = null; document.body.classList.toggle('explaining', on);
     ['#btn-xpl', '#rb-xpl', '#lb-xpl'].forEach(s => { const b = $(s); if (b) b.classList.toggle('on', on); });
     if (on) { $('#xpl-t').textContent = '？ せつめいモード'; $('#xpl-d').textContent = 'ブロック・てき・しかけを タップすると、せつめいが でるよ。ドラッグで 画面を うごかせる。'; $('#xpl').classList.remove('top'); }
@@ -2157,7 +2169,7 @@
     cv.addEventListener('pointermove', (e) => {
       if (!G.xpl.on || !dn) return; const s = cv.getBoundingClientRect().width / W;
       if (Math.hypot(e.clientX - dn.x, e.clientY - dn.y) > 6) dn.moved = true;
-      if (dn.moved) { G.cam.x = clamp(dn.cx - (e.clientX - dn.x) / s, 0, Math.max(0, G.level.w * T - W)); G.cam.y = clamp(dn.cy - (e.clientY - dn.y) / s, 0, Math.max(0, G.level.h * T - H)); render(); }
+      if (dn.moved) { const pb = panBounds(); G.cam.x = clamp(dn.cx - (e.clientX - dn.x) / s, pb.lx, pb.hx); G.cam.y = clamp(dn.cy - (e.clientY - dn.y) / s, pb.ly, pb.hy); render(); }
     });
     cv.addEventListener('pointerup', (e) => {
       if (!G.xpl.on || !dn) return; const d = dn; dn = null; if (d.moved) return;

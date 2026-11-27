@@ -106,7 +106,8 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     <div class="row" style="margin-top:4px"><span class="lbl">コストの上限</span><input id="f-energy" type="number" min="0" max="100" value="20" style="width:64px">
       <span class="lbl">エナジー回復（1秒あたり）</span><input id="f-regen" type="number" min="0" max="60" value="0" style="width:64px"><span class="lbl">（0＝回復なし。回復があるときは「エナジーの玉」も置く）</span>
       <span class="lbl">目標コスト（ムダなしの基準）</span><input id="f-par" type="number" min="0" max="100" value="0" style="width:64px">
-      <span class="lbl">背景の色</span><select id="f-theme"></select></div>
+      <span class="lbl">背景の色</span><select id="f-theme"></select>
+      <span class="lbl">✋で見られるはんい（エナーから何マス）</span><input id="f-pan" type="number" min="0" max="60" placeholder="むせいげん" style="width:84px"><span class="lbl">（空＝ステージ全体。0＝画面を動かせない。せまくすると、先がみえにくい）</span></div>
   </div>
 
   <div class="pop" id="p-hint"><div class="ph">ヒント（その場所に来たときに出る言葉）</div>
@@ -222,11 +223,11 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   function pushUndo() { undoStack.push(snap()); if (undoStack.length > 60) undoStack.shift(); }
   function undo() { const s = undoStack.pop(); if (!s) return msg('戻せるものがありません'); const d = JSON.parse(s); L = d.L; H = L.h; applyMeta(d.meta); sel = -1; selEnt = null; selR = -1; fit(); showLift(); showEnt(); }
   function collectMeta() {
-    return { name: $('#f-name').value.trim() || 'マイステージ', energy: Math.max(0, Math.min(100, +$('#f-energy').value || 0)), regen: Math.max(0, +$('#f-regen').value || 0), par: Math.max(0, +$('#f-par').value || 0), theme: +$('#f-theme').value || 0,
+    return { name: $('#f-name').value.trim() || 'マイステージ', energy: Math.max(0, Math.min(100, +$('#f-energy').value || 0)), regen: Math.max(0, +$('#f-regen').value || 0), par: Math.max(0, +$('#f-par').value || 0), theme: +$('#f-theme').value || 0, pan: $('#f-pan').value === '' ? undefined : Math.max(0, Math.min(60, +$('#f-pan').value | 0)),
       hints: meta.hints.map(h => ({ x: h.x, text: h.text })), tools: [...document.querySelectorAll('#tools input:checked')].map(i => i.dataset.t) };
   }
   function applyMeta(m) {
-    $('#f-name').value = m.name || 'マイステージ'; $('#f-energy').value = m.energy | 0; $('#f-regen').value = m.regen || 0; $('#f-par').value = m.par || 0; $('#f-theme').value = m.theme | 0;
+    $('#f-name').value = m.name || 'マイステージ'; $('#f-energy').value = m.energy | 0; $('#f-regen').value = m.regen || 0; $('#f-par').value = m.par || 0; $('#f-theme').value = m.theme | 0; $('#f-pan').value = (typeof m.pan === 'number') ? m.pan : '';
     meta.hints = (m.hints || []).map(h => ({ x: h.x | 0, text: h.text || '' })); document.querySelectorAll('#tools input').forEach(i => { i.checked = (m.tools || []).includes(i.dataset.t); }); $('#f-w').value = L.w; $('#f-h').value = L.h; drawHints();
   }
   function resize(w, h) {
@@ -582,7 +583,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   function nextId() { const used = new Set(readAll().map(l => l.id)); let n = 1; while (used.has('MY-' + n)) n++; return 'MY-' + n; }
   function toData() {
     const m = collectMeta(), th = THEMES[m.theme] || THEMES[0];
-    return { id: editingId || nextId(), name: m.name, w: L.w, tools: m.tools, energy: m.energy, regen: m.regen || undefined, par: m.par, theme: m.theme, bg: th[1], bg2: th[2],
+    return { id: editingId || nextId(), name: m.name, w: L.w, tools: m.tools, energy: m.energy, regen: m.regen || undefined, pan: m.pan, par: m.par, theme: m.theme, bg: th[1], bg2: th[2],
       hints: m.hints.filter(h => h.text.trim()), front: L.front.map(r => r.join('')), color: L.color.map(r => r.slice()), lock: L.lock.map(r => r.slice()),
       ents: L.ents.map(e => Object.assign({}, e)), gems: L.gems.map(g => g.slice()), checks: L.checks.map(c => c.slice()), sparks: L.sparks.map(c => c.slice()),
       switches: L.switches.map(s => s.slice()), doors: L.doors.map(d => d.slice()), judges: L.judges.map(j => j.slice()),
