@@ -436,3 +436,18 @@ body.editing #editbar{overflow-x:hidden}
 #opt-panel .op-btns{display:flex;gap:8px;flex-wrap:wrap}
 #opt-panel .op-btns button{min-height:40px;padding:0 14px}
 #opt-panel .op-btns .big{background:#217346;color:#fff;border:1px solid #185C37;font-weight:700}
+
+/* ===== せつめいモード(？)・あそびかた ===== */
+#xpl{position:absolute;left:4px;right:4px;bottom:4px;z-index:6;display:none;background:#FFFBE8;color:#1F2A44;border:2px solid #F5C842;border-radius:10px;padding:7px 12px;font-size:13px;line-height:1.5;box-shadow:0 2px 8px #0005;text-align:left}
+#xpl.top{bottom:auto;top:4px}
+body.explaining #xpl{display:block}
+#xpl b{display:block;font-size:14px;margin-bottom:1px}
+#xpl button{float:right;margin:0 0 4px 8px;min-height:26px;padding:2px 10px;font-size:12px;color:#1F2A44;border-color:#C9A15E;background:#fff}
+body.explaining #cv{cursor:help}
+#btn-xpl.on,#rb-xpl.on,#lb-xpl.on{background:#F5C842!important;color:#1F2A44!important}
+#how{width:min(640px,92vw);margin:6px auto;text-align:left;line-height:1.7;font-size:15px}
+#how h3{margin:0 0 8px;font-size:19px}
+#how ul{margin:0;padding-left:1.3em}
+#how li{margin:0 0 6px}
+#how small{opacity:.8}
+#how-n{margin-left:auto;font-size:13px}

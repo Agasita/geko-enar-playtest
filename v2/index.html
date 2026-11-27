@@ -28,6 +28,7 @@
       <div class="rb-group" id="rb-g-mode" style="display:none"><div class="rb-items"><span id="rb-mode"></span></div><div class="rb-cap">モード</div></div>
       <div class="rb-group rb-right" id="rb-g-btn"><div class="rb-items">
         <button class="rb-btn" id="rb-edit" data-proxy="#btn-edit" aria-label="なおす">✎<span class="lbl"> なおす</span> <kbd>E</kbd></button>
+        <button class="rb-btn" id="rb-xpl" data-proxy="#btn-xpl" aria-label="せつめい">？<span class="lbl"> せつめい</span></button>
         <button class="rb-btn" data-proxy="#btn-restart" aria-label="最初から">↻<span class="lbl"> 最初から</span></button>
         <button class="rb-btn" id="rb-mute" data-proxy="#btn-mute" aria-label="音">🔊<span class="lbl"> 音</span></button>
         <button class="rb-btn" data-proxy="#btn-menu" aria-label="ステージ選択">☰<span class="lbl"> ステージ選択</span></button>
@@ -37,6 +38,7 @@
     <div id="lpane">
       <div id="lbtns">
         <button class="lb lb-edit" id="lb-edit" data-proxy="#btn-edit" aria-label="なおす">なおす<kbd>E</kbd></button>
+        <button class="lb" id="lb-xpl" data-proxy="#btn-xpl" aria-label="せつめい">？ せつめい<kbd>H</kbd></button>
         <button class="lb" data-proxy="#btn-restart" aria-label="最初から">最初から<kbd>R</kbd></button>
         <button class="lb" id="lb-mute" data-proxy="#btn-mute" aria-label="音">🔊 音</button>
         <button class="lb" data-proxy="#btn-menu" aria-label="ステージ選択">ステージ選択</button>
@@ -52,11 +54,13 @@
       <span id="lvname"></span>
       <div class="hudbtns">
         <button id="btn-edit" aria-label="なおす">なおす <kbd>E</kbd></button>
+        <button id="btn-xpl" aria-label="せつめい">？</button>
         <button id="btn-restart" aria-label="最初から">↻</button>
         <button id="btn-mute" aria-label="音">🔊</button>
         <button id="btn-menu" aria-label="ステージ選択">☰</button>
       </div>
     </div>
+    <div id="xpl"><button id="xpl-x" class="ghost tiny">もどる</button><b id="xpl-t"></b><span id="xpl-d"></span></div>
     <div id="toast" class="hide"></div>
     </div>
     <div id="pane">
@@ -86,6 +90,7 @@
     <section id="screen-title" class="screen">
       <h1>エナーと<span>ふしぎ</span>のシート</h1>
       <button id="btn-play" class="big">遊ぶ</button>
+      <button id="btn-how" class="ghost">あそびかた</button>
       <button id="btn-guide" class="ghost">ブロック図鑑</button>
       <button id="btn-opening" class="ghost">オープニング</button>
       <button id="btn-opts" class="ghost">⚙ せってい（見た目・操作・ステージ）</button>
@@ -102,7 +107,7 @@
     </section>
 
     <section id="screen-select" class="screen hide">
-      <header><button id="btn-back" class="ghost">◀ 戻る</button><h2>ステージ選択</h2><button id="btn-guide2" class="ghost">ブロック図鑑</button><button id="btn-bestiary" class="ghost">てき図鑑</button><button id="btn-practice" class="ghost">れんしゅう：OFF</button><span id="total"></span></header>
+      <header><button id="btn-back" class="ghost">◀ 戻る</button><h2>ステージ選択</h2><button id="btn-how2" class="ghost">あそびかた</button><button id="btn-guide2" class="ghost">ブロック図鑑</button><button id="btn-bestiary" class="ghost">てき図鑑</button><button id="btn-practice" class="ghost">れんしゅう：OFF</button><span id="total"></span></header>
       <p class="legend">見かた：✓ クリア　◆ データのかけら（全部集める）　ノーミス＝ダメージなし　ムダなし＝目標コスト以下　カード右上の文字＝ランク（S〜C）</p>
       <div id="levels"></div>
       <footer><button id="btn-notes" class="ghost tiny">かけらノート</button> <button id="btn-editor" class="ghost tiny">ステージを作る</button> <button id="btn-reset" class="ghost tiny">セーブを消す</button></footer>
@@ -118,6 +123,12 @@
       <header><button id="btn-bestiary-back" class="ghost">◀ 戻る</button><h2>てき図鑑</h2><span id="bestiary-rate"></span></header>
       <p class="legend">であった てきが のる。どうやって たおすか、どう よけるか、ヒントも かいてあるよ。</p>
       <div id="bestiary"></div>
+    </section>
+
+    <section id="screen-how" class="screen hide">
+      <header><button id="btn-how-back" class="ghost">◀ 戻る</button><h2>あそびかた</h2><span id="how-n"></span></header>
+      <div id="how"></div>
+      <div class="row"><button id="how-prev" class="ghost">◀ まえ</button><button id="how-next" class="big">つぎ ▶</button></div>
     </section>
 
     <section id="screen-guide" class="screen hide">
