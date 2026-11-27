@@ -25,8 +25,8 @@
     { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: '選んだ範囲の保護を解除する' },
     { id: 'printarea', tab: 'view', name: '印刷範囲の設定', mode: 'rect', cost: 6, help: '範囲を選ぶと、そこが青い枠のまま、ずっと見えるようになる（いまの見える範囲に、重ねて選ぶ。40マスまで・3か所まで）' },
     { id: 'peek', tab: 'view', name: '小窓', mode: 'rect', cost: 6, help: '範囲を選ぶと、その場所が小さな窓になって、画面のすみに映る（動いているところが見える）。窓は1つだけ。選びなおすと、入れかわる。見るだけで、窓の中は直せない' },
-    { id: 'splitv', tab: 'view', name: '上下分割', mode: 'instant', cost: 8, help: '「分割する」を押すと、遊ぶ画面が上下に割れる。上半分は、いま見えている画面の まんなかを映しつづけ、下半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
-    { id: 'splith', tab: 'view', name: '左右分割', mode: 'instant', cost: 8, help: '「分割する」を押すと、遊ぶ画面が左右に割れる。左半分は、いま見えている画面の まんなかを映しつづけ、右半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
+    { id: 'splitv', tab: 'view', name: '上下分割', mode: 'instant', cost: 8, help: '「分割する」で、画面が上下に割れる。上は、いま見えている画面のまんなか。下は、エナーを追う。見える範囲は半分' },
+    { id: 'splith', tab: 'view', name: '左右分割', mode: 'instant', cost: 8, help: '「分割する」で、画面が左右に割れる。左は、いま見えている画面のまんなか。右は、エナーを追う。見える範囲は半分' },
     { id: 'zoom', tab: 'view', name: 'ズーム', mode: 'instant', cost: 4, help: '「ズームする」を押すと、数秒だけ、見える範囲が2倍に広がる（その間は、なおせない）' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
@@ -1937,6 +1937,7 @@
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '外す' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
       else if (id === 'splitv' || id === 'splith') chips('', [{ v: 1, label: '分割する' }], null, v => { runPlan(planFor(id, {})); UI.refreshTools(); });
       else if (id === 'zoom') chips('', [{ v: 1, label: 'ズームする' }], null, v => { runPlan(planFor('zoom', {})); UI.refreshTools(); });
+      if (opts.firstChild && UI._optsFor !== id) { try { opts.scrollIntoView({ block: 'nearest' }); } catch (e) {} } UI._optsFor = opts.firstChild ? id : null; // 道具をえらんだとき、「分割する」などのボタンが見えない場所に かくれないように
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' + (RING ? '（ダブルタップで もどる）' : '') : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
     },
