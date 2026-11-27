@@ -207,6 +207,7 @@
     G.bullets = []; G.parts = [];
     G.spent = 0; G.assisted = false; G.energy = lv.energy; G.gems = 0; G.deaths = 0; G.hits = 0; G.time = 0; G.hintShown = {};
     if (!practice && lv.tools.length && !lv.regen && save.fails && (save.fails[lv.id] || 0) >= 3 && !EDITOR_TEST) { G.maxE = G.energy = Math.ceil(lv.energy * 1.5); G.assisted = true; }
+    if (G.xpl && G.xpl.on) setExplain(false);
     G.edit = newEdit(lv); G.edit.cursor = [lv.start[0], lv.start[1]];
     G.p = newPlayer(G.respawn.x, G.respawn.y);
     G.cam.x = 0; G.cam.y = 0; snapCam();
@@ -1569,6 +1570,7 @@
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
     if (G.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * 1.2) + ')'; ctx.fillRect(0, 0, W, H); }
     if (G.edit.on) { drawEditOverlay(); UI.helpText(); }
+    if (G.xpl && G.xpl.on) drawXplOverlay();
     drawHUD();
     if (G.p.dead) drawMiss();
   }
@@ -1605,6 +1607,8 @@
     if (e.repeat) return; audio();
     if (G.mode === 'opening') { if (e.code === 'Escape') OP.finish(); else if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowRight') { e.preventDefault(); OP.advance(); } return; }
     if (G.mode !== 'play') return;
+    if (G.xpl.on) { if (e.code === 'Escape' || e.code === 'KeyH') { e.preventDefault(); setExplain(false); } return; }
+    if (e.code === 'KeyH' && !G.edit.on) { e.preventDefault(); setExplain(true); return; }
     if (G.edit.on) {
       const E = G.edit;
       if (e.code === 'KeyE' || e.code === 'Tab' || e.code === 'Escape') { e.preventDefault(); setEdit(false); return; }
@@ -2071,6 +2075,106 @@
     $('#bestiary-rate').textContent = got + '/' + DEX.length;
   }
   if ($('#btn-bestiary')) { $('#btn-bestiary').onclick = openBestiary; $('#btn-bestiary-back').onclick = () => UI.select(); }
+
+  // ===== あそびかた =====
+  const HOW_PAGES = () => [
+    ['ゴールを めざそう', ['← → で あるく。「はばたき」（Z / Space）で ジャンプ。空中で ながおしすると、ふわりと はばたく', 'ステージの おくの <b>フロッピー</b>が ゴール。さわると クリア', 'ライフは 3つ。てきや 赤（あつい）ブロックに ふれると ダメージ。あなや トゲ、ライフ0は ミス（さいしょから やりなおし）', 'てきは <b>上から ふむ</b>と たおせる。ふめない てきも いる（くわしくは、？せつめい や てき図鑑）']],
+    ['「なおす」で せかいを かえる', ['<b>なおす</b>（Eキー / 「なおす」ボタン）を おすと、<b>時間が とまる</b>', '上の どうぐを えらんで、はんいを ドラッグ（いどうなどは、いきさきを タップ）', 'つかうと <b>コスト</b>が へる。「もどす」で コストも もとに もどる', '<b>終わる</b>を おすと、時間が うごきだす', '<small>ブロックは あたらしく うまれない。あるものを うごかす・ならべる・かえる・かくす だけ</small>']],
+    ['コストと ほうしゅう', ['ステージごとに、つかえる どうぐと <b>コストの上限</b>が きまっている。ふつうは かいふくしない', '<b>エナジーの たま</b>を とると、コストが すこし かいふくする', 'ねらうのは 4つ：クリア／かけらを ぜんぶ／ノーミス／ムダなし（もくひょうコスト いか）', 'チェックポイントの はたを とおると、おちても とちゅうから はじめられる']],
+    ['どうぐの しゅるい', TOOLS.map(t => '<b>' + t.name + '</b>（コスト ' + t.cost + '）…' + t.help)],
+    ['ブロックの いろ', COLORS.map(k => '<b>' + k.n + '</b>…' + k.fx).concat(['<small>赤と 青が となりあうと、おたがいを うちけしあう。くわしくは「ブロック図鑑」</small>'])],
+    ['わからなく なったら', ['あそんでいる とちゅうで <b>「？ せつめい」</b>（Hキー）を おすと、時間が とまる。ブロック・てき・しかけを タップすると、その せつめいが でる（ドラッグで 画面を うごかせる）', '<b>ブロック図鑑</b>：ブロックや しかけの いちらん', '<b>てき図鑑</b>：であった てきの せつめいと、たおしかた', '<b>ステージを作る</b>：じぶんで ステージを つくれる']],
+  ];
+  let howI = 0, howFrom = 'title';
+  function renderHow() {
+    const pg = HOW_PAGES(), p = pg[howI]; $('#how').innerHTML = '<h3>' + p[0] + '</h3><ul>' + p[1].map(x => '<li>' + x + '</li>').join('') + '</ul>';
+    $('#how-n').textContent = (howI + 1) + ' / ' + pg.length; $('#how-prev').style.visibility = howI ? '' : 'hidden'; $('#how-next').textContent = howI < pg.length - 1 ? 'つぎ ▶' : 'おわり';
+  }
+  function openHow(from) { howFrom = from; howI = 0; G.mode = from; UI.show('#screen-how'); renderHow(); }
+  $('#btn-how').onclick = () => openHow('title');
+  if ($('#btn-how2')) $('#btn-how2').onclick = () => openHow('select');
+  $('#btn-how-back').onclick = () => (howFrom === 'select' ? UI.select() : UI.title());
+  $('#how-prev').onclick = () => { if (howI > 0) { howI--; renderHow(); } };
+  $('#how-next').onclick = () => { if (howI < HOW_PAGES().length - 1) { howI++; renderHow(); } else $('#btn-how-back').click(); };
+
+  // ===== せつめいモード(？) : 時間を とめて、さわった ものの せつめいを だす =====
+  G.xpl = { on: false, hit: null };
+  const XPL_TXT = {
+    player: ['エナー', 'あなたが うごかす いきもの。ライフは 3つ。てきや 赤ブロックに ふれると ダメージで、すこしの あいだ むてきになる'],
+    gem: ['データのかけら', 'ぜんぶ あつめると、そのステージの メモが よめる（目標のひとつ）'],
+    spark: ['エナジーの たま', 'とると「なおす」の コストが 15 かいふくする'],
+    flag: ['ゴール（フロッピー）', 'ここに さわると、ステージ クリア'],
+    check: ['チェックポイント', 'とおると、おちても ここから やりなおせる'],
+    steel: ['鋼', '編集できない 鋼の かべ・ゆか。どの どうぐも きかない'],
+    spike: ['トゲ', 'さわると ミス'],
+    magnet: ['磁石ブロック', 'いちばん ちかい 鋼へ、まっすぐ うごく。とちゅうに ブロックが あると うごかない'],
+    lift: ['リフト', 'きまった みちを おうふくする あし場。のると はこばれる。ブロックに はさまれると ミス'],
+    switch: ['スイッチ', '磁石が かさなると ONに なって、おなじ 色の 扉が あく'],
+    door: ['扉', 'おなじ 色の スイッチや 判定セルで あく。とじている あいだは とおれない'],
+    judge_exist: ['判定セル（存在）', 'この マスに ブロックが あると ON。おなじ 色の 扉が あく'],
+    judge_empty: ['判定セル（空き）', 'この マスに なにも ないと ON。おなじ 色の 扉が あく'],
+    judge_color: ['判定セル（色）', 'きめた 色の ブロックが あると ON。おなじ 色の 扉が あく'],
+    lock: ['（保護されている）', 'まもられた ブロック。へんしゅうや フィルターが きかない']
+  };
+  function xplFind(px, py) {
+    const p = G.p, ins = (x, y, w, h, m) => px >= x - (m || 0) && px < x + w + (m || 0) && py >= y - (m || 0) && py < y + h + (m || 0), tx = Math.floor(px / T), ty = Math.floor(py / T);
+    const r = (k, x, y, w, h) => ({ name: XPL_TXT[k][0], desc: XPL_TXT[k][1], rect: [x, y, w, h] });
+    if (ins(p.x, p.y, p.w, p.h, 3)) return r('player', p.x, p.y, p.w, p.h);
+    for (const e of G.enemies) {
+      if (e.dead || !ins(e.x, e.y, e.w, e.h, 3)) continue;
+      const d = DEX.find(x => x[0] === e.type); if (d) return { name: d[1], desc: d[2], rect: [e.x, e.y, e.w, e.h] };
+    }
+    for (const k of G.pick) if (!k.got && ins(k.x, k.y, k.w, k.h, 4)) return r(k.type, k.x, k.y, k.w, k.h);
+    const f = G.flag; if (ins(f.x, f.y, f.w, f.h, 2)) return r('flag', f.x, f.y, f.w, f.h);
+    for (const c of G.checks) if (!c.gone && ins(c.x, c.y, T, T, 2)) return r('check', c.x, c.y, T, T);
+    for (const l of G.lifts) if (ins(l.x, l.y, l.w, l.h, 2)) return r('lift', l.x, l.y, l.w, l.h);
+    for (const s of G.switches) if (tx === s.x && ty === s.y) return r('switch', s.x * T, s.y * T, T, T);
+    for (const d of G.doors) if (tx === d.x && ty >= d.y && ty < d.y + d.h) return r('door', d.x * T, d.y * T, T, d.h * T);
+    for (const j of G.judges) if (tx === j.x && ty === j.y) return r('judge_' + j.type, j.x * T, j.y * T, T, T);
+    const t = tileAt(tx, ty), rc = [tx * T, ty * T, T, T];
+    if (tx < 0 || tx >= G.level.w || ty < 0 || ty >= G.level.h || t === TL.EMPTY) return null;
+    if (t === TL.STEEL) return r('steel', ...rc);
+    if (t === TL.SPIKE) return r('spike', ...rc);
+    if (t === TL.MAGNET) return r('magnet', ...rc);
+    if (t === TL.STONE || t === TL.GLASSED) {
+      const ci = G.col[ty][tx], k = COLORS[ci] || COLORS[0]; let desc = k.fx + (t === TL.GLASSED ? '（色をつけた ガラス）' : '');
+      if (G.lock[ty][tx]) desc += '。まもられていて、へんしゅうや フィルターが きかない';
+      return { name: k.n + 'ブロック', desc, rect: rc };
+    }
+    return null;
+  }
+  function setExplain(on) {
+    const X = G.xpl; if (on === X.on) return;
+    if (on) { if (G.mode !== 'play' || G.cleared || G.p.dead) return; if (G.edit.on) setEdit(false); }
+    X.on = on; X.hit = null; document.body.classList.toggle('explaining', on);
+    ['#btn-xpl', '#rb-xpl', '#lb-xpl'].forEach(s => { const b = $(s); if (b) b.classList.toggle('on', on); });
+    if (on) { $('#xpl-t').textContent = '？ せつめいモード'; $('#xpl-d').textContent = 'ブロック・てき・しかけを タップすると、せつめいが でるよ。ドラッグで 画面を うごかせる。'; $('#xpl').classList.remove('top'); }
+    else { input.left = input.right = input.down = input.up = input.jumpHeld = false; input.jumpP = false; render(); }
+  }
+  {
+    let dn = null;
+    cv.addEventListener('pointerdown', (e) => { if (!G.xpl.on) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); dn = { x: e.clientX, y: e.clientY, cx: G.cam.x, cy: G.cam.y, moved: false }; });
+    cv.addEventListener('pointermove', (e) => {
+      if (!G.xpl.on || !dn) return; const s = cv.getBoundingClientRect().width / W;
+      if (Math.hypot(e.clientX - dn.x, e.clientY - dn.y) > 6) dn.moved = true;
+      if (dn.moved) { G.cam.x = clamp(dn.cx - (e.clientX - dn.x) / s, 0, Math.max(0, G.level.w * T - W)); G.cam.y = clamp(dn.cy - (e.clientY - dn.y) / s, 0, Math.max(0, G.level.h * T - H)); render(); }
+    });
+    cv.addEventListener('pointerup', (e) => {
+      if (!G.xpl.on || !dn) return; const d = dn; dn = null; if (d.moved) return;
+      const w = toWorld(e), h = xplFind(w.px, w.py); G.xpl.hit = h;
+      if (h) { $('#xpl-t').textContent = h.name; $('#xpl-d').textContent = h.desc; const cr = cv.getBoundingClientRect(); $('#xpl').classList.toggle('top', e.clientY > cr.top + cr.height * .55); }
+      else { $('#xpl-t').textContent = 'なにも ないよ'; $('#xpl-d').textContent = 'ブロックや てきの ところを タップしてね。'; }
+      render();
+    });
+    cv.addEventListener('pointercancel', () => { dn = null; });
+  }
+  $('#btn-xpl').onclick = () => setExplain(!G.xpl.on);
+  $('#xpl-x').onclick = () => setExplain(false);
+  function drawXplOverlay() {
+    const h = G.xpl.hit; ctx.fillStyle = 'rgba(11,18,38,.28)'; ctx.fillRect(0, 0, W, H); if (!h) return;
+    const cx = Math.round(G.cam.x), cy = Math.round(G.cam.y), r = h.rect;
+    ctx.strokeStyle = '#F5C842'; ctx.lineWidth = 2; ctx.strokeRect(Math.round(r[0] - cx) - 1, Math.round(r[1] - cy) - 1, r[2] + 2, r[3] + 2);
+  }
   $('#btn-guide').onclick = () => openGuide('title');
   $('#btn-guide2').onclick = () => openGuide('select');
   $('#btn-guide-back').onclick = () => (guideFrom === 'select' ? UI.select() : UI.title());
@@ -2199,6 +2303,7 @@
   function loop(now) {
     requestAnimationFrame(loop);
     if (G.paused) { last = now; return; }
+    if (G.xpl && G.xpl.on) { if (G.mode !== 'play') setExplain(false); else { last = now; syncBGM(); render(); return; } } // せつめいモード: 時間を とめる
     syncBGM();
     acc += Math.min(.1, (now - last) / 1000); last = now;
     while (acc >= DT) { update(DT); acc -= DT; }
