@@ -31,7 +31,7 @@
       id: def.id, name: def.name, world: def.world, w, h, tools: def.tools || [], energy: def.energy !== undefined ? def.energy : 0, regen: def.regen,
       front: front.map(r => r.join('')), color, lock,
       ents: m.ents, lifts: m.lifts, switches: m.switches, doors: m.doors, judges: m.judges, gems: m.gems, sparks: m.sparks, checks: m.checks, start: m.start, flag: m.flag,
-      hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0, fog: def.fog,
+      hints: def.hints || [], solution: def.solution || [], bg: def.bg, bg2: def.bg2, par: def.par || 0, fog: def.fog, pan: def.pan,
       meta: def.meta || {},
     };
   }
@@ -42,7 +42,7 @@
   // add(番号, 名前, 設定)。 meta: 難しさ(★)・使う仕掛け・ねらい・解法の手順(PDFに のせる)
   function add(n, name, o) {
     const id = 'P' + String(n).padStart(2, '0'), p = PAL[(n - 1) % PAL.length];
-    L.push(make({ id, name, world: 31, w: o.w, tools: o.tools, energy: o.energy, fog: o.fog, bg: p[0], bg2: p[1], par: o.par || o.energy,
+    L.push(make({ id, name, world: 31, w: o.w, tools: o.tools, energy: o.energy, fog: o.fog, pan: o.pan, bg: p[0], bg2: p[1], par: o.par || o.energy,
       hints: o.hints || [], solution: [{ edits: o.edits || [] }], meta: { star: o.star, tags: o.tags, aim: o.aim, steps: o.steps, note: o.note || '', bot: o.bot || {} }, build: o.build }));
   }
 
@@ -123,6 +123,13 @@
     steps: ['スタート地点で、緑のブロックと判定セルを含む範囲を「印刷範囲の設定」で青枠に残す（コスト6）', '出口の前（赤い壁の手前）まで歩く', '青枠に残した範囲で、緑ブロックを判定セルの位置へ「左右反転」（コスト8）：色判定がONになり扉が開く', '「フィルター」で緑を残す（コスト8）：赤い壁が消える。緑は残るので扉も開いたまま', '壁を抜け、扉を通って旗へ'],
     build(m) { m.floor(); m.ceil(2); m.blk(6, 9, 3); m.judge(12, 9, 'color', 3, 0); m.wall(36, 2, 37, 9, 1); m.door(42, 0, 10, 0); m.start = [9, 9]; m.flag = [46, 9]; },
     edits: [{ tool: 'printarea', rect: F(5, 9, 13, 9) }, { tool: 'transform', rect: F(6, 9, 12, 9), opts: { tf: 'flipH' } }, { tool: 'filter', fcolor: 3 }] });
+
+  // お試し: ✋(画面を うごかす)で 見られる はんいを せまくした 面。P11と おなじ しかけで、まわり3マスより 先は、なおす 中でも 見られない
+  add(14, '✋のはんいを せまく（お試し）', { w: 34, tools: ['protect', 'sort'], energy: 14, pan: 3, star: 3, tags: ['シートをまもる', 'ならべかえ', '✋のはんい'], hints: [{ x: 1, text: 'なおす 中に 画面を うごかせる はんいが、まわり3マスだけ。先は 歩いて たしかめよう' }],
+    aim: 'P11と同じ解き方。ただし、「なおす」中に✋で見られるのは、エナーの画面から3マスまで。先を下見できない。',
+    steps: ['P11と同じ手順（保護 → ↑よせ）。✋で動かせる範囲に注意'],
+    build(m) { m.floor(); m.ceil(2); m.S(0, 7, 9, 9); m.S(13, 7, 20, 9); m.pit(10, 12); m.blk(11, 6); m.blk(11, 8); m.blk(11, 9); m.blk(10, 9); m.blk(12, 9); m.blk(12, 8); m.start = [3, 6]; m.flag = [18, 6]; },
+    edits: [{ tool: 'protect', rect: F(11, 6, 11, 6) }, { tool: 'sort', rect: F(10, 2, 12, 9), opts: { sort: 'U' } }] });
 
   window.LEVELS_PZ = L; window.LEVELS = L;
 })();
