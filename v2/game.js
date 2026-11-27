@@ -25,8 +25,8 @@
     { id: 'unprotect', tab: 'view', name: 'まもりをはずす', mode: 'rect', cost: 6, help: '選んだ範囲の保護を解除する' },
     { id: 'printarea', tab: 'view', name: '印刷範囲の設定', mode: 'rect', cost: 6, help: '範囲を選ぶと、そこが青い枠のまま、ずっと見えるようになる（いまの見える範囲に、重ねて選ぶ。40マスまで・3か所まで）' },
     { id: 'peek', tab: 'view', name: '小窓', mode: 'rect', cost: 6, help: '範囲を選ぶと、その場所が小さな窓になって、画面のすみに映る（動いているところが見える）。窓は1つだけ。選びなおすと、入れかわる。見るだけで、窓の中は直せない' },
-    { id: 'splitv', tab: 'view', name: '上下分割', mode: 'rect', cost: 8, help: '範囲を選ぶと、遊ぶ画面が上下に割れる。上半分は、えらんだ場所を映しつづけ、下半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
-    { id: 'splith', tab: 'view', name: '左右分割', mode: 'rect', cost: 8, help: '範囲を選ぶと、遊ぶ画面が左右に割れる。左半分は、えらんだ場所を映しつづけ、右半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
+    { id: 'splitv', tab: 'view', name: '上下分割', mode: 'instant', cost: 8, help: '「分割する」を押すと、遊ぶ画面が上下に割れる。上半分は、いま見えている画面の まんなかを映しつづけ、下半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
+    { id: 'splith', tab: 'view', name: '左右分割', mode: 'instant', cost: 8, help: '「分割する」を押すと、遊ぶ画面が左右に割れる。左半分は、いま見えている画面の まんなかを映しつづけ、右半分が、エナーを追いかける。エナーの見える範囲は、半分になる' },
     { id: 'zoom', tab: 'view', name: 'ズーム', mode: 'instant', cost: 4, help: '「ズームする」を押すと、数秒だけ、見える範囲が2倍に広がる（その間は、なおせない）' },
   ];
   const TOOL_BY = {}; TOOLS.forEach(t => { TOOL_BY[t.id] = t; });
@@ -925,8 +925,8 @@
       case 'peek': { const r = a.rect, w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1;
         if (w > 18 || h > 11) return fail('ひろすぎます（横18・縦11マスまで）', { rects: [r] });
         return { ok: true, cost: costOf('peek'), rects: [r], run() { G.inset = { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }; SFX.place(); } }; }
-      case 'splitv': case 'splith': { const r = a.rect;
-        return { ok: true, cost: costOf(tool), rects: [r], run() { G.split = { dir: tool === 'splitv' ? 'v' : 'h', cx: (r.x0 + r.x1 + 1) / 2 * T, cy: (r.y0 + r.y1 + 1) / 2 * T }; SFX.place(); } }; }
+      case 'splitv': case 'splith': { const r = a.rect, cx = r ? (r.x0 + r.x1 + 1) / 2 * T : G.cam.x + W / 2, cy = r ? (r.y0 + r.y1 + 1) / 2 * T : G.cam.y + H / 2; // はんいの 指定が なければ、いま見えている画面のまんなか
+        return { ok: true, cost: costOf(tool), run() { G.split = { dir: tool === 'splitv' ? 'v' : 'h', cx, cy }; SFX.place(); } }; }
       case 'zoom': if (!G.fog) return fail('このステージでは、使えません'); return { ok: true, cost: costOf('zoom'), run() { G.zoomT = 5; } };
       case 'painter': { const [sx, sy] = a.srcCell; if (!inb(sx, sy) || !isBlk(sx, sy)) return fail('コピー元のブロックがありません'); if (G.front[sy][sx] === TL.MAGNET) return fail('磁石はコピーできません'); if (G.col[sy][sx] === GLASS) return fail('色のないガラスはコピー元にできません'); return planColor(a.rect, G.col[sy][sx], 'painter'); }
       case 'transform': return planTransform(a.rect, o.tf);
@@ -1935,6 +1935,7 @@
       if (id === 'transform') chips('', [{ v: 'flipH', label: '左右反転' }, { v: 'flipV', label: '上下反転' }, { v: 'rot', label: '90°回転' }], o.tf, v => { o.tf = v; UI.refreshTools(); });
       else if (id === 'sort') chips('', [{ v: 'L', label: '←よせ', icon: 'alignL' }, { v: 'R', label: 'よせ→', icon: 'alignR' }, { v: 'U', label: '↑よせ', icon: 'alignU' }, { v: 'D', label: 'よせ↓', icon: 'alignD' }], o.sort, v => { o.sort = v; UI.refreshTools(); });
       else if (id === 'filter') chips('残す色', colorItems.concat([{ v: null, label: '外す' }]), G.filter, v => { runPlan(planFor('filter', { fcolor: v })); UI.refreshTools(); });
+      else if (id === 'splitv' || id === 'splith') chips('', [{ v: 1, label: '分割する' }], null, v => { runPlan(planFor(id, {})); UI.refreshTools(); });
       else if (id === 'zoom') chips('', [{ v: 1, label: 'ズームする' }], null, v => { runPlan(planFor('zoom', {})); UI.refreshTools(); });
       const d = TOOL_BY[E.tool]; $('#edithelp').textContent = E.pan ? 'ドラッグで画面を移動' + (RING ? '（ダブルタップで もどる）' : '') : (E.msg || E.hint || (d ? d.help : ''));
       $('#e-pan').className = E.pan ? 'sel' : '';
