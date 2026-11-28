@@ -286,7 +286,7 @@
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
     if (G.doors) for (const d of G.doors) if (!d.open && tx === d.x && ty >= d.y && ty < d.y + d.h) return true;
     if (G.mgs) for (const m of G.mgs) for (const c of m.cells) if (tx === c[0] + m.dx && ty === c[1] + m.dy) return true;
-    if (G.fakes) for (const f of G.fakes) if (!f.hidden && !f.empty && !f.magOn && tx === f.gx && ty === f.gy) return true; // リンカちゃんは かべ
+    if (G.fakes) for (const f of G.fakes) if (!f.hidden && !f.empty && !f.magOn && !f.crkOn && tx === f.gx && ty === f.gy) return true; // リンカちゃんは かべ
     const t = G.front[ty][tx]; if (t === TL.STEEL) return true;
     return isBlockT(t) && blockVisible(tx, ty);
   }
@@ -482,6 +482,9 @@
       if (p.pogo) { p.vy = -250; p.free = true; p.dashAvail = true; p.pogo = false; }
     }
   }
+  function breakLinka(e) { // リンカちゃんが こわれる: 一瞬 おどろいた 顔→ から(てんせん)→ さんしょうさきが ある かぎり すぐ さいせい
+    e.crkOn = false; e.surp = .45; e.cool = 1.7; e.empty = true; SFX.hit(); spawnParts(e.gx * T + 8, e.gy * T + 8, 8, '#B07A4F', 70); G.shake = Math.max(G.shake, 2);
+  }
   function breakCrack(tx, ty) { G.front[ty][tx] = 0; G.col[ty][tx] = 0; SFX.hit(); spawnParts(tx * T + 8, ty * T + 8, 8, '#B07A4F', 70); G.shake = 3; }
   function damageEnemy(e, n) {
     e.hp -= n; e.flash = .15; G.hitstop = .05; G.shake = 3; SFX.hit(); spawnParts(e.x + e.w / 2, e.y + e.h / 2, 7, '#fff', 60);
@@ -571,7 +574,7 @@
     ['bucket', 'いろづけ師', 'ゆかを あるいて、ガラスの上で 立ちどまっては、足もとを 1マスずつ ぬっていく。ぬる とき、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
     ['shuffler', 'とりかえ職人', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', 'ルーパールーパー', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
-    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。エナーが ちかづくと、目が ぱちくり して、さんしょうさきを ひからせて おしえてくれる。さんしょうさきに ブロックが ないときは、てんせんの わくと 目だけに なって、とおりぬけられる。ブロックが できると、かたまる。磁石を さんしょうすると、磁石と おなじ うごき（はがねに ひきよせられる）を する。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。'],
+    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。エナーが ちかづくと、目が ぱちくり して、さんしょうさきを ひからせて おしえてくれる。さんしょうさきに ブロックが ないときは、てんせんの わくと 目だけに なって、とおりぬけられる。ブロックが できると、かたまる。磁石を さんしょうすると、磁石と おなじ うごき（はがねに ひきよせられる）を する。ひびわれブロックを さんしょうすると ふむと こわれる。DEL砲台の たまが あたっても こわれる。こわれる ときは びっくりした 顔を して、さんしょうさきが ある かぎり、すぐ さいせいする。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。'],
   ];
   function seeEnemy(type) {
     save.seenEnemies = save.seenEnemies || {}; if (save.seenEnemies[type]) return;
@@ -592,7 +595,10 @@
         if (!p.dead && d < 72) e.bt = e.bt == null ? 0 : e.bt + dt; else e.bt = null; // エナーが ちかづいた ときだけ、まばたきする(ちかづいた しゅんかんから)
         e.look = 2; e.ex = dx; e.ey = dy; if (e.rx !== undefined && e.ry !== undefined) { e.ex = (e.rx * T + 8) - (e.x + 7); e.ey = (e.ry * T + 8) - (e.y + 7); } /* ひとみは、まねしている ブロックの ほうを むく */ // いつも 目が あいている(ぱちくりは えがくときに)
         if (e.rx !== undefined && inb(e.rx, e.ry) && (e.rx !== e.gx || e.ry !== e.gy)) { const rt = G.front[e.ry][e.rx]; if (isBlockT(rt) && blockVisible(e.rx, e.ry)) { e.c = rt === TL.CRACK ? 4 : G.col[e.ry][e.rx]; e.mag = rt === TL.MAGNET; } }
-        if (e.rx !== undefined) { // さんしょうさきに ブロックが なければ、リンカちゃんも 「から」(てんせんの わくと 目だけ。とおりぬけられる)。ブロックが できたら かたまる
+        if (e.surp > 0) e.surp -= dt;
+        if (e.cool > 0) { e.cool -= dt; e.empty = true; if (e.cool <= 0) { e.cool = 0; spawnParts(e.gx * T + 8, e.gy * T + 8, 7, '#FFFFFF', 45); SFX.place(); } } // こわれて いる あいだ(さいせいまち)
+        else if (e.crkOn && G.front[e.gy][e.gx] === 0) breakLinka(e); // ひびわれの かたちで ふまれる/ダッシュ/たまで こわれた
+        if (e.rx !== undefined && !(e.cool > 0)) { // さんしょうさきに ブロックが なければ、リンカちゃんも 「から」(てんせんの わくと 目だけ。とおりぬけられる)。ブロックが できたら かたまる
           const has = inb(e.rx, e.ry) && isBlockT(G.front[e.ry][e.rx]) && blockVisible(e.rx, e.ry);
           if (has && e.empty && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) e.empty = false; else if (!has) e.empty = true; // ひとが なかに いる あいだは かたまらない
           // 磁石を まねして いる ときは、ほんとうの 磁石(G.frontの MAGNET)に なる。磁石と おなじ うごき(はがねに ひきよせられる)を する
@@ -600,6 +606,10 @@
           if (e.magOn && G.front[e.gy][e.gx] !== TL.MAGNET) e.magOn = false;
           if (e.magOn && !refMag) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; e.magOn = false; }
           else if (!e.magOn && refMag && !e.empty && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.MAGNET; G.col[e.gy][e.gx] = 0; G.lock[e.gy][e.gx] = 0; e.magOn = true; }
+          // ひびわれブロックを まねして いる ときは、ほんとうの ひびわれブロックに なる(ふんだり ダッシュで こわれる)
+          const refCrk = has && (G.front[e.ry][e.rx] === TL.CRACK || ((G.front[e.ry][e.rx] === TL.STONE || G.front[e.ry][e.rx] === TL.GLASSED) && G.col[e.ry][e.rx] === 4));
+          if (e.crkOn && !refCrk) { if (G.front[e.gy][e.gx] === TL.STONE) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; } e.crkOn = false; }
+          else if (!e.crkOn && refCrk && !e.empty && !e.magOn && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.STONE; G.col[e.gy][e.gx] = 4; G.lock[e.gy][e.gx] = 0; e.crkOn = true; }
         } // さんしょうさきの ブロックと おなじ いろ(しゅるい)に かわる
         // (となりの あつい ブロックで にげる うごきは なくなった)
         const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
@@ -668,6 +678,7 @@
           if (isFragile(bx, by)) { breakCrack(bx, by); b.dead = true; }
           else if ((G.front[by][bx] === TL.STONE || G.front[by][bx] === TL.GLASSED) && G.col[by][bx] === 0) { G.col[by][bx] = 4; SFX.hit(); spawnParts(bx * T + 8, by * T + 8, 5, '#B07A4F', 50); b.dead = true; }
         }
+        if (!b.dead) for (const f of G.fakes || []) if (!f.empty && !f.crkOn && !f.magOn && !f.hidden && f.rx !== undefined && !(f.cool > 0) && bx === f.gx && by === f.gy) { breakLinka(f); b.dead = true; } // リンカちゃんに あたると こわれる(さんしょうさきが あれば さいせい)
       }
       if (b.dead) continue;
       if (boxHitsSolid(b.x, b.y, b.w, b.h) || b.x < 0 || b.x > G.level.w * T) b.dead = true;
@@ -734,7 +745,7 @@
   const isMovable = (x, y) => isBlk(x, y) && !G.lock[y][x];
   function actorRects() {
     const r = [{ x: G.p.x, y: G.p.y, w: G.p.w, h: G.p.h }];
-    for (const e of G.enemies) if (!e.dead && !(e.type === 'fake' && e.magOn)) r.push({ x: e.x, y: e.y, w: e.w, h: e.h }); // 磁石に なった リンカちゃんは、磁石の かたまりの なかま
+    for (const e of G.enemies) if (!e.dead && !(e.type === 'fake' && (e.magOn || e.crkOn))) r.push({ x: e.x, y: e.y, w: e.w, h: e.h }); // 磁石に なった リンカちゃんは、磁石の かたまりの なかま
     return r;
   }
   function cellBlocked(tx, ty) { // ひと・てき・リフトのみちとかさなるマスには、ブロックをおけない
@@ -1396,12 +1407,15 @@
     const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     if (e.empty) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x, y, T, T); ctx.strokeStyle = 'rgba(70,70,70,.75)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.strokeRect(x + .5, y + .5, T - 1, T - 1); ctx.setLineDash([]); }
-    else if (e.magOn) { /* ほんものの 磁石の マスが えがかれる */ }
+    else if (e.magOn || e.crkOn) { /* ほんものの 磁石/ひびわれの マスが えがかれる */ }
     else if (e.mag) drawMagnet(x, y);
     else drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0);
     ctx.globalAlpha = 1;
     const bp = e.bt == null ? -1 : e.bt % 2.2, blink = !hotMv && bp >= 0 && (bp < .12 || (bp > .27 && bp < .39)); // ぱちくり(2かい まばたき)
     const look = hotMv ? 2 : blink ? 1 : 2;
+    if (e.surp > 0) { // こわれる しゅんかん: びっくりした 顔(おおきな 目と、まるい 口)
+      ctx.fillStyle = '#fff'; ctx.fillRect(x + 2, y + 3, 5, 6); ctx.fillRect(x + 9, y + 3, 5, 6); ctx.fillStyle = '#262626'; ctx.fillRect(x + 4, y + 5, 2, 2); ctx.fillRect(x + 11, y + 5, 2, 2); ctx.fillRect(x + 2, y + 2, 4, 1); ctx.fillRect(x + 10, y + 2, 4, 1); ctx.fillRect(x + 6, y + 10, 4, 4); ctx.fillStyle = '#fff'; ctx.fillRect(x + 7, y + 11, 2, 2); return;
+    }
     if (e.rx !== undefined && e.ry !== undefined && inb(e.rx, e.ry)) { // まばたきの たびに、まねしている ブロックが きいろく ふわっと ひかる(なにも ない ときは、てんせんの わくが ひかる)
       const fl = (x) => x >= 0 && x < .32 ? 1 - x / .32 : 0, gi = Math.max(fl(bp), fl(bp - .27)), has = isBlockT(G.front[e.ry][e.rx]);
       if (gi > 0 && !has) { const gx = e.rx * T - cx, gy = e.ry * T - cy; ctx.fillStyle = 'rgba(255,224,102,' + (.32 * gi) + ')'; ctx.fillRect(gx, gy, T, T); ctx.strokeStyle = 'rgba(255,214,70,' + gi + ')'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.strokeRect(gx + .5, gy + .5, T - 1, T - 1); ctx.setLineDash([]); }
