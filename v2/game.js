@@ -1846,6 +1846,8 @@
     el.addEventListener('pointerdown', (e) => { if (e.target === el || e.target.classList.contains('ring-disc')) close(); });
     return { open, move, release, close, get isOpen() { return !el.classList.contains('hide'); } };
   })();
+  // ゲームの画面の中では、ブラウザ本来の右クリックメニューを出さない(入力欄だけは のこす)
+  document.addEventListener('contextmenu', (e) => { if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) e.preventDefault(); });
   if (RING) {
     let lpTimer = null, lpPointer = null;
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
