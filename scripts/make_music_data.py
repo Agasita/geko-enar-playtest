@@ -131,6 +131,32 @@ MEL_EDIT = ["g5 - e5 g5 c6 - g5 e5", "d5 - g5 b5 d6 - b5 g5", "c6 - a5 c6 e6 - c
 PROG_EDIT = ['C', 'G', 'Am', 'Em', 'F', 'C', 'Dm', 'G', 'C', 'G', 'Am', 'F', 'Dm', 'G', 'C', 'G']
 
 
+# ================= ワールド1（草原をおさんぽ）116BPM・ハ長調・はずむリズム =================
+MEL_W1 = ["e5 - g5 - e5 c5 e5 g5", "f5 - a5 - f5 c5 f5 a5", "g5 - e5 g5 c6 - g5 e5", "d5 - g5 b4 d5 - g5 -",
+          "e5 - g5 - c6 - g5 e5", "e5 - a5 - c6 a5 e5 a5", "a5 - f5 a5 c6 - a5 f5", "g5 - f5 e5 d5 - b4 d5",
+          "c6 - c6 b5 c6 - e6 -", "a5 - a5 g5 a5 - c6 -", "g5 - g5 f5 g5 - b5 -", "a5 - c6 - e6 - c6 a5",
+          "f5 - a5 c6 a5 - f5 a5", "g5 - e5 - g5 - c6 -", "d6 - b5 - g5 - b5 d6", "c6 - g5 - e5 - g5 -"]
+PROG_W1 = ['C', 'F', 'C', 'G', 'C', 'Am', 'F', 'G', 'C', 'F', 'Em', 'Am', 'F', 'C', 'G', 'C']
+
+
+def bounce_bass(prog):  # ズン・タッ・ズン・タッ: 1・3拍目は ルート、2・4拍目は 5度(みじかく はずませる)
+    out = []
+    for bi, name in enumerate(prog):
+        pc, _ = chord(name); r = 36 + pc
+        for step, m in ((0, r), (4, r + 7), (8, r), (12, r + 7)): out.append((bi * 16 + step, 2, m))
+        out.append((bi * 16 + 6, 1, r + 12)) if bi % 2 == 0 else None
+    return out
+
+
+def offbeat_stabs(prog):  # 裏拍(8分の ウラ)で コードを ポンポンと はじく
+    out = []
+    for bi, name in enumerate(prog):
+        pc, iv = chord(name); base = 60 + ((pc - 0 + 6) % 12) - 6
+        for step in (2, 6, 10, 14):
+            for x in iv[:3]: out.append((bi * 16 + step, 1, base + x))
+    return out
+
+
 def short(notes, cap):  # 音を みじかく きる(スタッカート)
     return [(s, min(l, cap), m) for s, l, m in notes]
 
@@ -153,6 +179,10 @@ def build():
     # FM音源（ステージBと同じ ベル・エレピ・FMベース）。ステージAだけ チップチューンっぽかったので そろえた
     T['stageA'] = track(128, 256, [('bell', .26, melody(MEL_A)), ('ep', .10, arps(PROG_A, step=2, pat3=(0, 1, 2, 1), pat4=(0, 1, 2, 1))),
                                    ('fmbass', .30, bass8(PROG_A)), ('kick', .2, k), ('snare', .16, s), ('hat', .05, h)], echo=True, gain=0.8)
+    # --- ワールド1(草原): メジャーで はずむ おさんぽ
+    k, s, h = drums(16, kick=(0, 8), snare=(4, 12), hat=4)
+    T['world1'] = track(116, 256, [('bell', .26, melody(MEL_W1)), ('ep', .075, offbeat_stabs(PROG_W1)), ('fmbass', .30, bounce_bass(PROG_W1)),
+                                   ('pad', .02, pads(PROG_W1)), ('kick', .16, k), ('snare', .09, s), ('hat', .04, h)], echo=True, gain=0.85)
     # --- ステージB
     k, s, h = drums(16, kick=(0, 6, 8), snare=(4, 12), hat=2)
     T['stageB'] = track(108, 256, [('bell', .26, melody(MEL_B)), ('ep', .10, arps(PROG_B)), ('fmbass', .30, bass8(PROG_B)),

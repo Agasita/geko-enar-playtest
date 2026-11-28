@@ -217,8 +217,24 @@
       }
     }
   }
+  // ワールド1の遠景(576×180)。ふだんは絵だけ見える。なおしている間だけ、罫線と うすいセルの色を かさねる。?farbg=0 で むこうに できる
+  const FAR = {};
+  if (!/[?&]farbg=0/.test(location.search)) { const i = new Image(); i.onload = () => { FAR[1] = i; }; i.src = 'assets/bg/world1.png'; }
+  const farOf = (lv) => (lv && FAR[lv.world | 0]) || null;
+  function drawFar(ctx, G, lv, W, H, im) {
+    const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
+    const maxc = lv.w * T - W, off = maxc > 0 ? Math.round(Math.max(0, Math.min(1, cx / maxc)) * (im.width - W)) : 0; // ステージのはしからはしへ、絵の左はしから右はしまで
+    const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(im, -off, 0); ctx.imageSmoothingEnabled = sm;
+    if (G.edit && G.edit.on) {
+      ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      for (let x = -(((cx % T) + T) % T); x < W; x += T) ctx.fillRect(x, 0, 1, H);
+      for (let y = -(((cy % T) + T) % T); y < H; y += T) ctx.fillRect(0, y, W, 1);
+    }
+  }
   function drawBg(ctx, G, lv, W, H) {
-    const sh = sheetOf(lv);
+    const sh = sheetOf(lv), far = farOf(lv);
+    if (far) { drawFar(ctx, G, lv, W, H, far); return; }
     ctx.fillStyle = sh.bg; ctx.fillRect(0, 0, W, H);
     const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
     ctx.fillStyle = sh.ln;
@@ -351,6 +367,6 @@
     enemy(name, fr, flip) { const k = 'e' + name + fr + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr), flip, OUTX)); },
     shard() { return cache.shard || (cache.shard = GFX.gridSprite(SHARD.map(r => [...r].map(ch => (ch === '.' ? null : SHCX[ch]))), false, OUTX)); },
     floppy(back) { const k = 'fl' + (back ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(floppyGrid(back), false, OUTX)); },
-    bg: drawBg, frame: drawFrame,
+    bg: drawBg, frame: drawFrame, hasFar: (lv) => !!farOf(lv),
   };
 })();
