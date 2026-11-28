@@ -571,7 +571,7 @@
     ['bucket', 'いろづけ師', 'ゆかを あるいて、ガラスの上で 立ちどまっては、足もとを 1マスずつ ぬっていく。ぬる とき、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
     ['shuffler', 'とりかえ職人', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', 'ルーパールーパー', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
-    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。いつも 目が ぱちくり している。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。でも あつい（赤い）ブロックが となりに くると、あつがって 1マス はなれる'],
+    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。いつも 目が ぱちくり している。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。'],
   ];
   function seeEnemy(type) {
     save.seenEnemies = save.seenEnemies || {}; if (save.seenEnemies[type]) return;
@@ -591,21 +591,9 @@
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
         e.look = 2; e.ex = dx; e.ey = dy; // いつも 目が あいている(ぱちくりは えがくときに)
         if (e.rx !== undefined && inb(e.rx, e.ry) && (e.rx !== e.gx || e.ry !== e.gy)) { const rt = G.front[e.ry][e.rx]; if (isBlockT(rt) && blockVisible(e.rx, e.ry)) e.c = rt === TL.CRACK ? 4 : G.col[e.ry][e.rx]; } // さんしょうさきの ブロックと おなじ いろ(しゅるい)に かわる
-        // あつい(赤い)ブロックが となりに くると、あつがって 1マス はなれる(はんたいがわへ)
+        // (となりの あつい ブロックで にげる うごきは なくなった)
         const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
         if (e.mv > 0) { e.mv -= dt; const k = Math.max(0, e.mv / .5); if (Math.random() < dt * 40) { const sd = Math.random() < .5 ? -1 : 1; G.parts.push({ x: e.x + 7 + sd * 5, y: e.y + 3, vx: sd * (25 + Math.random() * 35), vy: -50 - Math.random() * 40, g: 260, s: 2, life: .45 + Math.random() * .25, col: Math.random() < .5 ? '#8FD0FF' : '#D6EEFF' }); } e.x = tx0 - e.fdx * T * k; e.y = ty0 - e.fdy * T * k; if (e.mv <= 0) { e.mv = 0; e.x = tx0; e.y = ty0; } }
-        else {
-          const hot = (x, y) => colorAt(x, y) === 1;
-          const tries = [[hot(e.gx - 1, e.gy), 1, 0], [hot(e.gx + 1, e.gy), -1, 0], [hot(e.gx, e.gy - 1), 0, 1], [hot(e.gx, e.gy + 1), 0, -1]];
-          for (const [h, mx, my] of tries) {
-            if (!h) continue;
-            const nx = e.gx + mx, ny = e.gy + my;
-            if (solidCell(nx, ny) || liftRailHit(nx, ny)) continue;
-            if (overlap(nx * T, ny * T, T, T, p.x, p.y, p.w, p.h)) continue;
-            if (G.enemies.some(o => o !== e && !o.dead && overlap(nx * T, ny * T, T, T, o.x, o.y, o.w, o.h))) continue;
-            e.gx = nx; e.gy = ny; e.fdx = mx; e.fdy = my; e.mv = .5; SFX.bad(); spawnParts(e.x + 7, e.y + 7, 5, '#E8563F', 40); break;
-          }
-        }
       }
       if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
         if (Math.abs(p.x + 5 - (e.x + 6)) < 46 && Math.abs(p.y - e.y) < 30 && !p.dead) { e.awake = true; e.t = 0; SFX.bad(); spawnParts(e.x + 6, e.y + 4, 8, '#fff', 60); G.shake = Math.max(G.shake, 2); }
