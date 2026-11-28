@@ -492,7 +492,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     if (cur.kind === 'pick') { pickDown(e, c); draw(); return; }
     if (cur.kind === 'lift') {
       const h = liftHit(e);
-      if (h) { sel = h[0]; showLift(); msg('リフトのはんい・設定は、「選ぶ」で直します'); }
+      if (h) { sel = h[0]; showLift(); msg('リフトのはんい・設定は、「選択」で直します'); }
       else { if (inb(c[0], c[1])) newLift(c[0], c[1]); }
       down = { what: 'none' };
       draw(); return;
@@ -587,7 +587,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
       addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });
     });
-    pickBtn = addBtn(p2, '<span class="sw" style="background:none;border:2px solid #7030A0"></span>選ぶ（敵・リフトのはんいを直す／ブロックを変える）', { kind: 'pick' });
+    pickBtn = addBtn(p2, '<span class="sw" style="background:none;border:2px solid #7030A0"></span>選択', { kind: 'pick' });
     addBtn(p2, '<span class="sw" style="background:none;border:1px dashed #7030A0"></span>はんい（2か所をクリック）', { kind: 'range' });
     COLORS.forEach((c, i) => { if (i === 5) return; addBtn(p2, spIcon(blockIm(i)) + 'にせブロック（' + c[0] + '）', { kind: 'ent', type: 'fake', opt: { c: i } }); });
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
