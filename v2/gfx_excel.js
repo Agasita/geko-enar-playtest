@@ -217,9 +217,9 @@
       }
     }
   }
-  // ワールド1の遠景(576×180)。ふだんは絵だけ見える。なおしている間だけ、罫線と うすいセルの色を かさねる。?farbg=0 で むこうに できる
+  // ワールド1・2の遠景(576×180)。ふだんは絵だけ見える。なおしている間だけ、罫線と うすいセルの色を かさねる。?farbg=0 で むこうに できる
   const FAR = {};
-  if (!/[?&]farbg=0/.test(location.search)) { const i = new Image(); i.onload = () => { FAR[1] = i; }; i.src = 'assets/bg/world1.png'; }
+  if (!/[?&]farbg=0/.test(location.search)) [1, 2].forEach((n) => { const i = new Image(); i.onload = () => { FAR[n] = i; }; i.src = 'assets/bg/world' + n + '.png'; });
   const farOf = (lv) => (lv && FAR[lv.world | 0]) || null;
   function drawFar(ctx, G, lv, W, H, im) {
     const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
