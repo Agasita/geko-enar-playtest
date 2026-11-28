@@ -232,10 +232,11 @@
       inv: 0, hp: 3, squash: 0, anim: 0, wasGround: false, dead: 0, stun: 0, pogo: false, hurtT: 0 };
   }
   function makeEnemy(e, k) {
+    if (e.type === 'guard') e = Object.assign({}, e, { type: 'walker' }); // かたいこうらは なくなった。セルくんに おきかえる
     const base = { type: e.type, x: e.x * T, y: e.y * T, k, dead: false, frozen: 0, t: Math.random() * 6, flash: 0, stun: 0 };
     if (e.type === 'walker') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, vx: -28, hp: 1, dir: -1, spdc: e.spdc || 0, lim: e.lim || null, x: base.x + 2, y: base.y + 4 });
     if (e.type === 'guard') return Object.assign(base, { w: 12, h: 13, ox: 2, oy: 3, vx: -22, hp: 2, dir: -1, spdc: e.spdc || 0, lim: e.lim || null, x: base.x + 2, y: base.y + 3 });
-    if (e.type === 'flyer') return Object.assign(base, { w: 12, h: 10, ox: 2, oy: 5, hp: 1, bx: base.x + 2, by: base.y + 5, range: e.range || 30, x: base.x + 2, y: base.y + 5 });
+    if (e.type === 'flyer') return Object.assign(base, { w: 12, h: 10, ox: 2, oy: 5, hp: 1, bx: base.x + 2, by: base.y + 5, range: e.range || 30, axis: e.axis === 'y' ? 'y' : 'x', x: base.x + 2, y: base.y + 5 });
     if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 13, ox: 1, oy: 2, vx: -24, hp: 1, spdc: e.spdc || 0, ptime: e.ptime || 1, dir: e.dir || -1, c: e.c === undefined ? 0 : e.c, lim: e.lim || null, painted: [], pt: 0, x: base.x + 1, y: base.y + 2 }); // 塗りつぶし: あるきながら、足もとの ガラスを 1マスずつ ぬる。たおすと、ぬった ガラスは もとに もどる
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
     // ---- Excelの こまった きどう ----
@@ -561,10 +562,9 @@
   }
   // ===== てき図鑑 =====
   const DEX = [
-    ['walker', 'てくてく', 'ゆかを まっすぐ あるく。ふちや かべに ぶつかると ひきかえす。上から ふむと たおせる'],
-    ['guard', 'かたいこうら', 'かたい こうらを もつ。2かい ふまないと たおせない'],
-    ['flyer', 'ふわふわ', 'くうちゅうを ゆらゆら ただよう。上から ふむと たおせる'],
-    ['turret', 'たまうち', 'エナーの ほうを むいて、たまを うつ。うつ まえに 光る。ふめないし、たおせない。光った ときに、たまの みちから はずれよう'],
+    ['walker', 'セルくん', 'いろと わくの ついた セルが あるいてくる。いろは ワールドで ちがう。ふちや かべに ぶつかると ひきかえす。上から ふむと たおせる'],
+    ['flyer', 'くもがた', 'くもの かたちの ふきだし。ゆかに かんけいなく ふわふわ ただよう。たてや よこに ゆっくり おうふくする。上から ふむと たおせる'],
+    ['turret', 'DEL砲台', 'デリートキーの かたち。キーが しずむと たまを うつ。たまは 茶ブロックを ひびわれに、ひびわれブロックを きえさせる。ふめないし、たおせない。キーが しずんだ ときに、たまの みちから はずれよう'],
     ['div0', '#DIV/0!', 'エラーの かたまり。ふめないし、たおせない。ゆっくり おうふく するので、タイミングを みて よけよう'],
     ['autofill', 'オートフィル', 'ゆかを どんどん コピーして ふやす。つくる ブロックの いろは、しゅるいで ちがう（赤や 氷も）。ねらう マスが 光る。ふむと たおせる'],
     ['moji', 'しろい文字', 'しろい シートに とけこむ、ほとんど みえない 文字。ちかづくと あらわれて、おいかけてくる。ふむと たおせる'],
@@ -645,11 +645,12 @@
         const q = loopPos(e.loop, e.t * (e.spdc ? e.spdc * T : 38)); e.x = q.x + 2; e.y = q.y + 2; e.dir = q.dir;
       } else if (e.type === 'flyer') {
         const px = e.x;
-        e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; e.dir = e.x > px ? 1 : -1;
+        if (e.axis === 'y') { e.y = e.by + Math.sin(e.t * 1.1) * e.range; e.x = e.bx + Math.sin(e.t * 2.2) * 3; } else { e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; } e.dir = e.x > px ? 1 : -1;
       } else if (e.type === 'turret') {
         e.cd -= dt; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
-        if (e.cd < .5) e.tele = 1; else e.tele = 0;
-        if (e.cd <= 0 && Math.abs(p.x - e.x) < 150) { e.cd = 2.2; G.bullets.push({ x: e.x + 6 + e.dir * 8, y: e.y + 4, w: 4, h: 4, vx: e.dir * 85 }); }
+        if (e.cd < .5) e.tele = 1; else e.tele = 0; // キーが しずむ = うつ あいず
+        if (e.cd <= 0 && Math.abs(p.x - e.x) < 150) { e.cd = 2.2; e.press = .18; SFX.hit(); G.bullets.push({ x: e.x + 6 + e.dir * 8, y: e.y + 4, w: 4, h: 4, vx: e.dir * 85, del: true }); }
+        if (e.press > 0) e.press -= dt;
       }
       // 接触ダメージ・ダッシュ攻撃
       if (!p.dead && e.type !== 'fake' && overlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)) {
@@ -660,6 +661,14 @@
     }
     for (const b of G.bullets) {
       b.x += b.vx * dt;
+      if (b.del) { // DELの たま: 茶ブロック→ひびわれ、ひびわれ→きえる
+        const bx = Math.floor((b.x + (b.vx > 0 ? b.w : 0)) / T), by = Math.floor((b.y + 2) / T);
+        if (inb(bx, by) && blockVisible(bx, by) && !G.lock[by][bx]) {
+          if (isFragile(bx, by)) { breakCrack(bx, by); b.dead = true; }
+          else if ((G.front[by][bx] === TL.STONE || G.front[by][bx] === TL.GLASSED) && G.col[by][bx] === 0) { G.col[by][bx] = 4; SFX.hit(); spawnParts(bx * T + 8, by * T + 8, 5, '#B07A4F', 50); b.dead = true; }
+        }
+      }
+      if (b.dead) continue;
       if (boxHitsSolid(b.x, b.y, b.w, b.h) || b.x < 0 || b.x > G.level.w * T) b.dead = true;
       if (!G.p.dead && overlap(b.x, b.y, b.w, b.h, p.x, p.y, p.w, p.h)) { b.dead = true; hurtPlayer(null); }
     }
@@ -1420,8 +1429,8 @@
       const fr = Math.floor(e.t * 4) % 2, flip = e.dir > 0;
       if (e.type === 'moji' && !e.awake) { drawMojiHint(e, cx, cy); continue; }
       if (e.type === 'fake') { drawFake(e, cx, cy); continue; }
-      const name = e.type === 'walker' ? 'walker' : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'condfmt' || e.type === 'bucket') ? (EXCEL ? (e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type === 'bucket' ? 'bucket' + e.c : e.type) : 'walker') : 'turret';
-      const fi = name === 'guard' || name === 'turret' ? 0 : fr;
+      const name = e.type === 'walker' ? (EXCEL ? 'walker' + (((G.level.world | 0) + 5) % 6) : 'walker') : e.type === 'guard' ? 'guard' : e.type === 'flyer' ? 'flyer' : (e.type === 'div0' || e.type === 'autofill' || e.type === 'moji' || e.type === 'shuffler' || e.type === 'circ' || e.type === 'condfmt' || e.type === 'bucket') ? (EXCEL ? (e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type === 'bucket' ? 'bucket' + e.c : e.type) : 'walker') : 'turret';
+      const fi = name === 'turret' ? (e.press > 0 || e.tele ? 1 : 0) : name === 'guard' ? 0 : fr;
       if (e.type === 'circ') { // みちすじ(うすい てんせん)
         const lp = e.loop; ctx.strokeStyle = 'rgba(47,62,107,.32)'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.strokeRect(lp.x0 * T + 8 - cx + .5, lp.y0 * T + 8 - cy + .5, (lp.x1 - lp.x0) * T, (lp.y1 - lp.y0) * T); ctx.setLineDash([]);
       }
