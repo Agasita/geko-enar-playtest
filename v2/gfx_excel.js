@@ -223,7 +223,7 @@
   const farOf = (lv) => (lv && FAR[lv.world | 0]) || null;
   function drawFar(ctx, G, lv, W, H, im) {
     const cx = Math.round(G.cam.x + (G.sx || 0)), cy = Math.round(G.cam.y), T = 16;
-    const maxc = lv.w * T - W, off = maxc > 0 ? Math.round(Math.max(0, Math.min(1, cx / maxc)) * (im.width - W)) : 0; // ステージのはしからはしへ、絵の左はしから右はしまで
+    const off = Math.max(0, Math.min(im.width - W, Math.round(cx * .08))); // 遠景は、カメラの8%だけ ゆっくり ずれる(ステージが長くても、絵のはしで とまる)
     const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(im, -off, 0); ctx.imageSmoothingEnabled = sm;
     if (G.edit && G.edit.on) {
       ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(0, 0, W, H);
