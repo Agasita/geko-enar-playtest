@@ -276,7 +276,7 @@
   const BIRD = ['............', '....WWWW....', '...WWWWWW...', '..WWWWWWeW..', '..WWWWWWWWOO', '.UUWWWWWWW..', 'UUUVWWWWWW..', '.UUUUWWWSW..', '...UUUSSSS..', '.....f.f....', '............', '............'];
   function grid16() { const g = []; for (let y = 0; y < 16; y++) g.push(new Array(16).fill(null)); return g; }
   function prims(g) { return { R(x, y, w, h, col) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (x + i >= 0 && x + i < 16 && y + j >= 0 && y + j < 16) g[y + j][x + i] = col; }, P(x, y, col) { if (x >= 0 && x < 16 && y >= 0 && y < 16) g[y][x] = col; } }; }
-  function enemyGrid(name, fr) { // みぎむき。ゲームがわで、むきにあわせてひだりみぎをいれかえる
+  function enemyGrid(name, fr, fl) { // みぎむき。ゲームがわで、むきにあわせてひだりみぎをいれかえる
     const g = grid16(), { R, P } = prims(g), W = '#FFFFFF', K = '#262626';
     if (name.indexOf('walker') === 0) { // セルくん: いろと わくの ついた セル。いろは ワールドで ちがう
       const WC = [['#C6E0B4', '#548235'], ['#BDD7EE', '#2F5597'], ['#FFE699', '#BF9000'], ['#F8CBAD', '#C55A11'], ['#D9C3E8', '#7030A0'], ['#F4B6B6', '#C00000']][+name.slice(6) || 0] || ['#C6E0B4', '#548235'];
@@ -333,11 +333,11 @@
       R(5, 7, 2, 2, '#FFD966'); R(9, 7, 2, 2, '#FFD966'); P(6, 8, K); P(10, 8, K);
       if (fr) { P(14, 2, '#FFC000'); P(15, 3, '#FFC000'); P(0, 12, '#FFC000'); } else { P(14, 12, '#FFC000'); P(15, 11, '#FFC000'); P(0, 3, '#FFC000'); }
     } else { // DEL砲台: デリートキーの かたち。fr=1 で キーが しずむ
-      const y0 = fr ? 5 : 3, DK = '#404040';
-      R(1, 12, 13, 3, '#7F7F7F'); R(1, 14, 13, 1, DK);
-      R(1, y0, 13, 9, '#F2F2F2'); R(1, y0, 13, 1, W); R(1, y0 + 8, 13, 1, '#BFBFBF'); R(13, y0 + 1, 1, 8, '#BFBFBF');
-      R(14, y0 + 3, 2, 3, DK);
-      const gl = (x, rows) => rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === 'X') P(x + i, y0 + 2 + j, fr ? '#C00000' : '#262626'); }));
+      const y0 = fr ? 5 : 3, DK = '#404040', ox = fl ? 1 : 0; // fl=ひだりむき: もじは はんてんさせず、くちだけ ひだりに
+      R(1 + ox, 12, 13, 3, '#7F7F7F'); R(1 + ox, 14, 13, 1, DK);
+      R(1 + ox, y0, 13, 9, '#F2F2F2'); R(1 + ox, y0, 13, 1, W); R(1 + ox, y0 + 8, 13, 1, '#BFBFBF'); R(13 + ox, y0 + 1, 1, 8, '#BFBFBF');
+      R(fl ? 0 : 14, y0 + 3, 2, 3, DK);
+      const gl = (x, rows) => rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === 'X') P(x + i + ox, y0 + 2 + j, fr ? '#C00000' : '#262626'); }));
       gl(2, ['XX.', 'X.X', 'X.X', 'X.X', 'XX.']); gl(6, ['.XX', 'X.X', 'XXX', 'X..', '.XX']); gl(10, ['X..', 'X..', 'X..', 'X..', 'XX.']);
     }
     return g;
@@ -369,7 +369,7 @@
     hero(name, flip) { const k = 'h' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.heroFrame(name, HCX), flip, OUTX)); },
     bird(flip) { const k = 'bird' + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(BIRD.map(r => [...r].map(ch => (ch === '.' ? null : BCX[ch]))), flip, OUTX)); },
     ener(name, flip) { const k = 'en' + name + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(GFX.enerGrid(name, BCX), flip, OUTX)); },
-    enemy(name, fr, flip) { const k = 'e' + name + fr + (flip ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr), flip, OUTX)); },
+    enemy(name, fr, flip) { const k = 'e' + name + fr + (flip ? 1 : 0); if (name === 'turret') return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr, !!flip), false, OUTX)); /* DEL砲台は もじが はんてんしないよう、むきごとに かく */ return cache[k] || (cache[k] = GFX.gridSprite(enemyGrid(name, fr), flip, OUTX)); },
     shard() { return cache.shard || (cache.shard = GFX.gridSprite(SHARD.map(r => [...r].map(ch => (ch === '.' ? null : SHCX[ch]))), false, OUTX)); },
     floppy(back) { const k = 'fl' + (back ? 1 : 0); return cache[k] || (cache[k] = GFX.gridSprite(floppyGrid(back), false, OUTX)); },
     bg: drawBg, frame: drawFrame, hasFar: (lv) => !!farOf(lv),
