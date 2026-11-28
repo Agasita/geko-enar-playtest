@@ -51,6 +51,7 @@
   };
   // ?ui=new: 画像生成AIが作った、新しい道具のアイコン(assets/enar32/ui_icons_new.png。32px×24個の1列)に さしかえる。せっていで えらべる
   if (/[?&]ui=new/.test(location.search)) {
+    document.body.classList.add('ui-new');
     const NEWI = { painter: 0, transform: 1, sort: 2, filter: 3, protect: 4, unprotect: 5, printarea: 6, peek: 7, splitv: 8, splith: 9, zoom: 10, undo: 13, pan: 15, write: 16 };
     Object.keys(NEWI).forEach((k) => { ICON[k] = '<span class="nic" style="background-position:-' + NEWI[k] * 16 + 'px 0"></span>'; });
   }

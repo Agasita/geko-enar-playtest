@@ -44,6 +44,16 @@ body.editing .hudbtns,body.editing #lvname{display:none}
 #tools button small{margin-left:auto;color:var(--accent);font-size:10px}
 #tools button.sel{background:#4a5c92;box-shadow:inset 3px 0 0 var(--accent);font-weight:800}
 #tools kbd{background:#0004}
+/* ?ui=new: タイトル画面のボタンを、AI製の絵(9分割)に さしかえる。大=緑、小=灰 */
+body.ui-new #screen-title button.big,body.ui-new #screen-title button.ghost{border:0;border-radius:0;box-shadow:none;image-rendering:pixelated;background-color:transparent}
+body.ui-new #screen-title button.big{border-image:url(assets/enar32/btn_big_n.png) 12 16 fill/12px 16px stretch;color:#fff;padding:0 24px;min-height:47px;font-weight:700}
+body.ui-new #screen-title button.big:active{border-image-source:url(assets/enar32/btn_big_p.png)}
+body.ui-new #screen-title button.big:disabled{border-image-source:url(assets/enar32/btn_big_d.png)}
+body.ui-new #screen-title button.big:focus-visible{border-image-source:url(assets/enar32/btn_big_s.png);outline:0}
+body.ui-new #screen-title button.ghost{border-image:url(assets/enar32/btn_sm_n.png) 10 14 fill/10px 14px stretch;color:#262626;padding:0 18px;min-height:39px}
+body.ui-new #screen-title button.ghost:active{border-image-source:url(assets/enar32/btn_sm_p.png)}
+body.ui-new #screen-title button.ghost:disabled{border-image-source:url(assets/enar32/btn_sm_d.png)}
+body.ui-new #screen-title button.ghost:focus-visible{border-image-source:url(assets/enar32/btn_sm_s.png);outline:0}
 .nic{display:inline-block;flex:none;width:16px;height:16px;background:url(assets/enar32/ui_icons_new.png) no-repeat;background-size:384px 16px;vertical-align:-3px}
 .chips{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 .chips>span{font-size:10px;color:var(--muted);margin-right:2px}
