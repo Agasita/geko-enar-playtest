@@ -87,7 +87,18 @@
     }
     return orig.block.apply(X, arguments);
   };
+  // ?hero=new: 画像生成AIが作った、新しいエナー(シマエナガ型ロボット。羽=キーボード、尾=USBケーブル)の試験。32px×9コマの1列(hero_enar_new.png)
+  // コマ: 0 立ち / 1 まばたき / 2 はばたき上 / 3 はばたき下 / 4 ダメージ / 5 ふわり / 6〜8 喜び
+  let heroNew = null;
+  if (/[?&]hero=new/.test(location.search)) loadImg(BASE + 'hero_enar_new.png').then((i) => { heroNew = i; }).catch(() => {});
+  function heroNewFrame(idx, flip) {
+    const key = 'hnew' + idx + (flip ? 1 : 0); if (cache[key]) return cache[key];
+    const c = document.createElement('canvas'); c.width = 32; c.height = 32; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+    if (flip) { g.translate(32, 0); g.scale(-1, 1); }
+    g.drawImage(heroNew, idx * 32, 0, 32, 32, 0, 0, 32, 32); c.__hd = true; return cache[key] = c;
+  }
   X.ener = function (name, flip) {
+    if (heroNew) return heroNewFrame(name === 'hurt' ? 4 : name === 'up' ? 2 : name === 'down' ? 3 : 0, flip);
     if (HD.ready) {
       const f = frame('hero_enar', name === 'hurt' ? 'damage' : name === 'up' ? 'flap_up' : name === 'down' ? 'flap_down' : 'idle_0', flip);
       if (f) return f;
