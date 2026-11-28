@@ -423,7 +423,7 @@
     p.ground = boxHitsSolid(p.x, p.y + 1, p.w, p.h) && p.vy >= 0;
     if (ENER) { // もろいブロックは、のってから0.45びょうで、くずれる
       const stand = new Set();
-      if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (isFragile(tx, fy) && !G.lock[fy][tx]) { const k = tx + ',' + fy; stand.add(k); G.crumb[k] = (G.crumb[k] || 0) + dt; if (G.crumb[k] > .45) { breakCrack(tx, fy); delete G.crumb[k]; } } }
+      if (p.ground) { const fy = Math.floor((p.y + p.h + 1) / T); for (let tx = Math.floor(p.x / T); tx <= Math.floor((p.x + p.w - 1) / T); tx++) if (isFragile(tx, fy) && G.lock[fy][tx] !== 1) { const k = tx + ',' + fy; stand.add(k); G.crumb[k] = (G.crumb[k] || 0) + dt; if (G.crumb[k] > .45) { breakCrack(tx, fy); delete G.crumb[k]; } } }
       for (const k of Object.keys(G.crumb)) if (!stand.has(k)) { G.crumb[k] -= dt; if (G.crumb[k] <= 0) delete G.crumb[k]; }
     }
     if (p.ground && !p.wasGround) { p.squash = .3; SFX.land(); const hard = Math.min(1, Math.max(0, (p.impact || 0) - 120) / 280); spawnDust(p.x + 5, p.y + 14, 4 + Math.round(hard * 6), 28 + hard * 30); if (hard > .6) G.shake = Math.max(G.shake, 1.5); }
@@ -470,7 +470,7 @@
     const p = G.p, b = attackBox();
     // ひびわれ・きいろ(もろい)ブロックはこわれる
     const x0 = Math.floor(b.x / T), x1 = Math.floor((b.x + b.w - 1) / T), y0 = Math.floor(b.y / T), y1 = Math.floor((b.y + b.h - 1) / T);
-    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (isFragile(tx, ty) && !G.lock[ty][tx]) breakCrack(tx, ty);
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (isFragile(tx, ty) && G.lock[ty][tx] !== 1) breakCrack(tx, ty);
     for (const e of G.enemies) {
       if (e.dead || e.hidden || p.atkHit.has(e)) continue;
       if (!overlap(b.x, b.y, b.w, b.h, e.x, e.y, e.w, e.h)) continue;
@@ -483,7 +483,7 @@
     }
   }
   function breakLinka(e) { // リンカちゃんが こわれる: 一瞬 おどろいた 顔→ から(てんせん)→ さんしょうさきが ある かぎり すぐ さいせい
-    e.crkOn = false; e.surp = .45; e.cool = 1.7; e.empty = true; SFX.hit(); spawnParts(e.gx * T + 8, e.gy * T + 8, 8, '#B07A4F', 70); G.shake = Math.max(G.shake, 2);
+    e.crkOn = false; if (G.lock[e.gy][e.gx] === 2) G.lock[e.gy][e.gx] = 0; e.surp = .45; e.cool = 1.7; e.empty = true; SFX.hit(); spawnParts(e.gx * T + 8, e.gy * T + 8, 8, '#B07A4F', 70); G.shake = Math.max(G.shake, 2);
   }
   function breakCrack(tx, ty) { G.front[ty][tx] = 0; G.col[ty][tx] = 0; SFX.hit(); spawnParts(tx * T + 8, ty * T + 8, 8, '#B07A4F', 70); G.shake = 3; }
   function damageEnemy(e, n) {
@@ -603,13 +603,13 @@
           if (has && e.empty && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) e.empty = false; else if (!has) e.empty = true; // ひとが なかに いる あいだは かたまらない
           // 磁石を まねして いる ときは、ほんとうの 磁石(G.frontの MAGNET)に なる。磁石と おなじ うごき(はがねに ひきよせられる)を する
           const refMag = has && G.front[e.ry][e.rx] === TL.MAGNET;
-          if (e.magOn && G.front[e.gy][e.gx] !== TL.MAGNET) e.magOn = false;
-          if (e.magOn && !refMag) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; e.magOn = false; }
-          else if (!e.magOn && refMag && !e.empty && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.MAGNET; G.col[e.gy][e.gx] = 0; G.lock[e.gy][e.gx] = 0; e.magOn = true; }
+          if (e.magOn && G.front[e.gy][e.gx] !== TL.MAGNET) { e.magOn = false; if (G.lock[e.gy][e.gx] === 2) G.lock[e.gy][e.gx] = 0; }
+          if (e.magOn && !refMag) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; G.lock[e.gy][e.gx] = 0; e.magOn = false; }
+          else if (!e.magOn && refMag && !e.empty && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.MAGNET; G.col[e.gy][e.gx] = 0; G.lock[e.gy][e.gx] = 2; e.magOn = true; }
           // ひびわれブロックを まねして いる ときは、ほんとうの ひびわれブロックに なる(ふんだり ダッシュで こわれる)
           const refCrk = has && (G.front[e.ry][e.rx] === TL.CRACK || ((G.front[e.ry][e.rx] === TL.STONE || G.front[e.ry][e.rx] === TL.GLASSED) && G.col[e.ry][e.rx] === 4));
-          if (e.crkOn && !refCrk) { if (G.front[e.gy][e.gx] === TL.STONE) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; } e.crkOn = false; }
-          else if (!e.crkOn && refCrk && !e.empty && !e.magOn && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.STONE; G.col[e.gy][e.gx] = 4; G.lock[e.gy][e.gx] = 0; e.crkOn = true; }
+          if (e.crkOn && !refCrk) { if (G.front[e.gy][e.gx] === TL.STONE) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; } G.lock[e.gy][e.gx] = 0; e.crkOn = false; }
+          else if (!e.crkOn && refCrk && !e.empty && !e.magOn && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.STONE; G.col[e.gy][e.gx] = 4; G.lock[e.gy][e.gx] = 2; e.crkOn = true; }
         } // さんしょうさきの ブロックと おなじ いろ(しゅるい)に かわる
         // (となりの あつい ブロックで にげる うごきは なくなった)
         const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
@@ -674,7 +674,7 @@
       b.x += b.vx * dt;
       if (b.del) { // DELの たま: 茶ブロック→ひびわれ、ひびわれ→きえる
         const bx = Math.floor((b.x + (b.vx > 0 ? b.w : 0)) / T), by = Math.floor((b.y + 2) / T);
-        if (inb(bx, by) && blockVisible(bx, by) && !G.lock[by][bx]) {
+        if (inb(bx, by) && blockVisible(bx, by) && G.lock[by][bx] !== 1) {
           if (isFragile(bx, by)) { breakCrack(bx, by); b.dead = true; }
           else if ((G.front[by][bx] === TL.STONE || G.front[by][bx] === TL.GLASSED) && G.col[by][bx] === 0) { G.col[by][bx] = 4; SFX.hit(); spawnParts(bx * T + 8, by * T + 8, 5, '#B07A4F', 50); b.dead = true; }
         }
@@ -880,7 +880,7 @@
     return { ok: true, cost: costOf('filter'), run() { G.filter = c; } };
   }
   function planProtect(r, on) {
-    const cells = []; rectEach(r, (x, y) => { if (on ? (isBlk(x, y) && !G.lock[y][x]) : G.lock[y][x]) cells.push([x, y]); });
+    const cells = []; rectEach(r, (x, y) => { if (on ? (isBlk(x, y) && !G.lock[y][x]) : G.lock[y][x] === 1) cells.push([x, y]); });
     if (!cells.length) return fail(on ? '保護できるブロックがありません' : '保護されたブロックがありません', { rects: [r] });
     return { ok: true, cost: costOf(on ? 'protect' : 'unprotect'), rects: [r], hl: cells, run() { for (const [x, y] of cells) G.lock[y][x] = on ? 1 : 0; } };
   }
@@ -1320,13 +1320,13 @@
     }
   }
   function drawTile(t, x, y, tx, ty) {
-    if (t === TL.MAGNET) { if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return; const mv = G.mgs.find(m => m.cells.some(c => c[0] === tx && c[1] === ty)); drawMagnet(Math.round(x + (mv ? mv.dx * mv.off * T : 0)), Math.round(y + (mv ? mv.dy * mv.off * T : 0))); if (G.lock[ty][tx] && SOLID) drawLock(x, y); return; }
+    if (t === TL.MAGNET) { if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return; const mv = G.mgs.find(m => m.cells.some(c => c[0] === tx && c[1] === ty)); drawMagnet(Math.round(x + (mv ? mv.dx * mv.off * T : 0)), Math.round(y + (mv ? mv.dy * mv.off * T : 0))); if (G.lock[ty][tx] === 1 && SOLID) drawLock(x, y); return; }
     if (isBlockT(t)) {
       if ((G.hideRow.has(ty) || G.hideCol.has(tx)) && !G.lock[ty][tx]) return;
       const faded = G.filter !== null && G.col[ty][tx] !== G.filter && !G.lock[ty][tx];
       drawBlock(t, G.col[ty][tx], x, y, !solidCell(tx, ty - 1), !solidCell(tx, ty + 1), faded ? .28 : undefined, tx * 7 + ty * 13);
-      if (G.lock[ty][tx] && SOLID) drawLock(x, y);
-      else if (G.lock[ty][tx]) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
+      if (G.lock[ty][tx] === 1 && SOLID) drawLock(x, y);
+      else if (G.lock[ty][tx] === 1) { ctx.fillStyle = '#1F2A44'; ctx.fillRect(x + 9, y + 1, 6, 7); icon(LOCK, x + 10, y + 2, '#F5C842'); }
     } else if (t === TL.STEEL) {
       ctx.drawImage(GFX.metal(), x, y);
     }
@@ -2260,7 +2260,7 @@
     if (t === TL.MAGNET) return r('magnet', ...rc);
     if (t === TL.STONE || t === TL.GLASSED) {
       const ci = G.col[ty][tx], k = COLORS[ci] || COLORS[0]; let desc = k.fx + (t === TL.GLASSED ? '（色をつけた ガラス）' : '');
-      if (G.lock[ty][tx]) desc += '。まもられていて、へんしゅうや フィルターが きかない';
+      if (G.lock[ty][tx] === 1) desc += '。まもられていて、へんしゅうや フィルターが きかない';
       return { name: k.n + 'ブロック', desc, rect: rc };
     }
     return null;
