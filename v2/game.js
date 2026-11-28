@@ -1384,6 +1384,13 @@
   }
   // リンカちゃん: とおくでは ふつうの ブロック。ちかづくと とじた目、かなり ちかづくと 目が あいて こちらを おう。へんしゅう中は しょうたいが わからない
   function drawFake(e, cx, cy) {
+    if (e.rx !== undefined && e.ry !== undefined) { // どの ブロックを まねしているか: むらさきの うごく てんせんの わくと、そこへ のびる うすい せん
+      const fx = e.rx * T - cx, fy = e.ry * T - cy, mx = e.gx * T + 8 - cx, my = e.gy * T + 8 - cy, off = -Math.floor(e.t * 8);
+      ctx.save(); ctx.lineDashOffset = off; ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(fx + 8, fy + 8); ctx.stroke();
+      ctx.strokeStyle = 'rgba(140,60,210,.95)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(fx + 8, fy + 8); ctx.stroke();
+      ctx.setLineDash([]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(fx - .5, fy - .5, T + 1, T + 1); ctx.strokeStyle = '#8C3CD2'; ctx.lineWidth = 2; ctx.setLineDash([4, 2]); ctx.strokeRect(fx + 1, fy + 1, T - 2, T - 2); ctx.restore();
+    }
     const hotMv = e.mv > 0; // あつがって にげている ところ: 目を 見開いて、ぶるぶる ふるえる
     const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
