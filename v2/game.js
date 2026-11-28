@@ -286,7 +286,7 @@
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
     if (G.doors) for (const d of G.doors) if (!d.open && tx === d.x && ty >= d.y && ty < d.y + d.h) return true;
     if (G.mgs) for (const m of G.mgs) for (const c of m.cells) if (tx === c[0] + m.dx && ty === c[1] + m.dy) return true;
-    if (G.fakes) for (const f of G.fakes) if (!f.hidden && !f.empty && tx === f.gx && ty === f.gy) return true; // リンカちゃんは かべ
+    if (G.fakes) for (const f of G.fakes) if (!f.hidden && !f.empty && !f.magOn && tx === f.gx && ty === f.gy) return true; // リンカちゃんは かべ
     const t = G.front[ty][tx]; if (t === TL.STEEL) return true;
     return isBlockT(t) && blockVisible(tx, ty);
   }
@@ -571,7 +571,7 @@
     ['bucket', 'いろづけ師', 'ゆかを あるいて、ガラスの上で 立ちどまっては、足もとを 1マスずつ ぬっていく。ぬる とき、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
     ['shuffler', 'とりかえ職人', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', 'ルーパールーパー', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
-    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。エナーが ちかづくと、目が ぱちくり して、さんしょうさきを ひからせて おしえてくれる。さんしょうさきに ブロックが ないときは、てんせんの わくと 目だけに なって、とおりぬけられる。ブロックが できると、かたまる。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。'],
+    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。エナーが ちかづくと、目が ぱちくり して、さんしょうさきを ひからせて おしえてくれる。さんしょうさきに ブロックが ないときは、てんせんの わくと 目だけに なって、とおりぬけられる。ブロックが できると、かたまる。磁石を さんしょうすると、磁石と おなじ うごき（はがねに ひきよせられる）を する。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。'],
   ];
   function seeEnemy(type) {
     save.seenEnemies = save.seenEnemies || {}; if (save.seenEnemies[type]) return;
@@ -595,9 +595,15 @@
         if (e.rx !== undefined) { // さんしょうさきに ブロックが なければ、リンカちゃんも 「から」(てんせんの わくと 目だけ。とおりぬけられる)。ブロックが できたら かたまる
           const has = inb(e.rx, e.ry) && isBlockT(G.front[e.ry][e.rx]) && blockVisible(e.rx, e.ry);
           if (has && e.empty && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) e.empty = false; else if (!has) e.empty = true; // ひとが なかに いる あいだは かたまらない
+          // 磁石を まねして いる ときは、ほんとうの 磁石(G.frontの MAGNET)に なる。磁石と おなじ うごき(はがねに ひきよせられる)を する
+          const refMag = has && G.front[e.ry][e.rx] === TL.MAGNET;
+          if (e.magOn && G.front[e.gy][e.gx] !== TL.MAGNET) e.magOn = false;
+          if (e.magOn && !refMag) { G.front[e.gy][e.gx] = 0; G.col[e.gy][e.gx] = 0; e.magOn = false; }
+          else if (!e.magOn && refMag && !e.empty && G.front[e.gy][e.gx] === 0 && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) { G.front[e.gy][e.gx] = TL.MAGNET; G.col[e.gy][e.gx] = 0; G.lock[e.gy][e.gx] = 0; e.magOn = true; }
         } // さんしょうさきの ブロックと おなじ いろ(しゅるい)に かわる
         // (となりの あつい ブロックで にげる うごきは なくなった)
         const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
+        { const mvm = e.magOn ? G.mgs.find(m => m.cells.some(c => c[0] === e.gx && c[1] === e.gy)) : null; e.x = tx0 + (mvm ? mvm.dx * mvm.off * T : 0); e.y = ty0 + (mvm ? mvm.dy * mvm.off * T : 0); } // うごく 磁石に ついて いく
         if (e.mv > 0) { e.mv -= dt; const k = Math.max(0, e.mv / .5); if (Math.random() < dt * 40) { const sd = Math.random() < .5 ? -1 : 1; G.parts.push({ x: e.x + 7 + sd * 5, y: e.y + 3, vx: sd * (25 + Math.random() * 35), vy: -50 - Math.random() * 40, g: 260, s: 2, life: .45 + Math.random() * .25, col: Math.random() < .5 ? '#8FD0FF' : '#D6EEFF' }); } e.x = tx0 - e.fdx * T * k; e.y = ty0 - e.fdy * T * k; if (e.mv <= 0) { e.mv = 0; e.x = tx0; e.y = ty0; } }
       }
       if (e.type === 'moji' && !e.awake) { // ぎたい中: ちかづくと しょうたいを あらわす
@@ -728,7 +734,7 @@
   const isMovable = (x, y) => isBlk(x, y) && !G.lock[y][x];
   function actorRects() {
     const r = [{ x: G.p.x, y: G.p.y, w: G.p.w, h: G.p.h }];
-    for (const e of G.enemies) if (!e.dead) r.push({ x: e.x, y: e.y, w: e.w, h: e.h });
+    for (const e of G.enemies) if (!e.dead && !(e.type === 'fake' && e.magOn)) r.push({ x: e.x, y: e.y, w: e.w, h: e.h }); // 磁石に なった リンカちゃんは、磁石の かたまりの なかま
     return r;
   }
   function cellBlocked(tx, ty) { // ひと・てき・リフトのみちとかさなるマスには、ブロックをおけない
@@ -1098,6 +1104,7 @@
       G.front[ny][nx] = G.front[y][x]; G.col[ny][nx] = G.col[y][x]; G.lock[ny][nx] = G.lock[y][x];
       if (prev) { G.front[y][x] = prev.t; G.col[y][x] = prev.c; G.lock[y][x] = prev.l; delete G.under[ok]; } else { G.front[y][x] = 0; G.col[y][x] = 0; G.lock[y][x] = 0; }
       c[0] = nx; c[1] = ny;
+      for (const f of G.fakes || []) if (f.magOn && f.gx === x && f.gy === y) { f.gx = nx; f.gy = ny; } // リンカちゃんも いっしょに すすむ
     }
   }
   // ===== ギミック: マグマ(赤)と氷(青)が たて・よこに となりあうと、どちらも ふつうの(茶色の)ブロックに なる =====
@@ -1389,6 +1396,7 @@
     const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     if (e.empty) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x, y, T, T); ctx.strokeStyle = 'rgba(70,70,70,.75)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.strokeRect(x + .5, y + .5, T - 1, T - 1); ctx.setLineDash([]); }
+    else if (e.magOn) { /* ほんものの 磁石の マスが えがかれる */ }
     else if (e.mag) drawMagnet(x, y);
     else drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0);
     ctx.globalAlpha = 1;
