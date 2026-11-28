@@ -237,18 +237,18 @@
     if (e.type === 'walker') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, vx: -28, hp: 1, dir: -1, spdc: e.spdc || 0, lim: e.lim || null, x: base.x + 2, y: base.y + 4 });
     if (e.type === 'guard') return Object.assign(base, { w: 12, h: 13, ox: 2, oy: 3, vx: -22, hp: 2, dir: -1, spdc: e.spdc || 0, lim: e.lim || null, x: base.x + 2, y: base.y + 3 });
     if (e.type === 'flyer') return Object.assign(base, { w: 12, h: 10, ox: 2, oy: 5, hp: 1, bx: base.x + 2, by: base.y + 5, range: e.range || 30, axis: e.axis === 'y' ? 'y' : 'x', x: base.x + 2, y: base.y + 5 });
-    if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 13, ox: 1, oy: 2, vx: -24, hp: 1, spdc: e.spdc || 0, ptime: e.ptime || 1, dir: e.dir || -1, c: e.c === undefined ? 0 : e.c, lim: e.lim || null, painted: [], pt: 0, x: base.x + 1, y: base.y + 2 }); // 塗りつぶし: あるきながら、足もとの ガラスを 1マスずつ ぬる。たおすと、ぬった ガラスは もとに もどる
+    if (e.type === 'bucket') return Object.assign(base, { w: 14, h: 13, ox: 1, oy: 2, vx: -24, hp: 1, spdc: e.spdc || 0, ptime: e.ptime || 1, dir: e.dir || -1, c: e.c === undefined ? 0 : e.c, lim: e.lim || null, painted: [], pt: 0, x: base.x + 1, y: base.y + 2 }); // いろづけ師: あるきながら、足もとの ガラスを 1マスずつ ぬる。たおすと、ぬった ガラスは もとに もどる
     if (e.type === 'turret') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 3, cd: 1.6, tele: 0, x: base.x + 2, y: base.y + 2 });
     // ---- Excelの こまった きどう ----
-    if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // #DIV/0!: ふめない・たおせない。ゆっくり おうふく
-    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap === undefined ? 1e9 : e.cap, max: e.max === undefined ? 1e9 : e.max, reach: e.reach || 12, rate: e.rate || 2.2, c: e.c, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // オートフィル: ゆかを どんどん ふやす
+    if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // ゼロジョさん: ふめない・たおせない。ゆっくり おうふく
+    if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap === undefined ? 1e9 : e.cap, max: e.max === undefined ? 1e9 : e.max, reach: e.reach || 12, rate: e.rate || 2.2, c: e.c, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // フィラーマン: ゆかを どんどん ふやす
     if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, gx: Math.round(base.x / T), gy: Math.round(base.y / T), mv: 0, x: base.x + 1, y: base.y + 2 }); // ぎたい手: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
-    if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), step: 0, seq: e.seq && e.seq.length ? e.seq : [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // 条件つき書式: はんいの ブロックの いろを かってに かえる
-    if (e.type === 'shuffler') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 2, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), sdir: e.dir || (e.axis === 'y' ? -1 : 1), axis: e.axis || 'x', ranges: rg([e.x - 3, e.y + 1, e.x + 3, e.y + 1]), tele: 0, x: base.x + 2, y: base.y + 2 }); // 並べ替え: はんいの ブロックを かたほうへ よせて ならべなおす
-    if (e.type === 'circ') { const lp = rg([e.x, e.y, e.x + 3, e.y + 2])[0]; if (lp.x1 === lp.x0) lp.x1++; if (lp.y1 === lp.y0) lp.y1++; return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 999, spdc: e.spdc || 0, loop: lp, dir: 1, t: 0, x: lp.x0 * T + 2, y: lp.y0 * T + 2 }); } // 循環参照: マスに そって、直角に まがりながら ぐるぐる まわる。たおせない
-    if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // しろい文字: ちかづくと しょうたいを あらわす
+    if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), step: 0, seq: e.seq && e.seq.length ? e.seq : [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // しょしき屋: はんいの ブロックの いろを かってに かえる
+    if (e.type === 'shuffler') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 2, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), sdir: e.dir || (e.axis === 'y' ? -1 : 1), axis: e.axis || 'x', ranges: rg([e.x - 3, e.y + 1, e.x + 3, e.y + 1]), tele: 0, x: base.x + 2, y: base.y + 2 }); // とりかえ職人: はんいの ブロックを かたほうへ よせて ならべなおす
+    if (e.type === 'circ') { const lp = rg([e.x, e.y, e.x + 3, e.y + 2])[0]; if (lp.x1 === lp.x0) lp.x1++; if (lp.y1 === lp.y0) lp.y1++; return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 2, hp: 999, spdc: e.spdc || 0, loop: lp, dir: 1, t: 0, x: lp.x0 * T + 2, y: lp.y0 * T + 2 }); } // ルーパールーパー: マスに そって、直角に まがりながら ぐるぐる まわる。たおせない
+    if (e.type === 'moji') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, awake: false, dir: 1, x: base.x + 2, y: base.y + 4 }); // セルくん: ちかづくと しょうたいを あらわす
     return base;
   }
   // 画面分割(上下/左右)の ときの、エナーの画面と、もう1つの画面の 大きさと 場所
@@ -490,7 +490,7 @@
 
   // ===== てき =====
   const hiddenAt = (cx, cy) => G.hideRow.has(cy) || G.hideCol.has(cx);
-  // オートフィルの「つぎに ふえる セル」: じぶんの足もと(ゆか)の たかさで、むきの さきの、さいしょの あきマス
+  // フィラーマンの「つぎに ふえる セル」: じぶんの足もと(ゆか)の たかさで、むきの さきの、さいしょの あきマス
   function fillTarget(e) {
     const tx0 = Math.floor((e.x + e.w / 2) / T), ty = Math.floor((e.y + e.h / 2) / T) + 1, d = e.d || 1;
     for (let k = 1; k <= (e.reach || 12); k++) {
@@ -500,14 +500,14 @@
     }
     return null;
   }
-  // オートフィル: ねらう ばんい(reach)の なかに、いま ある ブロックの かず。cap に たっしていると、つくらない(よせて ばんいの そとへ だすと、また つくる)
+  // フィラーマン: ねらう ばんい(reach)の なかに、いま ある ブロックの かず。cap に たっしていると、つくらない(よせて ばんいの そとへ だすと、また つくる)
   function fillWindowCount(e) {
     const tx0 = Math.floor((e.x + e.w / 2) / T), ty = Math.floor((e.y + e.h / 2) / T) + 1, d = e.d || 1; let n = 0;
     for (let k = 1; k <= (e.reach || 12); k++) { const x = tx0 + d * k; if (!inb(x, ty)) break; if (isBlockT(G.front[ty][x])) n++; }
     return n;
   }
   const AF_COL = ['#C9A15E', '#E8563F', '#6FD6E8', '#58B368', '#F5C842', '#DCEBF3'];
-  // 条件つき書式: はんいの ブロックの いろを かえる(ガラス・鋼・カギは そのまま)
+  // しょしき屋: はんいの ブロックの いろを かえる(ガラス・鋼・カギは そのまま)
   function formatRange(r, col) {
     let n = 0;
     for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) {
@@ -516,10 +516,10 @@
     }
     return n;
   }
-  // 塗りつぶし: 足もとの ガラスに いろを ぬる(まもった ガラスは ぬれない)。ぬった マスは おぼえておく
+  // いろづけ師: 足もとの ガラスに いろを ぬる(まもった ガラスは ぬれない)。ぬった マスは おぼえておく
   const paintableAt = (x, y) => inb(x, y) && isBlockT(G.front[y][x]) && !G.lock[y][x] && G.col[y][x] === GLASS;
   function paintCell(e, x, y) { G.front[y][x] = TL.GLASSED; G.col[y][x] = e.c; e.painted.push([x, y]); spawnParts(x * T + 8, y * T + 8, 4, AF_COL[e.c] || '#fff', 40); SFX.place(); }
-  // 塗りつぶしを たおしたら、ぬった ガラスは もとの ガラスに もどる(うごかして その場に ないものは、そのまま)
+  // いろづけ師を たおしたら、ぬった ガラスは もとの ガラスに もどる(うごかして その場に ないものは、そのまま)
   function restorePaint(e) {
     let n = 0;
     for (const [x, y] of e.painted || []) {
@@ -528,7 +528,7 @@
     }
     e.painted = []; if (n) SFX.place();
   }
-  // 並べ替え: はんいの ブロックを、かたほうへ よせて ならべなおす(鋼・磁石・カギ・ひび割れは しきり。ひとや てきの いる ところは そのまま)
+  // とりかえ職人: はんいの ブロックを、かたほうへ よせて ならべなおす(鋼・磁石・カギ・ひび割れは しきり。ひとや てきの いる ところは そのまま)
   function slideRange(r, axis, dir) {
     const isB = (x, y) => G.front[y][x] === TL.STONE || G.front[y][x] === TL.GLASSED;
     const wall = (x, y) => { const t = G.front[y][x]; return t === TL.STEEL || t === TL.MAGNET || t === TL.CRACK || !!G.lock[y][x]; };
@@ -553,7 +553,7 @@
     }
     return moved;
   }
-  // 循環参照: ループの ふちを、マスに そって うごく ばしょ(きょりは px)
+  // ルーパールーパー: ループの ふちを、マスに そって うごく ばしょ(きょりは px)
   function loopPos(lp, d) {
     const w = (lp.x1 - lp.x0) * T, h = (lp.y1 - lp.y0) * T, per = 2 * (w + h); d = ((d % per) + per) % per;
     let x, y, dir;
@@ -1383,7 +1383,7 @@
     ctx.globalAlpha = a; ctx.drawImage(im, dx, dy, w, h); ctx.globalAlpha = 1;
     if (!G.cleared && Math.sin(G.t * 2 + 1) > .94) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + 6), dy + 1, 3, 1); ctx.fillRect(Math.round(cx + 7), dy, 1, 3); }
   }
-  // しろい文字(ぎたい): しろい シートに とけこむ、ほとんど みえない 文字。ほんの すこし、ゆらぐ
+  // セルくん(ぎたい): しろい シートに とけこむ、ほとんど みえない 文字。ほんの すこし、ゆらぐ
   function drawMojiHint(e, cx, cy) {
     const x = Math.round(e.x + 6 - cx), y = Math.round(e.y + 7 - cy), a = .8 + .2 * Math.sin(e.t * 2.2);
     ctx.save(); ctx.font = '700 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
