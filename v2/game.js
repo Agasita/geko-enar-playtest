@@ -589,7 +589,7 @@
       if (e.stun > 0) { e.stun -= dt; continue; }
       if (e.type === 'fake') { // リンカちゃん: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
-        e.look = 2; e.ex = dx; e.ey = dy; // いつも 目が あいている(ぱちくりは えがくときに)
+        e.look = 2; e.ex = dx; e.ey = dy; if (e.rx !== undefined && e.ry !== undefined) { e.ex = (e.rx * T + 8) - (e.x + 7); e.ey = (e.ry * T + 8) - (e.y + 7); } /* ひとみは、まねしている ブロックの ほうを むく */ // いつも 目が あいている(ぱちくりは えがくときに)
         if (e.rx !== undefined && inb(e.rx, e.ry) && (e.rx !== e.gx || e.ry !== e.gy)) { const rt = G.front[e.ry][e.rx]; if (isBlockT(rt) && blockVisible(e.rx, e.ry)) e.c = rt === TL.CRACK ? 4 : G.col[e.ry][e.rx]; }
         if (e.rx !== undefined) { // さんしょうさきに ブロックが なければ、リンカちゃんも 「から」(てんせんの わくと 目だけ。とおりぬけられる)。ブロックが できたら かたまる
           const has = inb(e.rx, e.ry) && isBlockT(G.front[e.ry][e.rx]) && blockVisible(e.rx, e.ry);
@@ -1384,13 +1384,6 @@
   }
   // リンカちゃん: とおくでは ふつうの ブロック。ちかづくと とじた目、かなり ちかづくと 目が あいて こちらを おう。へんしゅう中は しょうたいが わからない
   function drawFake(e, cx, cy) {
-    if (e.rx !== undefined && e.ry !== undefined) { // どの ブロックを まねしているか: むらさきの うごく てんせんの わくと、そこへ のびる うすい せん
-      const fx = e.rx * T - cx, fy = e.ry * T - cy, mx = e.gx * T + 8 - cx, my = e.gy * T + 8 - cy, off = -Math.floor(e.t * 8);
-      ctx.save(); ctx.lineDashOffset = off; ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(fx + 8, fy + 8); ctx.stroke();
-      ctx.strokeStyle = 'rgba(140,60,210,.95)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(fx + 8, fy + 8); ctx.stroke();
-      ctx.setLineDash([]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(fx - .5, fy - .5, T + 1, T + 1); ctx.strokeStyle = '#8C3CD2'; ctx.lineWidth = 2; ctx.setLineDash([4, 2]); ctx.strokeRect(fx + 1, fy + 1, T - 2, T - 2); ctx.restore();
-    }
     const hotMv = e.mv > 0; // あつがって にげている ところ: 目を 見開いて、ぶるぶる ふるえる
     const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
@@ -1399,6 +1392,7 @@
     ctx.globalAlpha = 1;
     const bp = (e.t || 0) % 2.2, blink = !hotMv && (bp < .12 || (bp > .27 && bp < .39)); // ぱちくり(2かい まばたき)
     const look = hotMv ? 2 : blink ? 1 : 2;
+    if (blink && e.rx !== undefined && e.ry !== undefined && inb(e.rx, e.ry) && isBlockT(G.front[e.ry][e.rx])) { ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(e.rx * T - cx, e.ry * T - cy, T, T); } // まばたきと いっしょに、まねしている ブロックが ほんの いっしゅん ひかる
     if (look === 1) { ctx.fillStyle = 'rgba(38,38,38,.32)'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
     else if (look === 2) {
       ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
