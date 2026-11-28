@@ -30,7 +30,8 @@ legend,summary{color:var(--green);font-weight:700;cursor:pointer;font-size:13px}
 .tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 8px}
 #msg{background:var(--note);border:1px solid #000;padding:2px 8px;min-height:1.8em}
 #lp,#ep{display:none}
-#lp.on{display:block}
+#lp.on{display:block;position:fixed;left:8px;right:8px;bottom:8px;z-index:5;background:#fff;box-shadow:0 4px 16px #0005;max-height:45vh;overflow:auto}
+#lp fieldset{margin:0}
 #ep.on{display:block;position:fixed;left:8px;right:8px;bottom:8px;z-index:5;background:#fff;box-shadow:0 4px 16px #0005;max-height:45vh;overflow:auto}
 #ep fieldset{margin:0}
 #ep .row{margin:3px 0}
@@ -130,8 +131,8 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <div id="lp"><fieldset><legend>選んだリフト（はんい: ■=はじまり ●=おわり ▮=ながさ をドラッグ）</legend>
     <div class="row"><span class="lbl">色</span><select id="l-col"></select>
       <span class="lbl">長さ(マス)</span><input id="l-w" type="number" min="1" max="8">
-      <span class="lbl">横に動く(マス)</span><input id="l-dx" type="number" min="-40" max="40">
-      <span class="lbl">縦に動く(マス)</span><input id="l-dy" type="number" min="-40" max="40"></div>
+      <span class="lbl">動く向き</span><select id="l-dir"><option value="h">横に動く</option><option value="v">縦に動く</option></select>
+      <span class="lbl">動く量(マス)</span><input id="l-amt" type="number" min="-40" max="40"><span class="lbl">（マイナス＝左・上へ）</span></div>
     <div class="row"><span class="lbl">行き来1回の時間(秒)</span><input id="l-period" type="number" min="2" max="30" step="0.5">
       <span class="lbl">動き出しの位置</span><select id="l-phase"><option value="0">スタート側の端</option><option value="0.25">少し進んだ位置</option><option value="0.5">反対側の端</option><option value="0.75">戻る途中</option></select>
       <span class="lbl">リフトを動かす判定セル</span><select id="l-ctl"><option value="-1">なし（ずっと動く）</option><option value="0">1 赤</option><option value="1">2 青</option><option value="2">3 緑</option><option value="3">4 黄</option></select>
@@ -513,15 +514,14 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   // ---- リフトのパネル ----
   function showLift() {
     const p = $('#lp'), l = L.lifts[sel]; p.classList.toggle('on', !!l && (cur.kind === 'pick' || cur.kind === 'lift')); if (!l) return;
-    $('#l-col').value = l.col; $('#l-w').value = l.w; $('#l-dx').value = l.dx; $('#l-dy').value = l.dy; $('#l-period').value = l.period; $('#l-phase').value = String(l.phase); $('#l-ctl').value = String(l.ctl === undefined ? -1 : l.ctl);
+    $('#l-col').value = l.col; $('#l-w').value = l.w; $('#l-dir').value = l.dy && !l.dx ? 'v' : 'h'; $('#l-amt').value = l.dy && !l.dx ? l.dy : l.dx; $('#l-period').value = l.period; $('#l-phase').value = String(l.phase); $('#l-ctl').value = String(l.ctl === undefined ? -1 : l.ctl);
   }
   function liftEdit() {
     const l = L.lifts[sel]; if (!l) return; pushUndo();
-    l.col = +$('#l-col').value; l.w = Math.max(1, Math.min(8, +$('#l-w').value | 0 || 1)); let dx = +$('#l-dx').value | 0, dy = +$('#l-dy').value | 0;
-    if (dx && dy) { if (document.activeElement.id === 'l-dy') dx = 0; else dy = 0; } l.dx = dx; l.dy = dy; l.period = Math.max(2, Math.min(30, +$('#l-period').value || 7)); l.phase = +$('#l-phase').value; l.ctl = +$('#l-ctl').value;
+    l.col = +$('#l-col').value; l.w = Math.max(1, Math.min(8, +$('#l-w').value | 0 || 1)); const amt = +$('#l-amt').value | 0, vert = $('#l-dir').value === 'v', dx = vert ? 0 : amt, dy = vert ? amt : 0; l.dx = dx; l.dy = dy; l.period = Math.max(2, Math.min(30, +$('#l-period').value || 7)); l.phase = +$('#l-phase').value; l.ctl = +$('#l-ctl').value;
     fixRoute(l); showLift(); draw();
   }
-  ['l-col', 'l-w', 'l-dx', 'l-dy', 'l-period', 'l-phase', 'l-ctl'].forEach(id => $('#' + id).addEventListener('change', liftEdit));
+  ['l-col', 'l-w', 'l-dir', 'l-amt', 'l-period', 'l-phase', 'l-ctl'].forEach(id => $('#' + id).addEventListener('change', liftEdit));
   $('#l-del').onclick = () => { if (sel < 0) return; pushUndo(); L.lifts.splice(sel, 1); sel = -1; showLift(); draw(); };
 
   // ---- ヒント ----
