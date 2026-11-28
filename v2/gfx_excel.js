@@ -338,7 +338,7 @@
       R(1 + ox, y0, 13, 9, '#F2F2F2'); R(1 + ox, y0, 13, 1, W); R(1 + ox, y0 + 8, 13, 1, '#BFBFBF'); R(13 + ox, y0 + 1, 1, 8, '#BFBFBF');
       R(fl ? 0 : 14, y0 + 3, 2, 3, DK);
       const gl = (x, rows) => rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === 'X') P(x + i + ox, y0 + 2 + j, fr ? '#C00000' : '#262626'); }));
-      gl(2, ['XX.', 'X.X', 'X.X', 'X.X', 'XX.']); gl(6, ['.XX', 'X.X', 'XXX', 'X..', '.XX']); gl(10, ['X..', 'X..', 'X..', 'X..', 'XX.']);
+      gl(2, ['XX.', 'X.X', 'X.X', 'X.X', 'XX.']); gl(6, ['....', '.XX.', 'X..X', 'XXXX', '.XXX']); gl(11, ['X.', 'X.', 'X.', 'X.', 'XX']); // 「Del」(小文字のe・l)
     }
     return g;
   }
