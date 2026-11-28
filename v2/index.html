@@ -159,6 +159,7 @@
     <div class="op-row"><b>なおす の 操作</b><span id="o-ring"></span></div>
     <div class="op-row"><b>見た目</b><span id="o-gfx"></span></div>
     <div class="op-row"><b>エナーの絵</b><span id="o-hero"></span><small>新しい見た目のとき。「新しいエナー」をえらぶと、見た目も 新しい見た目に なる</small></div>
+    <div class="op-row"><b>道具のアイコン</b><span id="o-ui"></span><small>なおす の 道具の絵。「新しい」は AI製</small></div>
     <div class="op-row"><b>画面の大きさ</b><span id="o-ts"></span><small>新しい見た目のとき。1マスの大きさ（px）</small></div>
     <div class="op-row"><b>ブロックの絵</b><span id="o-blk"></span><small>新しい見た目のとき。チェック＝320pxの絵に もどす</small></div>
     <div class="op-row"><b>開発用</b><span id="o-dev"></span></div>
@@ -169,7 +170,7 @@
 <script>
 (function () {
   var $ = function (s) { return document.querySelector(s); }, q = new URLSearchParams(location.search), KEY = 'geko-enar-opts';
-  var KEYS = ['uc', 'pz', 'ring', 'gfx', 'hero', 'ts', 'blocks', 'brown', 'steel', 'lava', 'ice', 'dev'];
+  var KEYS = ['uc', 'pz', 'ring', 'gfx', 'hero', 'ui', 'ts', 'blocks', 'brown', 'steel', 'lava', 'ice', 'dev'];
   var cur = {}; KEYS.forEach(function (k) { if (q.has(k)) cur[k] = q.get(k); });
   var sel = {}; KEYS.forEach(function (k) { sel[k] = cur[k] || ''; });
   // 1つえらぶ(ラジオ) / チェック
@@ -185,6 +186,7 @@
     $('#o-gfx').querySelectorAll('input').forEach(function (r) { var f = r.onchange; r.onchange = function () { f(); if (sel.gfx !== 'enar32') sel.hero = ''; build(); }; });
     radios('#o-hero', 'hero', [['', 'いつものエナー'], ['new', '新しいエナー（シマエナガ型ロボット・AI製）']]);
     $('#o-hero').querySelectorAll('input').forEach(function (r, i) { r.onchange = function () { sel.hero = i === 1 ? 'new' : ''; if (i === 1) sel.gfx = 'enar32'; build(); }; });
+    radios('#o-ui', 'ui', [['', 'いつもの'], ['new', '新しい（AI製）']]);
     radios('#o-ts', 'ts', [['', 'ふつう（32）'], ['40', '40'], ['48', '48'], ['64', '大（64・おすすめ）'], ['80', 'さらに大（80）']]);
     checks('#o-blk', [['brown', '土', '320'], ['steel', '鋼', '320'], ['lava', 'マグマ', '320'], ['ice', '氷', '320']]);
     var d = $('#o-dev'); d.innerHTML = ''; var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = !!sel.dev; c.onchange = function () { sel.dev = c.checked ? '1' : ''; if (!c.checked && (sel.gfx === 'snes' || sel.gfx === 'classic')) sel.gfx = ''; build(); }; l.append(c, ' 調整パネル・開発用の見た目を出す（?dev=1）'); d.append(l);
