@@ -189,7 +189,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   const T = 20, KEY = 'geko-enar-v2-custom';
   const COLORS = [['茶色', '#C9A15E', '#E8CFA0', '#735630'], ['赤', '#E8563F', '#F7A08F', '#A8403F'], ['青', '#6FD6E8', '#D5F6FC', '#3F9DB5'], ['緑', '#58B368', '#8FD18A', '#3F8F52'], ['ひび割れ', '#F5C842', '#FFE27A', '#C99A1E'], ['ガラス', '#DCEBF3', '#FFFFFF', '#9DB9C8']];
   const TOOLS = [['painter', 'いろコピー'], ['transform', 'かたち'], ['sort', 'ならべかえ（寄せる）'], ['filter', 'フィルター'], ['protect', 'シートをまもる'], ['unprotect', 'まもりをはずす'], ['peek', '小窓（遠くをのぞく）'], ['splitv', '上下分割'], ['splith', '左右分割']];
-  const ENTS = [['walker', 'セルくん', '#70AD47'], ['flyer', 'くもがた', '#9DC3E6'], ['turret', 'DEL砲台', '#7A7F95'], ['div0', '#DIV/0!', '#C00000'], ['autofill', 'オートフィル', '#70AD47'], ['moji', 'しろい文字', '#8FA6C8'], ['condfmt', '条件つき書式', '#7030A0'], ['bucket', '塗りつぶし', '#E8A33D'], ['shuffler', '並べ替え', '#ED7D31'], ['circ', '循環参照', '#2F3E6B']];
+  const ENTS = [['walker', 'セルくん', '#70AD47'], ['flyer', 'くもがた', '#9DC3E6'], ['turret', 'DEL砲台', '#7A7F95'], ['div0', 'ゼロジョさん', '#C00000'], ['autofill', 'フィラーマン', '#70AD47'], ['condfmt', 'しょしき屋', '#7030A0'], ['bucket', 'いろづけ師', '#E8A33D'], ['shuffler', 'とりかえ職人', '#ED7D31'], ['circ', 'ルーパールーパー', '#2F3E6B']];
   const THEMES = [['青緑', '#42B8C2', '#3AA7B1'], ['オレンジ', '#F3C9A0', '#E9B88A'], ['むらさき', '#C7B9EE', '#B8A8E6'], ['みどり', '#9ADBC0', '#86CEB0'], ['ピンク', '#F2B6B0', '#E8A29B'], ['青空', '#8FA6E8', '#7E95DB'], ['きいろ', '#E3D18F', '#D8C47C'], ['グレー', '#B7C6D9', '#A6B6CC']];
   const $ = (s) => document.querySelector(s);
   // 本編と おなじ ゲームの え(GFXX)を つかって えがく
@@ -217,7 +217,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   function fromLevel(lv) {
     const h = lv.front.length;
     return { w: lv.w, h, front: lv.front.map(r => Array.from(r).map(c => c === 'c' ? '#' : c)), color: lv.color.map((r, y) => r.map((v, x) => lv.front[y][x] === 'c' ? 4 : v)), lock: (lv.lock || lv.front.map(() => new Array(lv.w).fill(0))).map(r => r.slice()),
-      ents: (lv.ents || []).map(e => { const o = Object.assign({}, e); if (o.type === 'guard') o.type = 'walker'; /* かたいこうらは なくなった */ if (o.type === 'circ' && o.ranges && o.ranges[0]) { o.x = Math.min(o.ranges[0][0], o.ranges[0][2]); o.y = Math.min(o.ranges[0][1], o.ranges[0][3]); } return o; }), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
+      ents: (lv.ents || []).map(e => { const o = Object.assign({}, e); if (o.type === 'guard' || o.type === 'moji') o.type = 'walker'; /* かたいこうらは なくなった */ if (o.type === 'circ' && o.ranges && o.ranges[0]) { o.x = Math.min(o.ranges[0][0], o.ranges[0][2]); o.y = Math.min(o.ranges[0][1], o.ranges[0][3]); } return o; }), gems: (lv.gems || []).map(g => g.slice()), checks: (lv.checks || []).map(c => c.slice()), sparks: (lv.sparks || []).map(c => c.slice()),
       switches: (lv.switches || []).map(s => s.slice()), doors: (lv.doors || []).map(d => d.slice()), judges: (lv.judges || []).map(j => j.slice()),
       lifts: (lv.lifts || []).map(l => ({ x: l.x, y: l.y, w: l.w, dx: l.dx, dy: l.dy, period: l.period || 7, phase: l.phase || 0, col: l.col || 0, ctl: l.ctl === undefined ? -1 : l.ctl })), start: lv.start.slice(), flag: lv.flag.slice() };
   }
@@ -273,7 +273,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       ctx.fillStyle = '#262626'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(j[4] + 1, x + 2, y + T - 3); });
     for (let i = 0; i < L.lifts.length; i++) drawLift(L.lifts[i], i === sel);
     const glyph = (x, y, t, col, r) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, r || 8, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t, x * T + T / 2, y * T + T / 2 + 4); };
-    for (const e of L.ents) { // はんい(条件つき書式・並べ替え・循環参照)
+    for (const e of L.ents) { // はんい(しょしき屋・とりかえ職人・ルーパールーパー)
       if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') continue;
       ctx.strokeStyle = e.type === 'condfmt' ? '#7030A0' : e.type === 'shuffler' ? '#C55A11' : '#2F3E6B'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       rangesOf(e).forEach(r => { const x0 = Math.min(r[0], r[2]), y0 = Math.min(r[1], r[3]), x1 = Math.max(r[0], r[2]), y1 = Math.max(r[1], r[3]);
@@ -358,7 +358,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       if (!pend) { pend = [x, y]; msg('はんいの もうひとつの角を おしてください'); return; }
       const r = [pend[0], pend[1], x, y]; pend = null; const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2; let best = null, bd = 1e9;
       L.ents.forEach(e => { if (e.type !== 'condfmt' && e.type !== 'shuffler' && e.type !== 'circ') return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bd) { bd = d; best = e; } });
-      if (!best) return msg('条件つき書式・並べ替え・循環参照の敵が いません。先に敵を おいてください');
+      if (!best) return msg('しょしき屋・とりかえ職人・ルーパールーパーの敵が いません。先に敵を おいてください');
       if (best.type === 'circ') { best.ranges = [r]; const n = [Math.min(r[0], r[2]), Math.min(r[1], r[3])]; best.x = n[0]; best.y = n[1]; } else best.ranges = (best.ranges && best.ranges.length ? best.ranges : []).concat([r]);
       msg('はんいを つけました（いちばん近い敵に）。まちがえたら「戻す」'); return;
     }
@@ -580,7 +580,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     COLORS.forEach((c, i) => { const b = addBtn(p, spIcon(blockIm(i)) + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>道具</small>' + b.innerHTML + ' ▸'; } });
     addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); eraserBtn = addBtn(p, '消しゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
-    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">オートフィルが作る色：足もとをまねる</option>' + COLORS.slice(0, 6).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
+    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">フィラーマンが作る色：足もとをまねる</option>' + COLORS.slice(0, 6).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
     ENTS.forEach(e => {
       if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
       if (e[0] === 'bucket') { COLORS.slice(0, 5).forEach((c, i) => addBtn(p2, spIcon(entIm('bucket' + i), 1) + e[1] + '（' + c[0] + '）', { kind: 'ent', type: 'bucket', opt: { c: i } })); return; }

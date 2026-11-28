@@ -799,7 +799,7 @@
     ],
     build(m) {
       m.floor(); m.ceil(3);
-      m.ent('moji', 9, 9); m.ent('moji', 15, 9); m.ent('moji', 20, 9);
+      m.ent('walker', 9, 9); m.ent('walker', 15, 9); m.ent('walker', 20, 9);
       m.gem(8, 7); m.gem(16, 7); m.gem(22, 8);
       m.flag = [24, 9];
     },
