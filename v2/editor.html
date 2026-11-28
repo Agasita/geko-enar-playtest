@@ -127,7 +127,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     <div class="row"><label><input type="checkbox" id="f-lock"> まもる（カギつき）にする</label></div>
     <div class="row"><button id="b-floor">床（下2行）をはる</button></div>
   </aside>
-  <div id="lp"><fieldset><legend>選んだリフト</legend>
+  <div id="lp"><fieldset><legend>選んだリフト（はんい: ■=はじまり ●=おわり ▮=ながさ をドラッグ）</legend>
     <div class="row"><span class="lbl">色</span><select id="l-col"></select>
       <span class="lbl">長さ(マス)</span><input id="l-w" type="number" min="1" max="8">
       <span class="lbl">横に動く(マス)</span><input id="l-dx" type="number" min="-40" max="40">
@@ -404,7 +404,10 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       const order = rs.map((_, i) => i).sort((a, b) => (b === selR) - (a === selR));
       for (const i of order) { const n = normR(rs[i]); if (c[0] >= n[0] && c[0] <= n[2] && c[1] >= n[1] && c[1] <= n[3] && !L.ents.some(q => hasSet(q) && q.x === c[0] && q.y === c[1])) { ensureRanges(selEnt); selEnt.ranges[i] = normR(selEnt.ranges[i]); selR = i; down = { what: 'rm', i, c0: c, r0: selEnt.ranges[i].slice() }; showEnt(); return; } }
     }
+    if (sel >= 0) { const h = liftHit(e); if (h) { down = { what: h[1], ox: c[0] - L.lifts[sel].x, oy: c[1] - L.lifts[sel].y }; return; } } // 選んでいるリフトの ■●▮ や 本体
     const hit = L.ents.find(q => hasSet(q) && q.x === c[0] && q.y === c[1]);
+    if (!hit) { const h = liftHit(e); if (h) { sel = h[0]; selEnt = null; selR = -1; down = { what: h[1], ox: c[0] - L.lifts[sel].x, oy: c[1] - L.lifts[sel].y }; showLift(); showEnt(); return; } } // リフトを選ぶ
+    sel = -1; showLift();
     selEnt = hit || null; selR = hit && isRg(hit) ? 0 : -1; showEnt();
   }
   function rangeDrag(c) {
@@ -472,14 +475,25 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     }
     msg(cnt + 'マス 変えました。まちがえたら「戻す」'); draw();
   };
+  // ステージを2回タップ(クリック)すると、「置く」と「動かす」が入れかわる
+  let tapDown = null, lastTap = null;
+  function doubleTap(e) {
+    const n = performance.now(); tapDown = { x: e.clientX, y: e.clientY };
+    if (e.button === 2 || !lastTap || n - lastTap.t > 380 || Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) > 12) return false;
+    lastTap = null; if (mode === 'draw') undo(); // 1回目のタップで置いたぶんは、もとにもどす
+    setMode(mode === 'draw' ? 'scroll' : 'draw'); msg(mode === 'draw' ? '✏ 置くに しました' : '✋ 動かすに しました'); return true;
+  }
+  cv.addEventListener('pointerup', (e) => { if (tapDown && Math.hypot(e.clientX - tapDown.x, e.clientY - tapDown.y) < 8) lastTap = { t: performance.now(), x: e.clientX, y: e.clientY }; tapDown = null; });
   cv.addEventListener('pointerdown', (e) => {
+    if (doubleTap(e)) { e.preventDefault(); return; }
     if (mode !== 'draw' || e.button === 2) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); pushUndo();
     const c = cellOf(e);
     if (cur.kind === 'pick') { pickDown(e, c); draw(); return; }
     if (cur.kind === 'lift') {
       const h = liftHit(e);
-      if (h) { sel = h[0]; down = { what: h[1], ox: c[0] - L.lifts[sel].x, oy: c[1] - L.lifts[sel].y }; showLift(); }
-      else { if (inb(c[0], c[1])) newLift(c[0], c[1]); down = { what: 'none' }; }
+      if (h) { sel = h[0]; showLift(); msg('リフトのはんい・設定は、「選ぶ」で直します'); }
+      else { if (inb(c[0], c[1])) newLift(c[0], c[1]); }
+      down = { what: 'none' };
       draw(); return;
     }
     if (cur.kind === 'door') { if (!inb(c[0], c[1])) return; const id = +$('#f-id').value || 0; L.doors.push([c[0], c[1], 3, id]); down = { what: 'door', x: c[0], y0: c[1], d: L.doors[L.doors.length - 1] }; draw(); return; }
@@ -498,7 +512,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
 
   // ---- リフトのパネル ----
   function showLift() {
-    const p = $('#lp'), l = L.lifts[sel]; p.classList.toggle('on', !!l); if (!l) return;
+    const p = $('#lp'), l = L.lifts[sel]; p.classList.toggle('on', !!l && (cur.kind === 'pick' || cur.kind === 'lift')); if (!l) return;
     $('#l-col').value = l.col; $('#l-w').value = l.w; $('#l-dx').value = l.dx; $('#l-dy').value = l.dy; $('#l-period').value = l.period; $('#l-phase').value = String(l.phase); $('#l-ctl').value = String(l.ctl === undefined ? -1 : l.ctl);
   }
   function liftEdit() {
@@ -526,7 +540,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     const items = () => [
       ['道具を選ぶ', () => drawer(true)],
       ['🧽 消しゴム', () => { if (eraserBtn) eraserBtn.click(); }],
-      ['🔲 敵のはんいを直す', () => { if (pickBtn) pickBtn.click(); }],
+      ['🔲 はんいを直す（敵・リフト）', () => { if (pickBtn) pickBtn.click(); }],
       [mode === 'draw' ? '✋ 動かすに する' : '✏ 置くに する', () => $('#b-mode').click()],
       ['—', '編集'], ['▶ 試しに遊ぶ', () => $('#b-test').click()], ['保存', () => $('#b-save').click()], ['↶ 戻す', () => $('#b-undo').click()],
       ['—', '設定'], ['⚙ ステージ設定', () => window.__openPop('p-set')], ['💬 ヒント', () => window.__openPop('p-hint')], ['🧰 使える道具', () => window.__openPop('p-tools')],
@@ -573,7 +587,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
       if (e[0] === 'shuffler') { addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（横）', { kind: 'ent', type: e[0] }); addBtn(p2, spIcon(entIm(e[0]), 1) + e[1] + '（縦）', { kind: 'ent', type: e[0], opt: { axis: 'y' } }); return; }
       addBtn(p2, spIcon(entIm(e[0]), 1) + e[1], { kind: 'ent', type: e[0] });
     });
-    pickBtn = addBtn(p2, '<span class="sw" style="background:none;border:2px solid #7030A0"></span>選ぶ（敵のはんいを直す・ブロックを変える）', { kind: 'pick' });
+    pickBtn = addBtn(p2, '<span class="sw" style="background:none;border:2px solid #7030A0"></span>選ぶ（敵・リフトのはんいを直す／ブロックを変える）', { kind: 'pick' });
     addBtn(p2, '<span class="sw" style="background:none;border:1px dashed #7030A0"></span>はんい（2か所をクリック）', { kind: 'range' });
     COLORS.forEach((c, i) => { if (i === 5) return; addBtn(p2, spIcon(blockIm(i)) + 'にせブロック（' + c[0] + '）', { kind: 'ent', type: 'fake', opt: { c: i } }); });
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
@@ -658,7 +672,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   $('#b-mode').onclick = () => setMode(mode === 'draw' ? 'scroll' : 'draw');
   loadData(Object.assign(blank(60, 12), { name: 'マイステージ', tools: ['sort'], energy: 20 })); editingId = null; refreshSaved(); setMode(mode);
   { const q = /[?&]edit=([^&]+)/.exec(location.search); if (q) { const l = readAll().find(x => x.id === decodeURIComponent(q[1])); if (l) { loadData(l); } } } // テストプレイから もどったら、そのステージを ひらく
-  window.__editor = { get L() { return L; }, get sel() { return sel; }, apply, toData, save, loadData, draw, newLift, check };
+  window.__editor = { get L() { return L; }, get sel() { return sel; }, get down() { return down; }, get mode() { return mode; }, apply, toData, save, loadData, draw, newLift, check };
 })();
 </script>
 <script src="music_data.js"></script><script src="music.js"></script>
