@@ -1392,9 +1392,10 @@
     ctx.globalAlpha = 1;
     const bp = (e.t || 0) % 2.2, blink = !hotMv && (bp < .12 || (bp > .27 && bp < .39)); // ぱちくり(2かい まばたき)
     const look = hotMv ? 2 : blink ? 1 : 2;
-    if (e.rx !== undefined && e.ry !== undefined && inb(e.rx, e.ry) && isBlockT(G.front[e.ry][e.rx])) { // まばたきの たびに、まねしている ブロックが きいろく ふわっと ひかる
-      const fl = (x) => x >= 0 && x < .32 ? 1 - x / .32 : 0, gi = Math.max(fl(bp), fl(bp - .27));
-      if (gi > 0) { const gx = e.rx * T - cx, gy = e.ry * T - cy; ctx.fillStyle = 'rgba(255,224,102,' + (.7 * gi) + ')'; ctx.fillRect(gx, gy, T, T); ctx.strokeStyle = 'rgba(255,255,255,' + gi + ')'; ctx.lineWidth = 1; ctx.strokeRect(gx + .5, gy + .5, T - 1, T - 1); ctx.fillStyle = 'rgba(255,224,102,' + (.25 * gi) + ')'; ctx.fillRect(gx - 2, gy - 2, T + 4, T + 4); }
+    if (e.rx !== undefined && e.ry !== undefined && inb(e.rx, e.ry)) { // まばたきの たびに、まねしている ブロックが きいろく ふわっと ひかる(なにも ない ときは、てんせんの わくが ひかる)
+      const fl = (x) => x >= 0 && x < .32 ? 1 - x / .32 : 0, gi = Math.max(fl(bp), fl(bp - .27)), has = isBlockT(G.front[e.ry][e.rx]);
+      if (gi > 0 && !has) { const gx = e.rx * T - cx, gy = e.ry * T - cy; ctx.fillStyle = 'rgba(255,224,102,' + (.32 * gi) + ')'; ctx.fillRect(gx, gy, T, T); ctx.strokeStyle = 'rgba(255,214,70,' + gi + ')'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.strokeRect(gx + .5, gy + .5, T - 1, T - 1); ctx.setLineDash([]); }
+      else if (gi > 0) { const gx = e.rx * T - cx, gy = e.ry * T - cy; ctx.fillStyle = 'rgba(255,224,102,' + (.7 * gi) + ')'; ctx.fillRect(gx, gy, T, T); ctx.strokeStyle = 'rgba(255,255,255,' + gi + ')'; ctx.lineWidth = 1; ctx.strokeRect(gx + .5, gy + .5, T - 1, T - 1); ctx.fillStyle = 'rgba(255,224,102,' + (.25 * gi) + ')'; ctx.fillRect(gx - 2, gy - 2, T + 4, T + 4); }
     } // まばたきと いっしょに、まねしている ブロックが ほんの いっしゅん ひかる
     if (look === 1) { ctx.fillStyle = 'rgba(38,38,38,.32)'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
     else if (look === 2) {
