@@ -1610,7 +1610,7 @@
     const sg = splitGeom();
     if (sg) drawSplit(sg); else {
     drawBackground();
-    if (G.edit.on) { ctx.fillStyle = 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); } // 編集中: 背景だけ暗く。ブロックや仕掛けは、明るいまま
+    if (G.edit.on) { ctx.fillStyle = (EXCEL && GFXX.hasFar && GFXX.hasFar(G.level)) ? 'rgba(11,18,38,.4)' : 'rgba(11,18,38,.63)'; ctx.fillRect(0, 0, W, H); } // 編集中: 背景だけ暗く。ブロックや仕掛けは、明るいまま
     drawWorld();
     if (G.fog) drawFog(); }
     if (EXCEL) GFXX.frame(ctx, G, G.level, W, H);
@@ -2375,7 +2375,7 @@
   })();
 
   // ===== BGMの切りかえ: 画面・ステージ(ワールド)・「なおす」中かどうかで きめる =====
-  const bgmFor = (w) => w <= 3 ? 'stageA' : w <= 7 ? 'stageB' : 'stageC';
+  const bgmFor = (w) => w === 1 ? 'world1' : w <= 3 ? 'stageA' : w <= 7 ? 'stageB' : 'stageC';
   function syncBGM() {
     let name = null, delay = 0.15;
     if (G.mode === 'title' || G.mode === 'opening') name = 'title';
