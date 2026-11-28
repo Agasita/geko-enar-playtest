@@ -395,7 +395,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   const isRg = (e) => !!e && (e.type === 'condfmt' || e.type === 'shuffler' || e.type === 'circ');
   const hasSet = (e) => isRg(e) || (!!e && ['autofill', 'bucket', 'walker', 'flyer'].includes(e.type));
   const normR = (r) => [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
-  const syncCirc = (e) => { if (e && e.type === 'circ' && e.ranges && e.ranges[0]) { const n = normR(e.ranges[0]); e.x = n[0]; e.y = n[1]; } }; // 循環参照は、みちの 左上の かどに いる
+  const syncCirc = (e) => { if (e && e.type === 'circ' && e.ranges && e.ranges[0]) { const n = normR(e.ranges[0]); e.x = n[0]; e.y = n[1]; } }; // ルーパールーパーは、みちの 左上の かどに いる
   const ensureRanges = (e) => { if (!e.ranges || !e.ranges.length) e.ranges = rangesOf(e).map(r => r.slice()); };
   function handlesOf(e, r) { const n = normR(r), o = []; for (const sx of [0, 1]) for (const sy of [0, 1]) o.push(e.type === 'circ' ? { sx, sy, px: n[sx ? 2 : 0] * T + T / 2, py: n[sy ? 3 : 1] * T + T / 2 } : { sx, sy, px: sx ? (n[2] + 1) * T : n[0] * T, py: sy ? (n[3] + 1) * T : n[1] * T }); return o; }
   function pickDown(e, c) {
@@ -468,7 +468,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   $('#ep-do').onclick = () => {
     if (!selEnt) return; const r = rangesOf(selEnt)[selR]; if (!r) return; pushUndo(); const n = normR(r), k = $('#ep-k').value; let cnt = 0;
     for (let y = n[1]; y <= n[3]; y++) for (let x = n[0]; x <= n[2]; x++) {
-      if (!inb(x, y)) continue; if (selEnt.type === 'circ' && x > n[0] && x < n[2] && y > n[1] && y < n[3]) continue; // 循環参照は、四角の ふち(みち)だけ
+      if (!inb(x, y)) continue; if (selEnt.type === 'circ' && x > n[0] && x < n[2] && y > n[1] && y < n[3]) continue; // ルーパールーパーは、四角の ふち(みち)だけ
       const t = L.front[y][x]; if (t !== '#' && t !== 'S' && t !== 'c') continue;
       if (k === 'erase') { L.front[y][x] = '.'; L.color[y][x] = 0; L.lock[y][x] = 0; cnt++; }
       else if (k === 'steel') { if (t === '#') { L.front[y][x] = 'S'; L.color[y][x] = 0; cnt++; } }
@@ -580,7 +580,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     COLORS.forEach((c, i) => { const b = addBtn(p, spIcon(blockIm(i)) + c[0] + 'ブロック', { kind: 'block', color: i }); if (i === 0) { b.classList.add('sel'); $('#b-tool').innerHTML = '<small>道具</small>' + b.innerHTML + ' ▸'; } });
     addBtn(p, spIcon(GFX.metal()) + '鋼（動かない）', { kind: 'steel' }); eraserBtn = addBtn(p, '消しゴム', { kind: 'erase' });
     addBtn(p2, '<span class="sw" style="background:#217346"></span>リフト', { kind: 'lift' });
-    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">フィラーマンが作る色：足もとをまねる</option>' + COLORS.slice(0, 6).map((c, i) => '<option value="' + i + '">オートフィルが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
+    { const sel = document.createElement('select'); sel.id = 'f-afc'; sel.style.cssText = 'width:100%;margin:4px 0'; sel.innerHTML = '<option value="">フィラーマンが作る色：足もとをまねる</option>' + COLORS.slice(0, 6).map((c, i) => '<option value="' + i + '">フィラーマンが作る色：' + c[0] + '</option>').join(''); p2.appendChild(sel); }
     ENTS.forEach(e => {
       if (e[0] === 'autofill') { [[1, '→'], [-1, '←']].forEach(q => addBtn(p2, spIcon(GFXX.enemy('autofill', 0, false), 1) + e[1] + q[1], { kind: 'ent', type: 'autofill', opt: { d: q[0] } })); return; }
       if (e[0] === 'bucket') { COLORS.slice(0, 5).forEach((c, i) => addBtn(p2, spIcon(entIm('bucket' + i), 1) + e[1] + '（' + c[0] + '）', { kind: 'ent', type: 'bucket', opt: { c: i } })); return; }
