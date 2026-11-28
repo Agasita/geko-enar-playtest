@@ -296,9 +296,11 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     }
     for (const e of L.ents) {
       const px = e.x * T, py = e.y * T;
-      if (e.type === 'fake') { // ぎたい手: ゲームでは ふつうの ブロックに みえる。ここでは めじるし(目と てんせん)を つける
+      if (e.type === 'fake') { // リンカちゃん: ゲームでは ふつうの ブロックに みえる。ここでは めじるし(目と てんせん)を つける
         SP(blockIm(e.c || 0), px, py); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px + 4, py + 6, 4, 4); ctx.fillRect(px + 12, py + 6, 4, 4); ctx.fillStyle = '#262626'; ctx.fillRect(px + 5, py + 7, 2, 3); ctx.fillRect(px + 13, py + 7, 2, 3);
-        ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3); ctx.setLineDash([]); continue;
+        ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3);
+        if (e.rx !== undefined && e.ry !== undefined) { ctx.strokeStyle = '#7030A0'; ctx.beginPath(); ctx.moveTo(px + T / 2, py + T / 2); ctx.lineTo(e.rx * T + T / 2, e.ry * T + T / 2); ctx.stroke(); ctx.strokeRect(e.rx * T + 1.5, e.ry * T + 1.5, T - 3, T - 3); } // さんしょうさきへ せん
+        ctx.setLineDash([]); continue;
       }
       SP(entIm(e.type === 'autofill' && e.c !== undefined ? 'autofill' + e.c : e.type === 'bucket' ? 'bucket' + (e.c || 0) : e.type), px, py, 1);
       if (e.type === 'autofill') { ctx.fillStyle = '#217346'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((e.d || 1) < 0 ? '◀' : '▶', px + T / 2, py - 1); }
@@ -393,7 +395,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   }
   // ---- 選ぶ: 敵を えらんで、はんいを つかんで なおす ----
   const isRg = (e) => !!e && (e.type === 'condfmt' || e.type === 'shuffler' || e.type === 'circ');
-  const hasSet = (e) => isRg(e) || (!!e && ['autofill', 'bucket', 'walker', 'flyer'].includes(e.type));
+  const hasSet = (e) => isRg(e) || (!!e && ['autofill', 'bucket', 'walker', 'flyer', 'fake'].includes(e.type));
   const normR = (r) => [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
   const syncCirc = (e) => { if (e && e.type === 'circ' && e.ranges && e.ranges[0]) { const n = normR(e.ranges[0]); e.x = n[0]; e.y = n[1]; } }; // ルーパールーパーは、みちの 左上の かどに いる
   const ensureRanges = (e) => { if (!e.ranges || !e.ranges.length) e.ranges = rangesOf(e).map(r => r.slice()); };
@@ -430,6 +432,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     bucket: [{ t: 'sel', k: 'c', nm: 'ぬる 色', opts: CS0, def: '0', num: true }, { t: 'num', k: 'spdc', nm: '歩く 速さ', def: 1.75, mn: .25, mx: 5, st: .25, un: 'マス/秒' }, { t: 'num', k: 'ptime', nm: '1マス ぬる 時間', def: 1, mn: .3, mx: 5, st: .1, un: '秒' }, { t: 'lim' }],
     circ: [{ t: 'num', k: 'spdc', nm: 'まわる 速さ', def: 2.4, mn: .5, mx: 8, st: .25, un: 'マス/秒' }],
     walker: [{ t: 'num', k: 'spdc', nm: '歩く 速さ', def: 1.75, mn: .25, mx: 6, st: .25, un: 'マス/秒' }, { t: 'lim' }],
+    fake: [{ t: 'opt', k: 'rx', nm: 'さんしょうする ブロックの 場所（横）', mn: 0, mx: 300, st: 1, un: '列め（左はしが0）' }, { t: 'opt', k: 'ry', nm: 'さんしょうする ブロックの 場所（縦）', mn: 0, mx: 300, st: 1, un: '行め（上はしが0）' }],
     flyer: [{ t: 'sel', k: 'axis', nm: '漂う 向き', opts: [['x', '横に 往復'], ['y', '縦に 往復']], def: 'x' }, { t: 'num', k: 'range', nm: 'ゆれる 幅', def: 30, conv: 16, mn: .5, mx: 10, st: .5, un: 'マス' }],
   };
   function buildPar() {
@@ -438,7 +441,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     (FIELDS[e.type] || []).forEach((f) => {
       if (f.t === 'num' || f.t === 'opt') { const cv = f.conv || 1, i = document.createElement('input'); i.type = 'number'; i.min = f.mn; i.max = f.mx; i.step = f.st || 1; i.style.width = '70px';
         const cur = e[f.k] === undefined ? (f.t === 'num' ? f.def : '') : e[f.k]; i.value = cur === '' ? '' : Math.round(cur / cv * 100) / 100; if (f.t === 'opt') i.placeholder = 'なし';
-        i.onchange = () => { pushUndo(); if (f.t === 'opt' && i.value === '') delete e[f.k]; else { const v = Math.max(f.mn, Math.min(f.mx, +i.value || (f.def / cv))); e[f.k] = Math.round(v * cv * 100) / 100; i.value = v; } draw(); };
+        i.onchange = () => { pushUndo(); if (f.t === 'opt' && i.value === '') delete e[f.k]; else { const v = Math.max(f.mn, Math.min(f.mx, (i.value !== '' && !isNaN(+i.value) ? +i.value : f.def / cv))); e[f.k] = Math.round(v * cv * 100) / 100; i.value = v; } draw(); };
         box.append(lb(f.nm), i, lb(f.un + (f.t === 'num' ? '（ふつう ' + Math.round(f.def / cv * 100) / 100 + '）' : ''))); box.append(nl()); }
       else if (f.t === 'sel') { const sl = document.createElement('select'); f.opts.forEach(([v, n]) => { const o = document.createElement('option'); o.value = v; o.textContent = n; sl.append(o); });
         sl.value = e[f.k] === undefined ? (f.def || '') : String(e[f.k]); sl.onchange = () => { pushUndo(); if (sl.value === '') delete e[f.k]; else e[f.k] = f.num ? +sl.value : sl.value; draw(); }; box.append(lb(f.nm), sl, nl()); }
@@ -453,7 +456,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   }
   function showEnt() {
     const p = $('#ep'), ok = hasSet(selEnt) && L.ents.includes(selEnt) && cur.kind === 'pick'; p.classList.toggle('on', ok); if (!ok) { buildPar.last = null; return; }
-    const nm = (ENTS.find(q => q[0] === selEnt.type) || [0, ''])[1], rg = isRg(selEnt); $('#ep-rg').style.display = rg ? '' : 'none';
+    const nm = (ENTS.find(q => q[0] === selEnt.type) || [0, selEnt.type === 'fake' ? 'リンカちゃん' : ''])[1], rg = isRg(selEnt); $('#ep-rg').style.display = rg ? '' : 'none';
     if (buildPar.last !== selEnt) { buildPar.last = selEnt; buildPar(); }
     if (!rg) { $('#ep-t').textContent = '選んだ敵：' + nm; $('#ep-hint').textContent = '点線で出ているのが、この敵が動く・ねらうはんいです。数を変えると、画面の点線も変わります。'; return; }
     const rs = rangesOf(selEnt);
@@ -589,7 +592,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     });
     pickBtn = addBtn(p2, '<span class="sw" style="background:none;border:2px solid #7030A0"></span>選択', { kind: 'pick' });
     addBtn(p2, '<span class="sw" style="background:none;border:1px dashed #7030A0"></span>はんい（2か所をクリック）', { kind: 'range' });
-    COLORS.forEach((c, i) => { if (i === 5) return; addBtn(p2, spIcon(blockIm(i)) + 'ぎたい手（' + c[0] + '）', { kind: 'ent', type: 'fake', opt: { c: i } }); });
+    addBtn(p2, spIcon(blockIm(0)) + 'リンカちゃん', { kind: 'ent', type: 'fake', opt: { c: 0 } });
     addBtn(p2, '<span class="sw" style="background:#4A5470"></span>磁石', { kind: 'magnet' }); addBtn(p2, '<span class="sw" style="background:#FFD600"></span>判定セル', { kind: 'judge' }); addBtn(p2, 'スイッチ', { kind: 'switch' }); addBtn(p2, '扉（ドラッグで高さ）', { kind: 'door' });
     addBtn(p2, spIcon(GFXX.shard()) + 'データのかけら', { kind: 'gem' }); addBtn(p2, 'エナジーの玉', { kind: 'spark' }); addBtn(p2, 'チェックポイント', { kind: 'check' }); addBtn(p2, 'スタート', { kind: 'start' }); addBtn(p2, spIcon(GFXX.floppy(false)) + 'ゴール（フロッピー）', { kind: 'flag' });
     TOOLS.forEach(t => { const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" data-t="' + t[0] + '"> ' + t[1]; $('#tools').appendChild(l); });

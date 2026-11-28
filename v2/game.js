@@ -242,7 +242,7 @@
     // ---- Excelの こまった きどう ----
     if (e.type === 'div0') return Object.assign(base, { w: 12, h: 11, ox: 2, oy: 5, vx: -18, hp: 999, dir: -1, x: base.x + 2, y: base.y + 5 }); // ゼロジョさん: ふめない・たおせない。ゆっくり おうふく
     if (e.type === 'autofill') return Object.assign(base, { w: 12, h: 12, ox: 2, oy: 4, hp: 1, cd: 1.5, made: 0, cap: e.cap === undefined ? 1e9 : e.cap, max: e.max === undefined ? 1e9 : e.max, reach: e.reach || 12, rate: e.rate || 2.2, c: e.c, dir: e.d || 1, d: e.d || 1, x: base.x + 2, y: base.y + 4 }); // フィラーマン: ゆかを どんどん ふやす
-    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, dir: 1, gx: Math.round(base.x / T), gy: Math.round(base.y / T), mv: 0, x: base.x + 1, y: base.y + 2 }); // ぎたい手: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
+    if (e.type === 'fake') return Object.assign(base, { w: 14, h: 14, ox: 1, oy: 2, hp: 1, look: 0, c: e.c || 0, rx: e.rx, ry: e.ry, dir: 1, gx: Math.round(base.x / T), gy: Math.round(base.y / T), mv: 0, x: base.x + 1, y: base.y + 2 }); // リンカちゃん: ブロックに ぎたい。ブロックでは ないので なおす(へんしゅう)が きかず、へんしゅう中も しょうたいは わからない
     // ---- ざんりの Excel てき ----
     const rg = (def) => (e.ranges && e.ranges.length ? e.ranges : [def]).map(r => ({ x0: Math.min(r[0], r[2]), y0: Math.min(r[1], r[3]), x1: Math.max(r[0], r[2]), y1: Math.max(r[1], r[3]) }));
     if (e.type === 'condfmt') return Object.assign(base, { w: 14, h: 12, ox: 1, oy: 2, hp: 1, every: e.every || 4.2, cd: Math.min(2.4, e.every || 4.2), step: 0, seq: e.seq && e.seq.length ? e.seq : [0, 1, 2], ranges: rg([e.x - 2, e.y + 1, e.x + 2, e.y + 2]), tele: 0, dir: 1, x: base.x + 1, y: base.y + 2 }); // しょしき屋: はんいの ブロックの いろを かってに かえる
@@ -286,7 +286,7 @@
     if (tx < 0 || tx >= G.level.w || ty < 0) return true; if (ty >= G.level.h) return false;
     if (G.doors) for (const d of G.doors) if (!d.open && tx === d.x && ty >= d.y && ty < d.y + d.h) return true;
     if (G.mgs) for (const m of G.mgs) for (const c of m.cells) if (tx === c[0] + m.dx && ty === c[1] + m.dy) return true;
-    if (G.fakes) for (const f of G.fakes) if (!f.hidden && tx === f.gx && ty === f.gy) return true; // ぎたい手は かべ
+    if (G.fakes) for (const f of G.fakes) if (!f.hidden && tx === f.gx && ty === f.gy) return true; // リンカちゃんは かべ
     const t = G.front[ty][tx]; if (t === TL.STEEL) return true;
     return isBlockT(t) && blockVisible(tx, ty);
   }
@@ -571,7 +571,7 @@
     ['bucket', 'いろづけ師', 'ゆかを あるいて、ガラスの上で 立ちどまっては、足もとを 1マスずつ ぬっていく。ぬる とき、足もとが ちかちか する。まもった ガラスには ぬれない。ふむと たおせて、ぬった ガラスは ぜんぶ もとに もどる'],
     ['shuffler', 'とりかえ職人', 'はんいの ブロックを、ときどき かたほうへ よせて ならべなおす。よせる まえに、はんいが 光る。たてに よせる なかまも いる。2かい ふむと たおせる'],
     ['circ', 'ルーパールーパー', 'マスに そって、かどで 直角に まがりながら、おなじ ところを ぐるぐる まわる。ふめないし、たおせない。みちすじが うすく 見えるので、タイミングを みて とおりぬけよう'],
-    ['fake', 'ぎたい手', 'ブロックに ばけている。とおくでは みわけが つかず、ちかづくと 目が みえる。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。でも あつい（赤い）ブロックが となりに くると、あつがって 1マス はなれる'],
+    ['fake', 'リンカちゃん', 'ほかの ブロックを さんしょうして、その ブロックと おなじ しゅるいに かわる。いつも 目が ぱちくり している。かべのように 立ちふさがるけれど、ダメージは ない。ふむことも、へんしゅうも コピーも きかない。でも あつい（赤い）ブロックが となりに くると、あつがって 1マス はなれる'],
   ];
   function seeEnemy(type) {
     save.seenEnemies = save.seenEnemies || {}; if (save.seenEnemies[type]) return;
@@ -585,12 +585,12 @@
       e.hidden = hiddenAt(Math.floor((e.x + e.w / 2) / T), Math.floor((e.y + e.h / 2) / T)); // かくしたぎょう・れつのてきは、そこにいない扱い
       e.t += dt; if (e.flash > 0) e.flash -= dt;
       if (e.hidden) continue;
-      if (!save.seenEnemies || !save.seenEnemies[e.type]) { if (e.type === 'moji' ? e.awake : e.type === 'fake' ? e.look === 2 : (Math.abs(p.x - e.x) < 150 && Math.abs(p.y - e.y) < 100)) seeEnemy(e.type); } // てき図鑑に のる
+      if (!save.seenEnemies || !save.seenEnemies[e.type]) { if (e.type === 'moji' ? e.awake : e.type === 'fake' ? (Math.abs(p.x - e.x) < 150 && Math.abs(p.y - e.y) < 100) : (Math.abs(p.x - e.x) < 150 && Math.abs(p.y - e.y) < 100)) seeEnemy(e.type); } // てき図鑑に のる
       if (e.stun > 0) { e.stun -= dt; continue; }
-      if (e.type === 'fake') { // ぎたい手: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
+      if (e.type === 'fake') { // リンカちゃん: あるかない。とおくでは ただの ブロック→ちかいと とじた目→かなり ちかいと 目が あいて こちらを 目で おう
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
-        const look = p.dead ? 0 : d < 30 ? 2 : d < 64 ? 1 : 0;
-                e.look = look; e.ex = dx; e.ey = dy;
+        e.look = 2; e.ex = dx; e.ey = dy; // いつも 目が あいている(ぱちくりは えがくときに)
+        if (e.rx !== undefined && inb(e.rx, e.ry) && (e.rx !== e.gx || e.ry !== e.gy)) { const rt = G.front[e.ry][e.rx]; if (isBlockT(rt) && blockVisible(e.rx, e.ry)) e.c = rt === TL.CRACK ? 4 : G.col[e.ry][e.rx]; } // さんしょうさきの ブロックと おなじ いろ(しゅるい)に かわる
         // あつい(赤い)ブロックが となりに くると、あつがって 1マス はなれる(はんたいがわへ)
         const tx0 = e.gx * T + 1, ty0 = e.gy * T + 2;
         if (e.mv > 0) { e.mv -= dt; const k = Math.max(0, e.mv / .5); if (Math.random() < dt * 40) { const sd = Math.random() < .5 ? -1 : 1; G.parts.push({ x: e.x + 7 + sd * 5, y: e.y + 3, vx: sd * (25 + Math.random() * 35), vy: -50 - Math.random() * 40, g: 260, s: 2, life: .45 + Math.random() * .25, col: Math.random() < .5 ? '#8FD0FF' : '#D6EEFF' }); } e.x = tx0 - e.fdx * T * k; e.y = ty0 - e.fdy * T * k; if (e.mv <= 0) { e.mv = 0; e.x = tx0; e.y = ty0; } }
@@ -619,7 +619,7 @@
       }
       if (e.type === 'walker' || e.type === 'guard' || e.type === 'div0' || e.type === 'moji' || e.type === 'fake' || e.type === 'bucket') {
         // おもさとあるぎょう(縁やかべで折り返す)
-        if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // ぎたい手は その場に ある
+        if (e.type !== 'fake') { e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; } // リンカちゃんは その場に ある
         const spd = e.spdc ? e.spdc * T : e.type === 'guard' ? 22 : e.type === 'div0' ? 18 : e.type === 'moji' ? 36 : 28;
         if (e.lim) { const mc = (e.x + e.w / 2) / T; if (mc < e.lim[0] + .5) e.dir = 1; else if (mc > e.lim[1] + .5) e.dir = -1; } // 行ったり来たりの はんい(マス)
         if (e.type === 'moji') e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
@@ -1390,13 +1390,14 @@
     ctx.fillStyle = 'rgba(165,190,230,' + (a * .85) + ')'; ctx.fillText('あ', x + 1, y + 1);
     ctx.fillStyle = 'rgba(250,251,255,' + a + ')'; ctx.fillText('あ', x, y); ctx.restore();
   }
-  // ぎたい手: とおくでは ふつうの ブロック。ちかづくと とじた目、かなり ちかづくと 目が あいて こちらを おう。へんしゅう中は しょうたいが わからない
+  // リンカちゃん: とおくでは ふつうの ブロック。ちかづくと とじた目、かなり ちかづくと 目が あいて こちらを おう。へんしゅう中は しょうたいが わからない
   function drawFake(e, cx, cy) {
     const hotMv = e.mv > 0; // あつがって にげている ところ: 目を 見開いて、ぶるぶる ふるえる
     const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0); ctx.globalAlpha = 1;
-    const look = hotMv ? 2 : G.edit.on ? 0 : (e.look || 0);
+    const bp = (e.t || 0) % 2.2, blink = !hotMv && (bp < .12 || (bp > .27 && bp < .39)); // ぱちくり(2かい まばたき)
+    const look = hotMv ? 2 : blink ? 1 : 2;
     if (look === 1) { ctx.fillStyle = 'rgba(38,38,38,.32)'; ctx.fillRect(x + 3, y + 7, 4, 1); ctx.fillRect(x + 9, y + 7, 4, 1); }
     else if (look === 2) {
       ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(x + 3, y + 5, 4, 4); ctx.fillRect(x + 9, y + 5, 4, 4);
@@ -1923,8 +1924,8 @@
     '13-1': '「ゼロジョさん」は、ゼロで わられて こまっている。さわると あぶないから、そっと よけて あげよう。',
     '13-2': 'フィラーマンは、ゆかを ひろげたいだけ。おせっかいだけど、わるいこだとは かぎらない。',
     '13-3': 'セルくんは、いろも かおも ちょっとずつ ちがう。ふんで あげれば、みんな おとなしくなるよ。',
-    '13-4': 'ぎたい手は、ブロックの ふりが じょうず。なおす(じかんていし)の 中なら、目が みえるらしい。',
-    '13-13': 'ぎたい手は、じつは あつがり。あかいブロックが そばに くると、にげていく。',
+    '13-4': 'リンカちゃんは、ブロックの ふりが じょうず。でも 目が いつも ぱちくり しているから、すぐ わかるよ。',
+    '13-13': 'リンカちゃんは、じつは あつがり。あかいブロックが そばに くると、にげていく。',
   };
   const UI = {
     toastT: 0,
