@@ -301,7 +301,9 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     for (const e of L.ents) {
       const px = e.x * T, py = e.y * T;
       if (e.type === 'fake') { // リンカちゃん: ゲームでは ふつうの ブロックに みえる。ここでは めじるし(目と てんせん)を つける
-        SP(blockIm(e.c || 0), px, py); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px + 4, py + 6, 4, 4); ctx.fillRect(px + 12, py + 6, 4, 4); ctx.fillStyle = '#262626'; ctx.fillRect(px + 5, py + 7, 2, 3); ctx.fillRect(px + 13, py + 7, 2, 3);
+        const rEmpty = e.rx !== undefined && inb(e.rx, e.ry) && L.front[e.ry][e.rx] === '.', rCol = e.rx !== undefined && inb(e.rx, e.ry) && !rEmpty && L.front[e.ry][e.rx] === '#' ? L.color[e.ry][e.rx] : (e.c || 0);
+        if (rEmpty) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(px, py, T, T); ctx.strokeStyle = '#555'; ctx.setLineDash([3, 3]); ctx.strokeRect(px + .5, py + .5, T - 1, T - 1); ctx.setLineDash([]); } else SP(blockIm(rCol), px, py);
+        ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px + 4, py + 6, 4, 4); ctx.fillRect(px + 12, py + 6, 4, 4); ctx.fillStyle = '#262626'; ctx.fillRect(px + 5, py + 7, 2, 3); ctx.fillRect(px + 13, py + 7, 2, 3);
         ctx.strokeStyle = '#C00000'; ctx.setLineDash([3, 2]); ctx.strokeRect(px + 1.5, py + 1.5, T - 3, T - 3);
         if (e.rx !== undefined && e.ry !== undefined) { ctx.strokeStyle = '#7030A0'; ctx.beginPath(); ctx.moveTo(px + T / 2, py + T / 2); ctx.lineTo(e.rx * T + T / 2, e.ry * T + T / 2); ctx.stroke(); ctx.strokeRect(e.rx * T + 1.5, e.ry * T + 1.5, T - 3, T - 3); } // さんしょうさきへ せん
         ctx.setLineDash([]); continue;
