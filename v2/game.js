@@ -301,7 +301,7 @@
   function liftAt(L, t) { const s = .5 - .5 * Math.cos(2 * Math.PI * t / L.period); return { x: L.ax + (L.bx - L.ax) * s, y: L.ay + (L.by - L.ay) * s }; }
   const liftOn = (L) => !L.gone && (G.filter === null || L.col === G.filter); // フィルターでいろがちがうリフトは、とおりぬけられる(うすくなる)
   function onLift(L) { const p = G.p; return liftOn(L) && p.ground && p.x + p.w > L.x && p.x < L.x + L.w && Math.abs(p.y + p.h - L.y) <= 2.5; }
-  const ONLIFT = { walker: 1, guard: 1, div0: 1, moji: 1, bucket: 1 }; // リフトに のって、いっしょに はこばれる てき(重さのある ある行の てき)
+  const ONLIFT = { walker: 1, guard: 1, div0: 1, moji: 1, bucket: 1, turret: 1 }; // リフトに のって、いっしょに はこばれる てき(重さのある ある行の てき)
   function updateLifts(dt) {
     const p = G.p;
     for (const L of G.lifts) {
@@ -647,6 +647,8 @@
         const px = e.x;
         if (e.axis === 'y') { e.y = e.by + Math.sin(e.t * 1.1) * e.range; e.x = e.bx + Math.sin(e.t * 2.2) * 3; } else { e.x = e.bx + Math.sin(e.t * 1.1) * e.range; e.y = e.by + Math.sin(e.t * 2.2) * 4; } e.dir = e.x > px ? 1 : -1;
       } else if (e.type === 'turret') {
+        e.vy = (e.vy || 0) + 900 * dt; if (moveY(e, e.vy * dt)) e.vy = 0; // あしもとが なくなると おちる
+        if (e.y > G.level.h * T + 40) { e.dead = true; continue; }
         e.cd -= dt; e.dir = (p.x + 5 > e.x + 6) ? 1 : -1;
         if (e.cd < .5) e.tele = 1; else e.tele = 0; // キーが しずむ = うつ あいず
         if (e.cd <= 0 && Math.abs(p.x - e.x) < 150) { e.cd = 2.2; e.press = .18; SFX.hit(); G.bullets.push({ x: e.x + 6 + e.dir * 8, y: e.y + 4, w: 4, h: 4, vx: e.dir * 85, del: true }); }
