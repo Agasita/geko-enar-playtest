@@ -49,6 +49,11 @@
     write: SVG('<path d="M2 14l1-3.6 8-8 2.6 2.6-8 8z" fill="#F2B100"/><path d="M11 2.4l1.3-1 2.6 2.6-1 1.3z" fill="#C00000"/><path d="M2 14l1-3.6 2.6 2.6z" fill="#7F7F7F"/>'),
     undo: '<span class="ti g">↶</span>', redo: '<span class="ti g">↷</span>', done: '<span class="ti g">✔</span>',
   };
+  // ?ui=new: 画像生成AIが作った、新しい道具のアイコン(assets/enar32/ui_icons_new.png。32px×24個の1列)に さしかえる。せっていで えらべる
+  if (/[?&]ui=new/.test(location.search)) {
+    const NEWI = { painter: 0, transform: 1, sort: 2, filter: 3, protect: 4, unprotect: 5, printarea: 6, peek: 7, splitv: 8, splith: 9, zoom: 10, undo: 13, pan: 15, write: 16 };
+    Object.keys(NEWI).forEach((k) => { ICON[k] = '<span class="nic" style="background-position:-' + NEWI[k] * 16 + 'px 0"></span>'; });
+  }
   function newEdit(lv) {
     const first = lv && lv.tools.length ? TOOL_BY[lv.tools[0]] : TOOLS[0];
     return { on: false, tab: first.tab, tool: first.id, opts: { color: 1, tf: 'flipH', sort: 'D', from: 1, to: 2, axis: 'row', fcolor: 2 },
