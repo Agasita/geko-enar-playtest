@@ -287,6 +287,10 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
         if (on) { ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.setLineDash([]); if (e.type === 'circ') ctx.strokeRect(n[0] * T + T / 2, n[1] * T + T / 2, Math.max(1, n[2] - n[0]) * T, Math.max(1, n[3] - n[1]) * T); else ctx.strokeRect(n[0] * T + 1.5, n[1] * T + 1.5, (n[2] - n[0] + 1) * T - 3, (n[3] - n[1] + 1) * T - 3); ctx.lineWidth = 1;
           handlesOf(e, r).forEach(h => { ctx.fillStyle = '#fff'; ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.fillRect(h.px - 5, h.py - 5, 10, 10); ctx.strokeRect(h.px - 5, h.py - 5, 10, 10); ctx.lineWidth = 1; }); } });
       ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.strokeRect(e.x * T - 1, e.y * T - 1, T + 2, T + 2); ctx.lineWidth = 1;
+      if (e.type === 'fake' && e.rx !== undefined && e.ry !== undefined) { // リンカちゃんが まねする ブロックの わく(うごかせる)
+        ctx.fillStyle = '#7030A0'; ctx.globalAlpha = .2; ctx.fillRect(e.rx * T, e.ry * T, T, T); ctx.globalAlpha = 1; ctx.strokeStyle = '#7030A0'; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.strokeRect(e.rx * T + 1.5, e.ry * T + 1.5, T - 3, T - 3); ctx.lineWidth = 1;
+        ctx.fillStyle = '#fff'; ctx.fillRect(e.rx * T - 1, e.ry * T - 1, 7, 7); ctx.strokeRect(e.rx * T - 1, e.ry * T - 1, 7, 7); ctx.fillStyle = '#7030A0'; ctx.font = 'bold 9px sans-serif'; ctx.textBaseline = 'top'; ctx.fillText('参照', e.rx * T + 2, e.ry * T + T + 1);
+      }
       ctx.fillStyle = '#217346'; ctx.strokeStyle = '#217346'; ctx.setLineDash([4, 3]);
       if (e.type === 'autofill') { const d = e.d || 1, rc = e.reach || 12, x0 = d > 0 ? e.x + 1 : e.x - rc; ctx.globalAlpha = .15; ctx.fillRect(x0 * T, (e.y + 1) * T, rc * T, T); ctx.globalAlpha = 1; ctx.strokeRect(x0 * T + .5, (e.y + 1) * T + .5, rc * T - 1, T - 1); }
       if (e.lim && (e.type === 'walker' || e.type === 'bucket')) { ctx.globalAlpha = .15; ctx.fillRect(e.lim[0] * T, e.y * T, (e.lim[1] - e.lim[0] + 1) * T, T); ctx.globalAlpha = 1; ctx.strokeRect(e.lim[0] * T + .5, e.y * T + .5, (e.lim[1] - e.lim[0] + 1) * T - 1, T - 1); }
@@ -402,6 +406,9 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   function handlesOf(e, r) { const n = normR(r), o = []; for (const sx of [0, 1]) for (const sy of [0, 1]) o.push(e.type === 'circ' ? { sx, sy, px: n[sx ? 2 : 0] * T + T / 2, py: n[sy ? 3 : 1] * T + T / 2 } : { sx, sy, px: sx ? (n[2] + 1) * T : n[0] * T, py: sy ? (n[3] + 1) * T : n[1] * T }); return o; }
   function pickDown(e, c) {
     const p = pos(e); down = { what: 'none' };
+    if (selEnt && selEnt.type === 'fake' && L.ents.includes(selEnt) && inb(c[0], c[1]) && !(selEnt.x === c[0] && selEnt.y === c[1]) && !L.ents.some(q => q !== selEnt && hasSet(q) && q.x === c[0] && q.y === c[1])) { // リンカちゃんを えらんでいる とき: マスを タップ/わくを ドラッグで、まねする ブロックを きめる
+      selEnt.rx = c[0]; selEnt.ry = c[1]; down = { what: 'lk' }; buildPar.last = null; showEnt(); return;
+    }
     if (isRg(selEnt) && L.ents.includes(selEnt)) {
       const rs = rangesOf(selEnt);
       if (selR >= 0 && selR < rs.length) for (const h of handlesOf(selEnt, rs[selR])) if (Math.hypot(p[0] - h.px, p[1] - h.py) < 11) { ensureRanges(selEnt); selEnt.ranges[selR] = normR(selEnt.ranges[selR]); down = { what: 'rh', i: selR, sx: h.sx, sy: h.sy }; return; }
@@ -458,7 +465,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     const p = $('#ep'), ok = hasSet(selEnt) && L.ents.includes(selEnt) && cur.kind === 'pick'; p.classList.toggle('on', ok); if (!ok) { buildPar.last = null; return; }
     const nm = (ENTS.find(q => q[0] === selEnt.type) || [0, selEnt.type === 'fake' ? 'リンカちゃん' : ''])[1], rg = isRg(selEnt); $('#ep-rg').style.display = rg ? '' : 'none';
     if (buildPar.last !== selEnt) { buildPar.last = selEnt; buildPar(); }
-    if (!rg) { $('#ep-t').textContent = '選んだ敵：' + nm; $('#ep-hint').textContent = '点線で出ているのが、この敵が動く・ねらうはんいです。数を変えると、画面の点線も変わります。'; return; }
+    if (!rg) { $('#ep-t').textContent = '選んだ敵：' + nm; $('#ep-hint').textContent = selEnt.type === 'fake' ? 'まねする ブロックを、マスをタップ、または 紫の枠をドラッグして 選びます。枠は、下の数字でも 動かせます（数字を からにすると、まねを やめます）。' : '点線で出ているのが、この敵が動く・ねらうはんいです。数を変えると、画面の点線も変わります。'; return; }
     const rs = rangesOf(selEnt);
     $('#ep-t').textContent = '選んだ敵：' + nm + '（はんい ' + rs.length + 'か所。いま ' + (selR + 1) + '番め）';
     const circ = selEnt.type === 'circ'; $('#ep-add').style.display = $('#ep-del').style.display = $('#ep-blk').style.display = circ ? 'none' : ''; $('#ep-del').disabled = rs.length <= 1;
@@ -508,6 +515,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     if (!down) return;
     if (down.what === 'door') { const y0 = Math.min(down.y0, c[1]), y1 = Math.max(down.y0, c[1]); down.d[1] = Math.max(0, y0); down.d[2] = Math.max(1, Math.min(L.h, y1) - down.d[1] + 1); draw(); return; }
     if (down.what === 'paint') { if (!last || c[0] !== last[0] || c[1] !== last[1]) { if (cur.kind === 'start' || cur.kind === 'flag' || cur.kind === 'range') apply(c[0], c[1]); else line(last || c, c); last = c; draw(); } }
+    else if (down.what === 'lk') { if (inb(c[0], c[1]) && selEnt && (selEnt.rx !== c[0] || selEnt.ry !== c[1])) { selEnt.rx = c[0]; selEnt.ry = c[1]; buildPar.last = null; showEnt(); draw(); } }
     else if (down.what === 'rh' || down.what === 'rm') { rangeDrag(c); draw(); }
     else if (down.what !== 'none') { liftDrag(c); draw(); }
   });
