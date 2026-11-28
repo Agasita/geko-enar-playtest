@@ -591,7 +591,7 @@
         const dx = (p.x + 5) - (e.x + 7), dy = (p.y + 7) - (e.y + 7), d = Math.hypot(dx, dy);
         if (!p.dead && d < 72) e.bt = e.bt == null ? 0 : e.bt + dt; else e.bt = null; // エナーが ちかづいた ときだけ、まばたきする(ちかづいた しゅんかんから)
         e.look = 2; e.ex = dx; e.ey = dy; if (e.rx !== undefined && e.ry !== undefined) { e.ex = (e.rx * T + 8) - (e.x + 7); e.ey = (e.ry * T + 8) - (e.y + 7); } /* ひとみは、まねしている ブロックの ほうを むく */ // いつも 目が あいている(ぱちくりは えがくときに)
-        if (e.rx !== undefined && inb(e.rx, e.ry) && (e.rx !== e.gx || e.ry !== e.gy)) { const rt = G.front[e.ry][e.rx]; if (isBlockT(rt) && blockVisible(e.rx, e.ry)) e.c = rt === TL.CRACK ? 4 : G.col[e.ry][e.rx]; }
+        if (e.rx !== undefined && inb(e.rx, e.ry) && (e.rx !== e.gx || e.ry !== e.gy)) { const rt = G.front[e.ry][e.rx]; if (isBlockT(rt) && blockVisible(e.rx, e.ry)) { e.c = rt === TL.CRACK ? 4 : G.col[e.ry][e.rx]; e.mag = rt === TL.MAGNET; } }
         if (e.rx !== undefined) { // さんしょうさきに ブロックが なければ、リンカちゃんも 「から」(てんせんの わくと 目だけ。とおりぬけられる)。ブロックが できたら かたまる
           const has = inb(e.rx, e.ry) && isBlockT(G.front[e.ry][e.rx]) && blockVisible(e.rx, e.ry);
           if (has && e.empty && !overlap(e.gx * T, e.gy * T, T, T, p.x, p.y, p.w, p.h)) e.empty = false; else if (!has) e.empty = true; // ひとが なかに いる あいだは かたまらない
@@ -1389,6 +1389,7 @@
     const x = Math.round(e.x - 1 - cx) + (hotMv ? Math.round(Math.sin(e.t * 90) * 1.2) : 0), y = Math.round(e.y - 2 - cy) + (hotMv ? Math.round(Math.cos(e.t * 77) * 1) : 0);
     if (e.flash > 0 && Math.floor(e.flash * 40) % 2) ctx.globalAlpha = .4;
     if (e.empty) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x, y, T, T); ctx.strokeStyle = 'rgba(70,70,70,.75)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.strokeRect(x + .5, y + .5, T - 1, T - 1); ctx.setLineDash([]); }
+    else if (e.mag) drawMagnet(x, y);
     else drawBlock(TL.STONE, e.c || 0, x, y, true, true, undefined, 0);
     ctx.globalAlpha = 1;
     const bp = e.bt == null ? -1 : e.bt % 2.2, blink = !hotMv && bp >= 0 && (bp < .12 || (bp > .27 && bp < .39)); // ぱちくり(2かい まばたき)
