@@ -24,7 +24,7 @@ main{padding:8px 10px;display:flex;flex-direction:column;gap:8px}
 .ic{width:20px;height:20px;image-rendering:pixelated;vertical-align:-5px;margin-right:4px}
 .sw{display:inline-block;width:14px;height:14px;border:1px solid #0004;vertical-align:-2px;margin-right:4px}
 #wrap{overflow:auto;border:1px solid var(--line);background:#fff;max-width:100%;max-height:70vh}
-canvas{display:block;image-rendering:pixelated}
+canvas{display:block;image-rendering:pixelated;margin:0 auto}
 fieldset,details{background:#fff;border:1px solid var(--line);border-radius:0;padding:6px 10px;margin:0}
 legend,summary{color:var(--green);font-weight:700;cursor:pointer;font-size:13px}
 .tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 8px}
@@ -83,6 +83,7 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
   <button id="b-test" class="go">▶ 試しに遊ぶ</button>
   <button id="b-undo">↶ 戻す</button>
   <button id="b-new">新しく</button>
+  <button id="b-zoom" title="ステージの絵の大きさを、ふつう(×1)と大きく(×2)で切りかえます">🔍×1</button>
   <button id="b-bgm" title="ステージ制作中の音楽（BGM）を、つけたり消したりします">♪</button>
   <span class="sep"></span>
   <button id="b-tool" class="toolbtn" title="置くものを えらぶ"></button>
@@ -242,7 +243,13 @@ body[data-mode=scroll] #b-mode{background:#F0A000;border-color:#B38600;color:#26
     n.start = ok(L.start[0], L.start[1]) ? [L.start[0], L.start[1] + dy] : [2, h - 3]; n.flag = ok(L.flag[0], L.flag[1]) && L.flag[1] + dy >= 1 ? [L.flag[0], L.flag[1] + dy] : [w - 4, h - 3];
     L = n; H = h; sel = -1; fit(); showLift();
   }
-  function fit() { cv.width = L.w * T; cv.height = L.h * T; H = L.h; draw(); }
+  // ---- 拡大(×1 / ×2)と、ひらいたときに ステージの まん中が 画面の まん中に来るようにする ----
+  let ZM = 1, lastDim = '';
+  try { ZM = localStorage.getItem('geko-editor-zoom') === '2' ? 2 : 1; } catch (e) {}
+  function centerView() { const w = $('#wrap'); w.scrollLeft = (L.w * T * ZM - w.clientWidth) / 2; w.scrollTop = (L.h * T * ZM - w.clientHeight) / 2; }
+  function applyZoom() { cv.style.width = L.w * T * ZM + 'px'; cv.style.height = L.h * T * ZM + 'px'; const b = $('#b-zoom'); if (b) b.textContent = '🔍×' + ZM; }
+  function fit() { cv.width = L.w * T; cv.height = L.h * T; H = L.h; applyZoom(); draw(); const d = L.w + 'x' + L.h; if (d !== lastDim) { lastDim = d; centerView(); } }
+  $('#b-zoom').addEventListener('click', () => { const w = $('#wrap'), cx = (w.scrollLeft + w.clientWidth / 2) / ZM, cy = (w.scrollTop + w.clientHeight / 2) / ZM; ZM = ZM === 1 ? 2 : 1; try { localStorage.setItem('geko-editor-zoom', String(ZM)); } catch (e) {} applyZoom(); w.scrollLeft = cx * ZM - w.clientWidth / 2; w.scrollTop = cy * ZM - w.clientHeight / 2; });
 
   // ---- 描く ----
   function draw() {
